@@ -58,6 +58,7 @@ Une fois installé, le code vit dans `games/<id>/` du site et importe le site pa
 - `server/addon.js` exporte par défaut `defineFeature` (`server/core/features.js`) ; `routes(app, { apiLimiter })` est appelé avant le repli de la SPA ;
 - un jeu en salles s'enregistre auprès de `games/platform/game-servers/core.js` en important son module de salles ;
 - une console d'administration en processus s'enregistre par `registerInProcessAdmin(id, admin)` (`games/platform/game-admin/registry.js`).
+- un jeu à table enregistre ses règles par `registerTableRules(id, rules)` (`games/platform/table-games.js`) : le site charge les add-ons avant ses tables ;
 - le code du navigateur (`client/`) est servi par le catalogue du site sous `/games/<id>/client/` et importe les modules du site par URL (`/core/js/...`) ; la fenêtre, son entrée légère et les textes restent dans le site.
 
 ## Installer un add-on dans le site
@@ -82,5 +83,5 @@ Puis, la première fois, les données (voir le README de l'add-on). Redémarrer 
 | [Quake 3](quake/README.md) | prêt (J7b) |
 | Minecraft | à déplacer (J7c) |
 | [Worms](worms/README.md) | prêt (J7d) |
-| Peggle | à déplacer (J7e) |
+| [Peggle](peggle/README.md) | prêt (J7e) |
 | Fighting / MUGEN, SF2 | projet Fighting / MUGEN (J8) |

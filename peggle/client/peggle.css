@@ -1,0 +1,72 @@
+/* =========================================================
+   ChaOS — Peggle styles
+   ========================================================= */
+
+#peggle-canvas,
+.peggle-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  flex-shrink: 0;
+  cursor: crosshair;
+  touch-action: none;
+  image-rendering: auto;
+  background: #080b18;
+}
+
+.peggle-stage {
+  position: relative;
+  line-height: 0;
+}
+.peggle-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; line-height: 1.3; max-width: 100%; }
+.peggle-controls-status { font-size: 12px; }
+.peggle-angle { width: 130px; }
+
+.peggle-forfeit-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  line-height: 1.2;
+  color: #ffe4e4;
+  background: rgba(73, 18, 26, 0.88);
+  border-color: rgba(255, 120, 120, 0.72);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.48);
+}
+
+.peggle-forfeit-btn:hover:not(:disabled) {
+  background: rgba(126, 26, 38, 0.96);
+}
+
+.peggle-waiting .peggle-forfeit-btn {
+  position: static;
+  margin-top: 8px;
+}
+
+/* Waiting screen shown while opponent plays */
+.peggle-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 16px;
+  text-align: center;
+  color: #c0c0d0;
+}
+
+.peggle-waiting-score {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffcc44;
+}
+
+.peggle-waiting-text {
+  font-size: 13px;
+  color: #aabbcc;
+}
+
+.peggle-waiting-sub {
+  font-size: 11px;
+  color: #667788;
+}

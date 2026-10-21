@@ -1,0 +1,28 @@
+.table-peggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: #0b1020;
+  color: #e6ecff;
+}
+.table-peggle-status {
+  margin: 0;
+  font-weight: bold;
+}
+.table-peggle-host {
+  display: flex;
+  justify-content: center;
+  min-height: 200px;
+}
+.table-peggle-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+.table-peggle-score {
+  padding: 3px 7px;
+  background: #16203a;
+  border-left: 4px solid #ff8a1f;
+}
