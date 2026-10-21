@@ -1,0 +1,16 @@
+{
+  "id": "minecraft",
+  "name": "Minecraft",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/index.js",
+  "data": {
+    "dir": "data",
+    "check": "server.properties",
+    "legacyDir": "server/games/minecraft",
+    "install": "docker compose --profile minecraft up -d minecraft"
+  },
+  "compose": {
+    "profile": "minecraft"
+  }
+}

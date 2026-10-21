@@ -56,6 +56,7 @@ Le site garde de son côté ce qui le relie au jeu : la fiche du catalogue (`gam
 Une fois installé, le code vit dans `games/<id>/` du site et importe le site par chemins relatifs (`../../../server/…`, `../../platform/…`), comme les jeux intégrés. Contrat `chaosAddonApi: 1` :
 
 - `server/addon.js` exporte par défaut `defineFeature` (`server/core/features.js`) ; `routes(app, { apiLimiter })` est appelé avant le repli de la SPA ;
+- `upgrade(server, { accepting })` attache un transport brut avant Socket.IO ; `stop()` le ferme dans la phase `transports` (Minecraft) ;
 - un jeu en salles s'enregistre auprès de `games/platform/game-servers/core.js` en important son module de salles ;
 - une console d'administration en processus s'enregistre par `registerInProcessAdmin(id, admin)` (`games/platform/game-admin/registry.js`).
 - un jeu à table enregistre ses règles par `registerTableRules(id, rules)` (`games/platform/table-games.js`) : le site charge les add-ons avant ses tables ;
@@ -73,7 +74,7 @@ node scripts/games-install.mjs --remove surf  # retire le code, garde les donné
 
 Puis, la première fois, les données (voir le README de l'add-on). Redémarrer le site.
 
-**Production** : le déploiement du site récupère ce dépôt au commit noté dans `games/addons.lock.json` du site et installe les add-ons listés avant de construire l'image. Les données restent sur le VPS, montées en lecture seule (`./games/<id>/data`). Pour publier une nouvelle version d'un add-on : commit ici, push, puis mettre à jour `ref` dans le fichier de verrouillage du site.
+**Production** : le déploiement du site récupère ce dépôt au commit noté dans `games/addons.lock.json` du site et installe les add-ons listés avant de construire l'image. Les données restent sur le VPS, montées depuis `./games/<id>/data` (lecture seule pour Surf/Quake ; écriture pour le monde Minecraft). Pour publier une nouvelle version d'un add-on : commit ici, push, puis mettre à jour `ref` dans le fichier de verrouillage du site.
 
 ## Add-ons
 
@@ -81,7 +82,7 @@ Puis, la première fois, les données (voir le README de l'add-on). Redémarrer 
 | --- | --- |
 | [Surf](surf/README.md) | prêt (J7a) |
 | [Quake 3](quake/README.md) | prêt (J7b) |
-| Minecraft | à déplacer (J7c) |
+| [Minecraft](minecraft/README.md) | prêt (J7c) : client, proxy WebSocket et conteneur ; monde conservé dans le site |
 | [Worms](worms/README.md) | prêt (J7d) |
 | [Peggle](peggle/README.md) | prêt (J7e) |
 | Fighting / MUGEN, SF2 | projet Fighting / MUGEN (J8) |

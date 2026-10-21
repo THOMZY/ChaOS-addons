@@ -1,0 +1,9 @@
+# Docker build context: ONLY Dockerfile + startup/configuration scripts + fallback icon.
+# Everything else is runtime data bind-mounted at /server.
+# DO NOT add any data file to this build context.
+
+*
+!Dockerfile
+!entrypoint.sh
+!configure-rcon.sh
+!default-server-icon.png
