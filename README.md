@@ -1,6 +1,6 @@
 # ChaOS-games
 
-Les **add-ons** de [ChaOS](https://github.com/THOMZY/THOMZY.com) : les gros jeux, avec leurs installateurs et leurs tests, gardés hors du dépôt du site (roadmap J7). Le site démarre sans eux et les montre « À installer » dans le menu « Jeux ».
+Les **add-ons** de [ChaOS](https://github.com/THOMZY/THOMZY.com) : les gros jeux, avec leurs installateurs et leurs tests, gardés hors du dépôt du site (roadmap J7 et J8). Le site démarre sans eux et les montre « À installer » dans le menu « Jeux ».
 
 ## Ce qu'un add-on contient
 
@@ -10,10 +10,10 @@ Un dossier par jeu, au nom de son id dans le site :
 <id>/
   addon.json      description du paquet (voir plus bas)
   README.md       ce qu'il faut savoir pour l'installer et le mettre à jour
-  server/         code serveur ; server/addon.js est son point d'entrée
+  server/         code serveur ; le point d’entrée est déclaré dans addon.json
   tests/          tests node:test, lancés par le `npm test` du site une fois installé
   install.mjs     installateur des données (gros fichiers jamais versionnés)
-  client/         code du navigateur, servi sous /games/<id>/client/ (Worms)
+  client/         code du navigateur, servi sous /games/<id>/client/
   media/          petits médias versionnés, servis par le serveur de l'add-on (Worms)
 ```
 
@@ -60,7 +60,7 @@ Une fois installé, le code vit dans `games/<id>/` du site et importe le site pa
 - un jeu en salles s'enregistre auprès de `games/platform/game-servers/core.js` en important son module de salles ;
 - une console d'administration en processus s'enregistre par `registerInProcessAdmin(id, admin)` (`games/platform/game-admin/registry.js`).
 - un jeu à table enregistre ses règles par `registerTableRules(id, rules)` (`games/platform/table-games.js`) : le site charge les add-ons avant ses tables ;
-- le code du navigateur (`client/`) est servi par le catalogue du site sous `/games/<id>/client/` et importe les modules du site par URL (`/core/js/...`) ; la fenêtre, son entrée légère et les textes restent dans le site.
+- le code du navigateur (`client/`) est servi par le catalogue ou les routes de l’add-on sous `/games/<id>/client/` et importe les modules du site par URL (`/core/js/...`) ; la fenêtre, son entrée légère et les textes restent dans le site.
 
 ## Installer un add-on dans le site
 
@@ -85,4 +85,5 @@ Puis, la première fois, les données (voir le README de l'add-on). Redémarrer 
 | [Minecraft](minecraft/README.md) | prêt (J7c) : client, proxy WebSocket et conteneur ; monde conservé dans le site |
 | [Worms](worms/README.md) | prêt (J7d) |
 | [Peggle](peggle/README.md) | prêt (J7e) |
-| Fighting / MUGEN, SF2 | projet Fighting / MUGEN (J8) |
+| [Fighting / MUGEN](fighting/README.md) | prêt (J8), bac à sable inclus ; moteur inchangé |
+| [Street Fighter II](sf2/README.md) | prêt (J8), indépendant de Fighting |

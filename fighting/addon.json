@@ -1,0 +1,13 @@
+{
+  "id": "fighting",
+  "name": "MUGEN / Fighting",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/index.js",
+  "data": {
+    "dir": "data",
+    "check": "Characters",
+    "legacyDir": "server/games/MUGEN",
+    "install": "Copy Characters/ and Stages/ into games/fighting/data/"
+  }
+}
