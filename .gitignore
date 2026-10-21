@@ -1,0 +1,3 @@
+# Add-on data is installed in the site (games/<id>/data/), never here.
+*/data/
+node_modules/

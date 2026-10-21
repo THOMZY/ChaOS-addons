@@ -1,0 +1,13 @@
+{
+  "id": "surf",
+  "name": "Surf",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/addon.js",
+  "data": {
+    "dir": "data",
+    "check": "index.html",
+    "legacyDir": "server/games/surf",
+    "install": "node games/surf/install.mjs <dossier-du-miroir>"
+  }
+}
