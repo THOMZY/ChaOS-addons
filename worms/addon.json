@@ -1,0 +1,7 @@
+{
+  "id": "worms",
+  "name": "Worms",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/index.js"
+}

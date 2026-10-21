@@ -13,6 +13,8 @@ Un dossier par jeu, au nom de son id dans le site :
   server/         code serveur ; server/addon.js est son point d'entrée
   tests/          tests node:test, lancés par le `npm test` du site une fois installé
   install.mjs     installateur des données (gros fichiers jamais versionnés)
+  client/         code du navigateur, servi sous /games/<id>/client/ (Worms)
+  media/          petits médias versionnés, servis par le serveur de l'add-on (Worms)
 ```
 
 Le site garde de son côté ce qui le relie au jeu : la fiche du catalogue (`games/<id>/manifest.js` et sa vignette `games/<id>/assets/`), la fenêtre et ses textes. Un add-on ne doit donc **jamais** contenir `manifest.js`, `assets/` ni son dossier de données : l'installateur refuse le paquet.
@@ -56,6 +58,7 @@ Une fois installé, le code vit dans `games/<id>/` du site et importe le site pa
 - `server/addon.js` exporte par défaut `defineFeature` (`server/core/features.js`) ; `routes(app, { apiLimiter })` est appelé avant le repli de la SPA ;
 - un jeu en salles s'enregistre auprès de `games/platform/game-servers/core.js` en important son module de salles ;
 - une console d'administration en processus s'enregistre par `registerInProcessAdmin(id, admin)` (`games/platform/game-admin/registry.js`).
+- le code du navigateur (`client/`) est servi par le catalogue du site sous `/games/<id>/client/` et importe les modules du site par URL (`/core/js/...`) ; la fenêtre, son entrée légère et les textes restent dans le site.
 
 ## Installer un add-on dans le site
 
@@ -78,6 +81,6 @@ Puis, la première fois, les données (voir le README de l'add-on). Redémarrer 
 | [Surf](surf/README.md) | prêt (J7a) |
 | [Quake 3](quake/README.md) | prêt (J7b) |
 | Minecraft | à déplacer (J7c) |
-| Worms | à déplacer (J7d) |
+| [Worms](worms/README.md) | prêt (J7d) |
 | Peggle | à déplacer (J7e) |
 | Fighting / MUGEN, SF2 | projet Fighting / MUGEN (J8) |

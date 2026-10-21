@@ -1,0 +1,105 @@
+/* Worms window battlefield (moved from the site's core/css/games.css, roadmap
+   J7d). Loaded with client/worms.js by the site's game resource loader. */
+.games-body[data-game-mode="worms-game"] {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Worms needs a true 2:1 battlefield instead of the narrow lobby window. */
+.wm-win[data-win-id="worms"]:has(.games-body[data-game-mode="worms-game"]) {
+  left: 2vw !important;
+  top: 6px !important;
+  width: min(1100px, 96vw) !important;
+  height: calc(100% - 12px) !important;
+  border-color: #7e9d42;
+  box-shadow: 0 24px 80px rgba(0,0,0,.72), 0 0 0 2px rgba(186,220,91,.18);
+}
+
+.games-body[data-game-mode="worms-game"] {
+  --worms-ink: #f4edcf;
+  --worms-panel: #172014;
+  --worms-edge: #66783a;
+  min-height: 0;
+  color: var(--worms-ink);
+  background:
+    radial-gradient(circle at 18% -20%, rgba(190,221,88,.18), transparent 38%),
+    #0c110c;
+}
+
+.worms-topbar {
+  min-height: 34px;
+  background: linear-gradient(180deg, #28351d, #121a10) !important;
+  border-bottom: 1px solid var(--worms-edge);
+  box-shadow: inset 0 1px rgba(255,255,255,.08);
+  letter-spacing: .02em;
+}
+
+.worms-stage {
+  min-height: 0;
+  background: #07111d;
+  box-shadow: inset 0 0 32px rgba(0,0,0,.55);
+}
+
+.worms-toolbar {
+  min-height: 58px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #7e9d42 #11170e;
+  background: linear-gradient(180deg, #1f2a19, #0f150d) !important;
+  border-top: 1px solid var(--worms-edge);
+  border-bottom: 1px solid #354326;
+}
+
+.worms-toolbar::before {
+  content: 'ARSENAL';
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: 0 7px;
+  color: #d8e99a;
+  border-right: 1px solid #52642f;
+  font: 700 8px/1 'Trebuchet MS', sans-serif;
+  letter-spacing: .16em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.worms-weapon-btn {
+  flex: 0 0 38px;
+  min-height: 46px;
+  border-radius: 7px !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 2px 5px rgba(0,0,0,.25);
+}
+
+.worms-weapon-btn:hover:not(:disabled),
+.worms-weapon-btn:focus-visible {
+  filter: brightness(1.35);
+  transform: translateY(-1px);
+  outline: 1px solid #d7ef77;
+}
+
+.worms-weapon-btn:disabled { cursor: not-allowed !important; }
+
+.worms-healthbar {
+  min-height: 28px;
+  overflow-x: auto;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  background: #0a0e09 !important;
+  border-top: 1px solid #29341f;
+}
+
+@media (max-width: 720px), (max-height: 600px) {
+  .wm-win[data-win-id="worms"]:has(.games-body[data-game-mode="worms-game"]) {
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100% !important;
+  }
+  .worms-topbar { min-height: 30px; padding-inline: 6px !important; }
+  .worms-toolbar { min-height: 52px; }
+  .worms-weapon-btn { flex-basis: 35px; min-height: 42px; }
+  .worms-healthbar { min-height: 24px; }
+}
