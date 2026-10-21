@@ -1,0 +1,14 @@
+{
+  "id": "quake",
+  "name": "Quake 3",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/addon.js",
+  "data": {
+    "dir": "data",
+    "check": "game",
+    "legacyDir": "server/games/quake",
+    "install": "node games/quake/install.mjs <dossier-du-miroir>"
+  },
+  "compose": { "profile": "quake" }
+}

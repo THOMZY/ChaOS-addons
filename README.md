@@ -45,6 +45,7 @@ Le site garde de son côté ce qui le relie au jeu : la fiche du catalogue (`gam
 | `data.check` | fichier qui prouve que les données sont installées (le catalogue s'en sert pour « À installer ») |
 | `data.legacyDir` | ancien emplacement des données dans le site, déplacé une seule fois vers `games/<id>/<data.dir>` |
 | `data.install` | commande à lancer, depuis le site, pour installer les données |
+| `compose.profile` | profil Compose du service propre au jeu (Quake : `quake`), activé par le déploiement quand l'add-on est installé |
 
 `node scripts/check-addons.mjs` vérifie ces règles sur tous les add-ons de ce dépôt, sans le site.
 
@@ -75,7 +76,7 @@ Puis, la première fois, les données (voir le README de l'add-on). Redémarrer 
 | Add-on | État |
 | --- | --- |
 | [Surf](surf/README.md) | prêt (J7a) |
-| Quake 3 | à déplacer (J7b) |
+| [Quake 3](quake/README.md) | prêt (J7b) |
 | Minecraft | à déplacer (J7c) |
 | Worms | à déplacer (J7d) |
 | Peggle | à déplacer (J7e) |

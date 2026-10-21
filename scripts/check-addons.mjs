@@ -40,6 +40,8 @@ for (const id of addons) {
     else if (existsSync(resolve(dir, addon.data.dir))) fail(`${addon.data.dir}/ ne doit pas être versionné`);
     if (!addon.data.install) fail('data.install manquant');
   }
+  if (addon.compose !== undefined && !/^[a-z][a-z0-9-]*$/.test(addon.compose?.profile ?? ''))
+    fail('compose.profile doit être un nom de profil');
   if (!existsSync(resolve(dir, 'README.md'))) fail('README.md manquant');
 }
 
