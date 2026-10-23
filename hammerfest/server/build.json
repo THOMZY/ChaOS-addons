@@ -1,0 +1,1107 @@
+{
+ "version": "2.5.2",
+ "created_at": "2026-10-09T17:20:35.740Z",
+ "git_commit_ref": "23aeff09fb4ef9973dc5ff754cfe29f4254d68f4",
+ "main_locale": "fr-FR",
+ "display_name": "Les Cavernes de Hammerfest",
+ "description": "Le jeu officiel Hammerfest, par Motion-Twin. Contient également des niveaux inédits et de nouvelles options loufoques !",
+ "icon": null,
+ "loader": "5.1.2",
+ "engine": {
+  "type": "Custom",
+  "blob": {
+   "type": "Blob",
+   "id": "a1b2c3d4-0001-4a0b-8c1d-000000000001",
+   "media_type": "application/x-shockwave-flash",
+   "byte_size": 5796283
+  }
+ },
+ "patcher": {
+  "blob": {
+   "type": "Blob",
+   "id": "a1b2c3d4-0002-4a0b-8c1d-000000000002",
+   "media_type": "application/x-shockwave-flash",
+   "byte_size": 69752
+  },
+  "framework": {
+   "name": "patchman",
+   "version": "0.10.14"
+  },
+  "meta": null
+ },
+ "debug": null,
+ "content": {
+  "type": "Blob",
+  "id": "a1b2c3d4-0003-4a0b-8c1d-000000000003",
+  "media_type": "application/xml",
+  "byte_size": 584728
+ },
+ "content_i18n": {
+  "type": "Blob",
+  "id": "a1b2c3d4-0004-4a0b-8c1d-000000000004",
+  "media_type": "application/xml",
+  "byte_size": 36705
+ },
+ "musics": [
+  {
+   "blob": {
+    "type": "Blob",
+    "id": "ae187ff4-13cb-49cd-89b5-74e989d13723",
+    "media_type": "audio/mp3"
+   },
+   "display_name": "./musics/music.mp3"
+  },
+  {
+   "blob": {
+    "type": "Blob",
+    "id": "ea4c1fcf-b764-4cb4-b0d6-a399034f56f6",
+    "media_type": "audio/mp3"
+   },
+   "display_name": "./musics/boss.mp3"
+  },
+  {
+   "blob": {
+    "type": "Blob",
+    "id": "31a0536c-e2ef-4e5e-821d-7e8b36bc294c",
+    "media_type": "audio/mp3"
+   },
+   "display_name": "./musics/hurryUp.mp3"
+  },
+  {
+   "blob": {
+    "type": "Blob",
+    "id": "c8634d57-3248-45f1-ad7c-6a7aa240203e",
+    "media_type": "audio/mp3"
+   },
+   "display_name": "./musics/lost_track.mp3"
+  },
+  {
+   "blob": {
+    "type": "Blob",
+    "id": "1eb431bc-33ed-43f8-8c14-9d5f17de767d",
+    "media_type": "audio/mp3"
+   },
+   "display_name": "./musics/boss_v2.3_unfinished.mp3"
+  },
+  {
+   "blob": {
+    "type": "Blob",
+    "id": "f23a6fc5-b5e5-484c-bdd8-047b2e1c8be8",
+    "media_type": "audio/mp3"
+   },
+   "display_name": "./musics/hurryUp.mp3"
+  }
+ ],
+ "modes": {
+  "solo": {
+   "display_name": "Aventure",
+   "is_visible": true,
+   "options": {
+    "mirror": {
+     "display_name": "Miroir",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "nightmare": {
+     "display_name": "Cauchemar",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "ninja": {
+     "display_name": "Ninjutsu",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "bombexpert": {
+     "display_name": "Explosifs instables",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "boost": {
+     "display_name": "Tornade",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "insight": {
+     "display_name": "Intuition",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    }
+   }
+  },
+  "multicoop": {
+   "display_name": "Multi Coopératif",
+   "is_visible": false,
+   "options": {
+    "mirrormulti": {
+     "display_name": "Miroir",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "nightmaremulti": {
+     "display_name": "Cauchemar",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "lifesharing": {
+     "display_name": "Partage de vies",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "insight": {
+     "display_name": "Intuition",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    }
+   }
+  },
+  "deluxe": {
+   "display_name": "Deluxe Edition",
+   "is_visible": false,
+   "options": {
+    "mirror": {
+     "display_name": "Miroir",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "nightmare": {
+     "display_name": "Cauchemar",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "ninja": {
+     "display_name": "Ninjutsu",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "bombexpert": {
+     "display_name": "Explosifs instables",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "boost": {
+     "display_name": "Tornade",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "insight": {
+     "display_name": "Intuition",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "firstrun": {
+     "display_name": "Première partie",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "randomfest": {
+     "display_name": "Randomfest",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "shadowclones": {
+     "display_name": "Clones d'ombre",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "noeffect": {
+     "display_name": "Pas d'objets d'aide",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "ice": {
+     "display_name": "Âge de Glace",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "hfest_ii": {
+     "display_name": "Hammerfest II",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "instant_bad": {
+     "display_name": "Fast & Furious",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "framboisefest": {
+     "display_name": "Framboisefest",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "autorun": {
+     "display_name": "Speed",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "lastigor": {
+     "display_name": "Le Dernier Igor",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    }
+   }
+  },
+  "deluxemulti": {
+   "display_name": "Deluxe Edition - Multi",
+   "is_visible": false,
+   "options": {
+    "mirrormulti": {
+     "display_name": "Miroir",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "nightmaremulti": {
+     "display_name": "Cauchemar",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "ninja": {
+     "display_name": "Ninjutsu",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "bombexpert": {
+     "display_name": "Explosifs instables",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "boost": {
+     "display_name": "Tornade",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "lifesharing": {
+     "display_name": "Partage de vies",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "insight": {
+     "display_name": "Intuition",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "bombcontrol": {
+     "display_name": "Bombotopia",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "firstrun": {
+     "display_name": "Première partie",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "shadowclones": {
+     "display_name": "Clones d'ombre",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "noeffect": {
+     "display_name": "Pas d'objets d'aide",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "ice": {
+     "display_name": "Âge de Glace",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "hfest_ii": {
+     "display_name": "Hammerfest II",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "instant_bad": {
+     "display_name": "Fast & Furious",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "framboisefest": {
+     "display_name": "Framboisefest",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "autorun": {
+     "display_name": "Speed",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    }
+   }
+  },
+  "bossrush": {
+   "display_name": "Bossrush",
+   "is_visible": false,
+   "options": {
+    "noeffect": {
+     "display_name": "Pas d'objets d'aide",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    }
+   }
+  },
+  "tutorial": {
+   "display_name": "Apprentissage",
+   "is_visible": true,
+   "options": {}
+  },
+  "timeattack": {
+   "display_name": "Time Attack",
+   "is_visible": false,
+   "options": {
+    "set_ta_0": {
+     "display_name": "Colline Verte",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "set_ta_1": {
+     "display_name": "Temple Orangé",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    }
+   }
+  },
+  "multitime": {
+   "display_name": "Time Attack - Multi",
+   "is_visible": false,
+   "options": {
+    "set_mta_0": {
+     "display_name": "Colline Verte",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "set_mta_1": {
+     "display_name": "Temple Orangé",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    }
+   }
+  },
+  "soccer": {
+   "display_name": "Soccerfest",
+   "is_visible": true,
+   "options": {
+    "kickcontrol": {
+     "display_name": "Contrôle avancé du ballon",
+     "is_visible": true,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "soccerbomb": {
+     "display_name": "Bombes",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": true
+    },
+    "soccerparty": {
+     "display_name": "Deux contre deux",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soctime_short": {
+     "display_name": "Durée de match courte",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soctime_normal": {
+     "display_name": "Durée de match normale",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": true
+    },
+    "set_soctime_long": {
+     "display_name": "Durée de match longue",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "prolongation": {
+     "display_name": "Prolongation",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_alea": {
+     "display_name": "Terrain aléatoire",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_0": {
+     "display_name": "Gazon maudit",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "set_soc_1": {
+     "display_name": "Temple du Ballon",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "set_soc_2": {
+     "display_name": "Volleyfest",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "set_soc_3": {
+     "display_name": "Maitrise aérienne",
+     "is_visible": true,
+     "is_enabled": true,
+     "default_value": false
+    },
+    "set_soc_4": {
+     "display_name": "Prototype inutilisé 1",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_5": {
+     "display_name": "Prototype inutilisé 2",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_6": {
+     "display_name": "Prototype inutilisé 3",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_7": {
+     "display_name": "Prototype inutilisé 4",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_8": {
+     "display_name": "Piste temporelle",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_9": {
+     "display_name": "Stade de Basalte",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_10": {
+     "display_name": "Coupe de glace",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_11": {
+     "display_name": "Carton noir",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_12": {
+     "display_name": "Terrain oublié",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_13": {
+     "display_name": "Orange gardien",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_14": {
+     "display_name": "Chaudron cracheur",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_15": {
+     "display_name": "Salle à pics",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_16": {
+     "display_name": "Kiwi Arena",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_17": {
+     "display_name": "Cages inviolées",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_18": {
+     "display_name": "Dojo Fulguro",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_19": {
+     "display_name": "Arbre Macabre",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_20": {
+     "display_name": "Jardin Zen",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_21": {
+     "display_name": "Sanguinolent",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_22": {
+     "display_name": "Sporio",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    },
+    "set_soc_23": {
+     "display_name": "Temple Aérien",
+     "is_visible": false,
+     "is_enabled": false,
+     "default_value": false
+    }
+   }
+  }
+ },
+ "families": "0,7,13,15,18,1000,1028,5015",
+ "category": "Other",
+ "i18n": {
+  "en-US": {
+   "display_name": "The Caverns of Hammerfest",
+   "description": "The official Hammerfest game, by Motion-Twin. Also includes unreleased levels and zany new options!",
+   "content_i18n": {
+    "type": "Blob",
+    "id": "a1b2c3d4-0005-4a0b-8c1d-000000000005",
+    "media_type": "application/xml",
+    "byte_size": 32208
+   },
+   "modes": {
+    "bossrush": {
+     "options": {
+      "noeffect": {
+       "display_name": "No help items"
+      }
+     }
+    },
+    "deluxe": {
+     "options": {
+      "bombexpert": {
+       "display_name": "Unstable explosives"
+      },
+      "boost": {
+       "display_name": "Tornado"
+      },
+      "firstrun": {
+       "display_name": "First run"
+      },
+      "framboisefest": {
+       "display_name": "Raspberryfest"
+      },
+      "insight": {
+       "display_name": "Insight"
+      },
+      "lastigor": {
+       "display_name": "The Last Igor"
+      },
+      "mirror": {
+       "display_name": "Mirror"
+      },
+      "nightmare": {
+       "display_name": "Nightmare"
+      },
+      "noeffect": {
+       "display_name": "No help items"
+      },
+      "shadowclones": {
+       "display_name": "Shadow clones"
+      }
+     }
+    },
+    "deluxemulti": {
+     "options": {
+      "bombexpert": {
+       "display_name": "Unstable explosives"
+      },
+      "boost": {
+       "display_name": "Tornado"
+      },
+      "firstrun": {
+       "display_name": "First run"
+      },
+      "framboisefest": {
+       "display_name": "Raspberryfest"
+      },
+      "insight": {
+       "display_name": "Insight"
+      },
+      "lifesharing": {
+       "display_name": "Life sharing"
+      },
+      "mirrormulti": {
+       "display_name": "Mirror"
+      },
+      "nightmaremulti": {
+       "display_name": "Nightmare"
+      },
+      "noeffect": {
+       "display_name": "No help items"
+      },
+      "shadowclones": {
+       "display_name": "Shadow clones"
+      }
+     }
+    },
+    "multicoop": {
+     "display_name": "Multiplayer",
+     "options": {
+      "insight": {
+       "display_name": "Insight"
+      },
+      "lifesharing": {
+       "display_name": "Life sharing"
+      },
+      "mirrormulti": {
+       "display_name": "Mirror"
+      },
+      "nightmaremulti": {
+       "display_name": "Nightmare"
+      }
+     }
+    },
+    "multitime": {
+     "options": {
+      "set_mta_0": {
+       "display_name": "Green Hill"
+      },
+      "set_mta_1": {
+       "display_name": "Orange Temple"
+      }
+     }
+    },
+    "soccer": {
+     "options": {
+      "kickcontrol": {
+       "display_name": "Advanced ball control"
+      },
+      "prolongation": {
+       "display_name": "Extra time"
+      },
+      "set_soc_0": {
+       "display_name": "Cursed lawn"
+      },
+      "set_soc_1": {
+       "display_name": "Temple of the Ball"
+      },
+      "set_soc_10": {
+       "display_name": "Ice cup"
+      },
+      "set_soc_11": {
+       "display_name": "Black card"
+      },
+      "set_soc_12": {
+       "display_name": "Forgotten pitch"
+      },
+      "set_soc_13": {
+       "display_name": "Goalkeeper orange"
+      },
+      "set_soc_14": {
+       "display_name": "Spitting cauldron"
+      },
+      "set_soc_15": {
+       "display_name": "Spike room"
+      },
+      "set_soc_17": {
+       "display_name": "Untouched goals"
+      },
+      "set_soc_18": {
+       "display_name": "Fulguro Dojo"
+      },
+      "set_soc_19": {
+       "display_name": "Macabre Tree"
+      },
+      "set_soc_20": {
+       "display_name": "Zen Garden"
+      },
+      "set_soc_21": {
+       "display_name": "Bloody"
+      },
+      "set_soc_23": {
+       "display_name": "Aerial Temple"
+      },
+      "set_soc_3": {
+       "display_name": "Aerial mastery"
+      },
+      "set_soc_4": {
+       "display_name": "Unused prototype 1"
+      },
+      "set_soc_5": {
+       "display_name": "Unused prototype 2"
+      },
+      "set_soc_6": {
+       "display_name": "Unused prototype 3"
+      },
+      "set_soc_7": {
+       "display_name": "Unused prototype 4"
+      },
+      "set_soc_8": {
+       "display_name": "Temporal track"
+      },
+      "set_soc_9": {
+       "display_name": "Basalt Stadium"
+      },
+      "set_soc_alea": {
+       "display_name": "Random pitch"
+      },
+      "set_soctime_long": {
+       "display_name": "Long match duration"
+      },
+      "set_soctime_normal": {
+       "display_name": "Standard match duration"
+      },
+      "set_soctime_short": {
+       "display_name": "Short match duration"
+      },
+      "soccerbomb": {
+       "display_name": "Bombs"
+      },
+      "soccerparty": {
+       "display_name": "2 versus 2"
+      }
+     }
+    },
+    "solo": {
+     "display_name": "Adventure",
+     "options": {
+      "bombexpert": {
+       "display_name": "Unstable explosives"
+      },
+      "boost": {
+       "display_name": "Tornado"
+      },
+      "insight": {
+       "display_name": "Insight"
+      },
+      "mirror": {
+       "display_name": "Mirror"
+      },
+      "nightmare": {
+       "display_name": "Nightmare"
+      }
+     }
+    },
+    "timeattack": {
+     "options": {
+      "set_ta_0": {
+       "display_name": "Green Hill"
+      },
+      "set_ta_1": {
+       "display_name": "Orange Temple"
+      }
+     }
+    },
+    "tutorial": {
+     "display_name": "Learning",
+     "options": {}
+    }
+   }
+  },
+  "es-SP": {
+   "display_name": "Las Cavernas de Hammerfest",
+   "description": "El juego oficial del Hammerfest, de Motion-Twin. También incluye niveles inéditos y nuevas y alocadas opciones.",
+   "content_i18n": {
+    "type": "Blob",
+    "id": "a1b2c3d4-0006-4a0b-8c1d-000000000006",
+    "media_type": "application/xml",
+    "byte_size": 35952
+   },
+   "modes": {
+    "bossrush": {
+     "options": {
+      "noeffect": {
+       "display_name": "Sin objetos de ayuda"
+      }
+     }
+    },
+    "deluxe": {
+     "options": {
+      "bombexpert": {
+       "display_name": "Explosivos inestables"
+      },
+      "boost": {
+       "display_name": "Tornado"
+      },
+      "firstrun": {
+       "display_name": "Primera partida"
+      },
+      "framboisefest": {
+       "display_name": "Frambuesafest"
+      },
+      "insight": {
+       "display_name": "Intuición"
+      },
+      "lastigor": {
+       "display_name": "El último Igor"
+      },
+      "mirror": {
+       "display_name": "Espejo"
+      },
+      "nightmare": {
+       "display_name": "Pesadilla"
+      },
+      "noeffect": {
+       "display_name": "Sin objetos de ayuda"
+      },
+      "shadowclones": {
+       "display_name": "Clones des sombras"
+      }
+     }
+    },
+    "deluxemulti": {
+     "display_name": "Deluxe Edition - Cooperativo",
+     "options": {
+      "bombexpert": {
+       "display_name": "Explosivos inestables"
+      },
+      "boost": {
+       "display_name": "Tornado"
+      },
+      "firstrun": {
+       "display_name": "Primera partida"
+      },
+      "framboisefest": {
+       "display_name": "Frambuesafest"
+      },
+      "insight": {
+       "display_name": "Intuición"
+      },
+      "lifesharing": {
+       "display_name": "Compartir vidas"
+      },
+      "mirrormulti": {
+       "display_name": "Espejo"
+      },
+      "nightmaremulti": {
+       "display_name": "Pesadilla"
+      },
+      "noeffect": {
+       "display_name": "Sin objetos de ayuda"
+      },
+      "shadowclones": {
+       "display_name": "Clones des sombras"
+      }
+     }
+    },
+    "multicoop": {
+     "display_name": "Cooperativo",
+     "options": {
+      "insight": {
+       "display_name": "Intuición"
+      },
+      "lifesharing": {
+       "display_name": "Compartir vidas"
+      },
+      "mirrormulti": {
+       "display_name": "Esoejo"
+      },
+      "nightmaremulti": {
+       "display_name": "Pesadilla"
+      }
+     }
+    },
+    "multitime": {
+     "display_name": "Contrareloj - Cooperativo",
+     "options": {
+      "set_mta_0": {
+       "display_name": "Colina Verde"
+      },
+      "set_mta_1": {
+       "display_name": "Templo Naranja"
+      }
+     }
+    },
+    "soccer": {
+     "display_name": "Fútbolfest",
+     "options": {
+      "kickcontrol": {
+       "display_name": "Control avanzado del balón"
+      },
+      "prolongation": {
+       "display_name": "Prórroga"
+      },
+      "set_soc_0": {
+       "display_name": "Césped maldito"
+      },
+      "set_soc_1": {
+       "display_name": "Templo del Balón"
+      },
+      "set_soc_10": {
+       "display_name": "Coupa de hielo"
+      },
+      "set_soc_11": {
+       "display_name": "Tarjeta negra"
+      },
+      "set_soc_12": {
+       "display_name": "Campo olvidado"
+      },
+      "set_soc_13": {
+       "display_name": "Guardián naranja"
+      },
+      "set_soc_14": {
+       "display_name": "Caldero escupidor"
+      },
+      "set_soc_15": {
+       "display_name": "Sala de pinchos"
+      },
+      "set_soc_17": {
+       "display_name": "Portería intacta"
+      },
+      "set_soc_19": {
+       "display_name": "Árbol macabro"
+      },
+      "set_soc_20": {
+       "display_name": "Jardín Zen"
+      },
+      "set_soc_21": {
+       "display_name": "Sangriento"
+      },
+      "set_soc_23": {
+       "display_name": "Templo Aéreo"
+      },
+      "set_soc_3": {
+       "display_name": "Control Aéreo"
+      },
+      "set_soc_4": {
+       "display_name": "Prototipo no utilizado 1"
+      },
+      "set_soc_5": {
+       "display_name": "Prototipo no utilizado 2"
+      },
+      "set_soc_6": {
+       "display_name": "Prototipo no utilizado 3"
+      },
+      "set_soc_7": {
+       "display_name": "Prototipo no utilizado 4"
+      },
+      "set_soc_8": {
+       "display_name": "Pista de tiempo"
+      },
+      "set_soc_9": {
+       "display_name": "Estadio de Basalto"
+      },
+      "set_soc_alea": {
+       "display_name": "Campo aleatorio"
+      },
+      "set_soctime_long": {
+       "display_name": "Duración larga"
+      },
+      "set_soctime_normal": {
+       "display_name": "Duración normal"
+      },
+      "set_soctime_short": {
+       "display_name": "Duración corta"
+      },
+      "soccerbomb": {
+       "display_name": "Bombas"
+      },
+      "soccerparty": {
+       "display_name": "Dos contra dos"
+      }
+     }
+    },
+    "solo": {
+     "display_name": "Aventura",
+     "options": {
+      "bombexpert": {
+       "display_name": "Explosivos inestables"
+      },
+      "boost": {
+       "display_name": "Tornado"
+      },
+      "insight": {
+       "display_name": "Intuición"
+      },
+      "mirror": {
+       "display_name": "Espejo"
+      },
+      "nightmare": {
+       "display_name": "Pesadilla"
+      }
+     }
+    },
+    "timeattack": {
+     "display_name": "Contrareloj",
+     "options": {
+      "set_ta_0": {
+       "display_name": "Colina Verde"
+      },
+      "set_ta_1": {
+       "display_name": "Templo Naranja"
+      }
+     }
+    },
+    "tutorial": {
+     "display_name": "Aprendizaje",
+     "options": {}
+    }
+   }
+  }
+ }
+}

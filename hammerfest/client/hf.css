@@ -1,0 +1,222 @@
+/* Feuille commune aux pages Hammerfest, calquée sur le CSS global du site
+   Eternalfest : conteneur #ebd9e6 bordé de #c52f36, h1 18pt aligné à droite,
+   tableaux bordés #6a100e, onglets en forme d'onglet sur #e8b0b3. */
+:root {
+  --pink: #e8b0b3;
+  --sheet: #ebd9e6;
+  --edge: #c52f36;
+  --ink: #8f201e;
+  --accent: #d9578d;
+  --border: #6a100e;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Trebuchet MS", Verdana, Georgia, sans-serif;
+  font-size: 10pt;
+  background: #17121f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%2317121f'/%3E%3C/svg%3E");
+}
+
+/* ── Conteneur (leur `.content`) ───────────────────────────────────────── */
+.sheet {
+  position: relative;
+  width: 720px;
+  max-width: 100%;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 8px 25px 16px;
+  background: var(--sheet);
+  border-left: 3px solid var(--edge);
+  border-right: 3px solid var(--edge);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Titre : 18pt, normal, aligné à droite, souligné (leur `.content h1`) ─ */
+h1.game-name {
+  margin: 0 0 5px;
+  padding: 0;
+  font-size: 18pt;
+  font-weight: normal;
+  text-align: right;
+  border-bottom: solid 1px var(--ink);
+  color: var(--ink);
+}
+
+/* ── Onglets (leurs `ef-* .game-tabs a`) ───────────────────────────────── */
+nav.game-tabs { overflow: hidden; margin: 0 0 14px; }
+nav.game-tabs a {
+  display: block;
+  float: left;
+  padding: 10px 15px;
+  background: var(--pink);
+  border: 1px solid var(--pink);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  margin-left: 10px;
+  margin-right: 1px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 10pt;
+}
+nav.game-tabs a + a { margin-left: 0; }
+nav.game-tabs a.blurred {
+  background-image: linear-gradient(#e8b0b3, #d38184);
+  background-size: 1px 10px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+}
+nav.game-tabs a:hover { text-decoration: underline; }
+
+/* ── Tableaux (leur CSS global) ────────────────────────────────────────── */
+table {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+thead th {
+  padding: 4px;
+  text-align: center;
+  background-color: var(--pink);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  font-weight: bold;
+}
+td {
+  padding: 4px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+/* ── Cartes et blocs communs ───────────────────────────────────────────── */
+.content { flex: 0 0 auto; }
+
+.card {
+  background: var(--pink);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+h3 {
+  margin: 0 0 6px;
+  padding: 0 0 4px;
+  font-size: 13px;
+  font-weight: normal;
+  text-align: right;
+  color: var(--ink);
+  border-bottom: 1px solid #c9868a;
+}
+
+ul.plain { list-style: none; margin: 0; padding: 0; }
+ul.plain li { margin: 1px 0; }
+
+/* ── Carte du jeu (page Jeu) ───────────────────────────────────────────── */
+.details { display: flex; gap: 12px; margin-bottom: 14px; }
+.details .icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+  background: #1b1526;
+  object-fit: cover;
+}
+.details p { margin: 0 0 6px; }
+.details dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 8px 0 0; }
+.details dl > div { display: contents; }
+.details dt { text-align: right; font-weight: bold; }
+.details dd { margin: 0; color: var(--accent); font-weight: bold; }
+
+/* ── Formulaire de partie ─────────────────────────────────────────────── */
+.run-form { display: flex; flex-direction: column; gap: 10px; }
+.run-form .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.run-form .row > * { flex: 1 1 260px; }
+
+label.choice {
+  display: block;
+  padding: 3px 6px 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: right;
+}
+label.choice:hover { background: #dfa2a5; }
+label.choice.selected { background: #d9999c; font-weight: bold; }
+label.choice input { display: none; }
+
+.card.settings label,
+.card.options label { display: block; padding: 2px 4px; cursor: pointer; }
+.card.settings input,
+.card.options input { accent-color: var(--accent); }
+.card.options { display: flex; flex-direction: column; gap: 8px; }
+.no-options { font-style: italic; opacity: 0.8; }
+
+button.play {
+  margin-top: 4px;
+  align-self: center;
+  min-width: 130px;
+  padding: 8px 22px;
+  border: 1px solid #a9556d;
+  border-radius: 8px;
+  background: linear-gradient(#e7749c, var(--accent));
+  color: #fff;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #9c3f5e;
+}
+button.play:hover { filter: brightness(1.06); }
+button.play[disabled] { opacity: 0.55; cursor: default; box-shadow: none; }
+
+/* ── Zone de jeu ──────────────────────────────────────────────────────── */
+#stage { display: none; }
+body.playing { overflow: hidden; }
+body.playing .sheet {
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  padding: 0;
+  background: #000;
+  border: none;
+}
+body.playing .page-head,
+body.playing .launcher,
+body.playing footer { display: none; }
+body.playing #stage {
+  display: block;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #0d0b12;
+}
+body.playing #stage ruffle-player { position: absolute; inset: 0; width: 100%; height: 100%; }
+#quit {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+  padding: 6px 12px;
+  border: 1px solid #a9556d;
+  border-radius: 8px;
+  background: rgba(217, 87, 141, 0.92);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.notice { padding: 26px 10px; text-align: center; color: #6b2a29; }
+.notice a { color: var(--accent); }
+
+footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #d8a4a7;
+  font-size: 8pt;
+  color: #6b2a29;
+  text-align: center;
+}
+footer a { color: #6b2a29; }

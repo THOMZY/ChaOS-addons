@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Résultat — Les Cavernes de Hammerfest</title>
+<link rel="stylesheet" href="/games/hammerfest/client/hf.css">
+<style>
+  .result-sub { margin: 0 0 18px; font-size: 11pt; color: #7d2a28; }
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin: 14px 0 18px;
+  }
+  .summary .box {
+    background: var(--pink);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .summary .box span { display: block; font-size: 9pt; text-transform: uppercase; letter-spacing: .04em; color: #7d2a28; }
+  .summary .box b { display: block; font-size: 22px; line-height: 1.25; color: #6a100e; }
+  .summary .box.victory { background: #d9c3a8; }
+
+  h3.section {
+    margin: 22px 0 10px;
+    padding-bottom: 4px;
+    font-size: 12pt;
+    border-bottom: 1px solid #c9868a;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h3.section small { font-weight: normal; font-size: 9pt; color: #7d2a28; }
+
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 8px;
+  }
+  .loot {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    background: var(--pink);
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+  .loot img { width: 34px; height: 34px; }
+  .loot .name { font-size: 10pt; font-weight: bold; }
+  .loot .sub { font-size: 9pt; color: #7d2a28; }
+  .loot .count { font-weight: bold; color: var(--accent); font-size: 10pt; white-space: nowrap; }
+  .loot .tags { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 8pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #43203a;
+    color: #ffe9f4;
+  }
+  .tag.unlock { background: #2f6b4a; color: #eafff2; }
+  .tag.new { background: #d9578d; color: #fff; }
+
+  .quest-row {
+    background: var(--pink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+  .quest-row .head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .quest-row .head b { font-size: 10.5pt; }
+  .quest-row .head span { font-size: 9pt; font-weight: bold; color: var(--accent); white-space: nowrap; }
+  .quest-row.done { background: #d9c3a8; }
+  .quest-row.done .head span { color: #2f6b4a; }
+  .bar { height: 6px; background: #d9999c; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .bar i.before { background: #b07ce8; }
+
+  .actions { display: flex; gap: 10px; justify-content: center; margin: 26px 0 8px; flex-wrap: wrap; }
+  .actions a {
+    padding: 9px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    border: 1px solid #a9556d;
+  }
+  .actions a.primary { background: linear-gradient(#e7749c, var(--accent)); color: #fff; }
+  .actions a.secondary { background: var(--pink); color: #6a100e; }
+  .empty { color: #8a3a38; font-style: italic; }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <div class="page-head">
+    <h1 class="game-name">Résultat</h1>
+    <p class="result-sub" id="subtitle">…</p>
+  </div>
+
+  <div class="content">
+    <div class="notice" id="notice">Chargement…</div>
+
+    <div id="result" hidden>
+      <div class="summary" id="summary"></div>
+
+      <h3 class="section">Objets ramassés <small id="items-count"></small></h3>
+      <div class="items-grid" id="items"></div>
+
+      <h3 class="section">Quêtes <small id="quests-count"></small></h3>
+      <div id="quests"></div>
+
+      <div class="actions">
+        <a class="primary" href="/games/hammerfest/client/play.html">Rejouer</a>
+        <a class="secondary" href="/games/hammerfest/client/profile.html#objets">Mes objets</a>
+        <a class="secondary" href="/games/hammerfest/client/profile.html#quetes">Mes quêtes</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Hammerfest © Motion Twin — corrections et contenu : Eternalfest — lecteur : Ruffle.
+    Version non officielle hébergée sur THOMZY.com.
+  </footer>
+</main>
+<script type="module" src="/games/hammerfest/client/result.js"></script>
+</body>
+</html>

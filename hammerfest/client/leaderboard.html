@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classement — Les Cavernes de Hammerfest</title>
+<link rel="stylesheet" href="hf.css">
+<style>
+  .mode-block { margin: 0 0 22px; }
+  .mode-block h3 {
+    margin: 0 0 6px;
+    padding: 0 0 4px;
+    font-size: 12pt;
+    font-weight: bold;
+    text-align: left;
+    border-bottom: 1px solid #8f201e;
+  }
+  .mode-block table { width: 100%; }
+  .mode-block td.rank { width: 12%; font-weight: bold; }
+  .mode-block td.player { text-align: left; }
+  .mode-block td.score { font-weight: bold; color: var(--accent); }
+  .mode-block tr.me td { background: rgba(217, 87, 141, 0.14); }
+  .empty { padding: 24px 6px; text-align: center; color: #6b2a29; }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <div class="page-head">
+    <h1 class="game-name">Les Cavernes de Hammerfest</h1>
+    <nav class="game-tabs">
+      <a class="blurred" href="play.html">Jeu</a>
+      <a href="leaderboard.html" aria-current="page">Classement</a>
+      <a class="blurred" href="profile.html#frigo">Frigo</a>
+      <a class="blurred" href="profile.html#objets">Mes objets</a>
+      <a class="blurred" href="profile.html#quetes">Mes quêtes</a>
+    </nav>
+  </div>
+
+  <div class="content">
+    <div class="notice" id="notice">Chargement…</div>
+    <div id="modes"></div>
+  </div>
+
+  <footer>
+    Hammerfest © Motion Twin — corrections et contenu : Eternalfest — lecteur : Ruffle.
+    Version non officielle hébergée sur THOMZY.com.
+  </footer>
+</main>
+<script type="module" src="/games/hammerfest/client/leaderboard.js"></script>
+</body>
+</html>

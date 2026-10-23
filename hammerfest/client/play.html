@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les Cavernes de Hammerfest — THOMZY.com</title>
+<link rel="stylesheet" href="hf.css">
+</head>
+<body>
+<main class="sheet">
+  <div class="page-head">
+    <h1 class="game-name">Les Cavernes de Hammerfest</h1>
+    <nav class="game-tabs">
+      <a href="play.html" aria-current="page">Jeu</a>
+      <a class="blurred" href="leaderboard.html">Classement</a>
+      <a class="blurred" href="profile.html#frigo">Frigo</a>
+      <a class="blurred" href="profile.html#objets">Mes objets</a>
+      <a class="blurred" href="profile.html#quetes">Mes quêtes</a>
+    </nav>
+  </div>
+
+  <div class="content launcher">
+    <div class="card details">
+      <img class="icon" src="/games/hammerfest/assets/thumbnail.svg" alt="Hammerfest">
+      <div class="right">
+        <p>Le jeu officiel Hammerfest, par Motion-Twin. Contient également des niveaux inédits et de
+          nouvelles options loufoques !</p>
+        <dl>
+          <div><dt>Propriétaire :</dt><dd>THOMZY</dd></div>
+          <div><dt>Build :</dt><dd>2.5.2 (Eternalfest)</dd></div>
+          <div><dt>Lecteur :</dt><dd>Ruffle</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="notice" id="notice">Chargement…</div>
+
+    <form class="run-form" id="run-form" hidden>
+      <div class="row">
+        <div class="card modes">
+          <h3>Mode de jeu</h3>
+          <ul class="plain" id="modes"></ul>
+        </div>
+        <div class="card settings">
+          <h3>Paramètres</h3>
+          <ul class="plain">
+            <li><label><input type="checkbox" id="set-detail" checked> Détails graphiques élevés</label></li>
+            <li><label><input type="checkbox" id="set-shake" checked> Vibrations fréquentes</label></li>
+            <li><label><input type="checkbox" id="set-sound" checked> Son</label></li>
+            <li><label><input type="checkbox" id="set-music"> Musique</label></li>
+          </ul>
+        </div>
+      </div>
+      <div class="card options">
+        <h3><b id="options-title">Aventure</b> — Options</h3>
+        <ul class="plain" id="options"></ul>
+        <button class="play" type="submit" id="play">Jouer</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="stage"></div>
+
+  <footer>
+    Hammerfest © Motion Twin — corrections et contenu : Eternalfest — lecteur : Ruffle.
+    Version non officielle hébergée sur THOMZY.com.
+  </footer>
+</main>
+<script src="/hammerfest/data/ruffle/ruffle.js"></script>
+<script type="module" src="/games/hammerfest/client/play.js"></script>
+</body>
+</html>
