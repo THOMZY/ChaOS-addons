@@ -15,7 +15,10 @@ Un dossier par jeu, au nom de son id dans le site :
   install.mjs     installateur des données (gros fichiers jamais versionnés)
   client/         code du navigateur, servi sous /games/<id>/client/
   media/          petits médias versionnés, servis par le serveur de l'add-on (Worms)
+  schema.sql      tables propres au jeu (facultatif), appliquées par son code serveur
 ```
+
+Depuis le schéma **v4** du site, un add-on qui a besoin de tables les **apporte et les crée lui-même** : `schema.sql` + un `server/schema.js` dont la fonction d’initialisation est appelée par le point d’entrée et exécute le fichier (tout en `CREATE TABLE IF NOT EXISTS`) dans une transaction. C'est le cas de `surf` et `hammerfest`. Le runner de migrations du site ne connaît pas ces tables : elles restent hors de son registre, et une base existante les garde intactes.
 
 Le site garde de son côté ce qui le relie au jeu : la fiche du catalogue (`games/<id>/manifest.js` et sa vignette `games/<id>/assets/`), la fenêtre et ses textes. Un add-on ne doit donc **jamais** contenir `manifest.js`, `assets/` ni son dossier de données : l'installateur refuse le paquet.
 

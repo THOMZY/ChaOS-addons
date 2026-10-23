@@ -45,7 +45,7 @@ function oracleDecodeSnapshot(buf) {
   assert.equal(v.getUint8(0), 1, 'octet 0 = version de protocole');
   assert.equal(v.getUint8(1), 2, 'byte 1 = snapshot type');
   const blocks = v.getUint16(2, true);
-  assert.ok(blocks <= 100, 'le client refuse plus de 100 blocs');
+  assert.ok(blocks <= 100, 'the client rejects more than 100 blocks');
   const parts = [];
   let r = HEADER_SNAPSHOT;
   for (let i = 0; i < blocks; i++) {
@@ -77,7 +77,7 @@ function oracleDecodeSnapshot(buf) {
     }
     parts.push({ slot, sequence, epoch, samples });
   }
-  assert.equal(r, buf.byteLength, 'aucun octet en trop');
+  assert.equal(r, buf.byteLength, 'no extra bytes');
   return parts;
 }
 
@@ -109,7 +109,7 @@ test('decodeBatch keeps useful precision (floats and angles)', () => {
   assert.equal(s.seconds, 3.5);
 });
 
-test('encodeSnapshot produit exactement la taille et les octets attendus', () => {
+test('encodeSnapshot produces exactly the expected size and bytes', () => {
   const blocks = [
     { slot: 0, sequence: 10, epoch: 2, samples: [sample()] },
     { slot: 3, sequence: 11, epoch: 2, samples: [sample({ time: 1300 }), sample({ time: 1316 })] },
@@ -147,14 +147,14 @@ test('decodeBatch rejects an invalid header', () => {
 });
 
 // ── Room ─────────────────────────────────────────────────────────────────────
-test('describe() expose ce que le client lit dans la liste des serveurs', () => {
+test('describe() exposes the fields read by the client server list', () => {
   const room = new SurfRoom({ id: 'eu', name: 'ChaOS EU', region: 'eu', capacity: 20 });
   const d = room.describe();
   for (const key of ['id', 'name', 'region', 'players', 'capacity', 'mapId', 'online', 'endsAt']) {
     assert.ok(key in d, `champ manquant : ${key}`);
   }
   assert.equal(d.online, true);
-  assert.ok(MAP_ROTATION.includes(d.mapId), 'mapId doit exister dans la rotation du client');
+  assert.ok(MAP_ROTATION.includes(d.mapId), 'mapId must exist in the client rotation');
 });
 
 test('unique slots, released on leave, and a consistent roster', () => {
@@ -182,7 +182,7 @@ test('setMap bumps the epoch and resets the timer', () => {
   assert.ok(room.endsAt > Date.now());
 });
 
-test('le roster porte les champs que le client lit', () => {
+test('the roster includes the fields read by the client', () => {
   const room = new SurfRoom({ id: 'eu', name: 'ChaOS EU', capacity: 4 });
   room.join({ readyState: 1, send() {} }, { accountId: 7, name: 'x' });
   const [p] = room.roster();
@@ -206,7 +206,7 @@ test('l\'apparence porte la couleur ChaOS convertie au format du client', () => 
   assert.equal(p.appearance.title, '', 'ChaOS n\'a pas de titre de joueur');
   assert.equal(p.appearance.titleColor, null);
   assert.ok(Number.isInteger(p.appearance.revision) && p.appearance.revision >= 0);
-  assert.equal(p.name, 'Thomzy', 'le pseudo ChaOS est repris tel quel');
+  assert.equal(p.name, 'Thomzy', 'the ChaOS nickname is preserved');
 });
 
 test('never an invalid colour sent to the client', () => {
@@ -222,7 +222,7 @@ test('never an invalid colour sent to the client', () => {
   }
 });
 
-test('le chat porte l\'apparence : c\'est elle qui colore le pseudo', () => {
+test('chat includes the appearance used to color the nickname', () => {
   const room = new SurfRoom({ id: 'eu', name: 'ChaOS EU', capacity: 4 });
   const sent = [];
   room.broadcast = (m) => sent.push(m);
@@ -232,8 +232,8 @@ test('le chat porte l\'apparence : c\'est elle qui colore le pseudo', () => {
   const chat = sent.find((m) => m.type === 'chat');
   assert.equal(chat.text, 'salut');
   assert.equal(chat.name, 'Alice');
-  assert.equal(chat.appearance.nameColor, '#634de6', 'couleur ChaOS dans le fil de chat');
-  assert.equal(chat.rank, '', 'aucun badge de rang');
+  assert.equal(chat.appearance.nameColor, '#634de6', 'ChaOS color in the chat feed');
+  assert.equal(chat.rank, '', 'no rank badge');
 });
 
 test('a player ChaOS did not identify does not enter the room', () => {
@@ -256,7 +256,7 @@ test('welcome.maps announces id AND title (the client resolves the map name ther
   assert.equal(w.maps[0].title, 'Boreas');
 });
 
-test('multiplayerUrlFor produit les URL que le client sait construire', () => {
+test('multiplayerUrlFor produces URLs the client can build', () => {
   const req = { get: () => 'thomzy.fr', protocol: 'https' };
   const base = multiplayerUrlFor(req);
   assert.equal(base, 'https://thomzy.fr');

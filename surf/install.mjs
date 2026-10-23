@@ -60,8 +60,8 @@ const DIRS  = ['assets', 'packed', 'previews', 'brand', 'menu'];
 const PAGES = ['index.html'];
 
 // ── Phase 1: copy ────────────────────────────────────────────────────────────
-console.log(`source: ${src}`);
-console.log(`target: ${DEST}`);
+console.info(`source: ${src}`);
+console.info(`target: ${DEST}`);
 if (NO_COPY && existsSync(join(DEST, 'index.html'))) {
   // packed/ manifests are recompressed on each pass, so restore them from the
   // source too; otherwise pack URLs would be prefixed a second time.
@@ -75,7 +75,7 @@ if (NO_COPY && existsSync(join(DEST, 'index.html'))) {
   for (const f of readdirSync(join(src, 'packed'))) {
     if (f.endsWith('.visual-manifest.gz')) cpSync(join(src, 'packed', f), join(DEST, 'packed', f));
   }
-  console.log('  --no-copy: restored index.html, assets, and manifests; kept binaries');
+  console.info('  --no-copy: restored index.html, assets, and manifests; kept binaries');
 } else {
   // Wipe the CONTENTS, not the folder: on Windows a handle on the directory
   // itself (a terminal sitting in it, an editor, the indexer) makes `rm` fail
@@ -89,13 +89,13 @@ if (NO_COPY && existsSync(join(DEST, 'index.html'))) {
 
   for (const d of DIRS) {
     const s = join(src, d);
-    if (!existsSync(s)) { console.log(`  (missing) ${d}/`); continue; }
+    if (!existsSync(s)) { console.info(`  (missing) ${d}/`); continue; }
     cpSync(s, join(DEST, d), { recursive: true });
-    console.log(`  copied  ${d}/`);
+    console.info(`  copied  ${d}/`);
   }
   for (const p of PAGES) {
     cpSync(join(src, p), join(DEST, p));
-    console.log(`  copied  ${p}`);
+    console.info(`  copied  ${p}`);
   }
 }
 
@@ -169,7 +169,7 @@ for (const f of readdirSync(packedDir)) {
     manifests++; packUrls += txt.split('"/packed/').length - 1;
   }
 }
-console.log(`\nprefix: bundle/html=${prefixHits} paths, ${manifests} manifests (${packUrls} URLs)`);
+console.info(`\nprefix: bundle/html=${prefixHits} paths, ${manifests} manifests (${packUrls} URLs)`);
 
 // ── Phase 3: clean clone ─────────────────────────────────────────────────────
 // a) Bundle: branding, UI text, storage keys, and external references.
@@ -270,7 +270,7 @@ for (const re of HTML_REMOVE) {
   html = html.replace(re, '');
   if (html !== before) removed++;
 }
-console.log(`clean clone: bundle=${cleanHits} strings, ${removed} HTML blocks removed`);
+console.info(`clean clone: bundle=${cleanHits} strings, ${removed} HTML blocks removed`);
 
 // d) Chrome: tab title, logo, window titles, and badge.
 //
@@ -284,7 +284,7 @@ html = html
   .replace(/Play — Surfd/, 'Play');
 
 const brandSpan = html.match(/<span id="brand-title">[\s\S]*?<\/span>/);
-if (!brandSpan) console.log('⚠ brand wordmark not found — check the menu markup');
+if (!brandSpan) console.info('⚠ brand wordmark not found — check the menu markup');
 
 // e) Clone styles: hide original UI that the bundle rebuilds at runtime and
 //    cannot have removed from the DOM without breaking it. !important overrides
@@ -324,9 +324,9 @@ const sdkFile = readdirSync(assetsDir).find((f) => /^index-[A-Za-z0-9_-]+\.js$/.
 if (sdkFile) {
   const adaptateur = readFileSync(resolve(ADDON, 'server', 'client-adapter.js'), 'utf8');
   writeFileSync(join(assetsDir, sdkFile), adaptateur);
-  console.log(`Account adapter written to ${sdkFile}`);
+  console.info(`Account adapter written to ${sdkFile}`);
 } else {
-  console.log('Account adapter: SDK not found; client will remain local');
+  console.info('Account adapter: SDK not found; client will remain local');
 }
 
 // g) Keep only the asset generation actually served. The mirror keeps every
@@ -343,7 +343,7 @@ for (const f of readdirSync(assetsDir)) {
   if (!/\.(?:js|css)$/.test(f)) continue;
   if (!html.includes(f) && !entryTxt.includes(f)) {
     rmSync(join(assetsDir, f));
-    console.log(`  previous generation removed: ${f}`);
+    console.info(`  previous generation removed: ${f}`);
   }
 }
 
@@ -368,7 +368,7 @@ if (existsSync(flythroughManifest)) {
     Object.entries(clip).map(([key, value]) => [key, withPrefix(value)]),
   ));
   writeFileSync(flythroughManifest, JSON.stringify(patched, null, 2) + '\n');
-  console.log(`flythrough: ${patched.length} clips, ${rewritten} chemins préfixés`);
+  console.info(`flythrough: ${patched.length} clips, ${rewritten} prefixed paths`);
 }
 
 // ── Server catalogue ─────────────────────────────────────────────────────────
@@ -403,7 +403,7 @@ function extractCatalogue(text) {
 const entryBundle = readdirSync(assetsDir).find((f) => /^game-[A-Za-z0-9_-]+\.js$/.test(f));
 const catalogue = entryBundle ? extractCatalogue(readFileSync(join(assetsDir, entryBundle), 'utf8')) : null;
 if (!catalogue?.length) {
-  console.log('⚠ map catalogue not found in the installed bundle — server catalogue left untouched');
+  console.info('⚠ map catalogue not found in the installed bundle — server catalogue left untouched');
 } else {
   // The mirror writes the same catalogue next to the source: a mismatch means
   // the install ran on a partially synced mirror, which is worth knowing.
@@ -411,7 +411,7 @@ if (!catalogue?.length) {
     ? JSON.parse(readFileSync(join(src, 'catalogue.json'), 'utf8'))
     : null;
   if (fromSource && fromSource.length !== catalogue.length) {
-    console.log(`⚠ source catalogue has ${fromSource.length} maps, bundle has ${catalogue.length} — bundle wins`);
+    console.info(`⚠ source catalogue has ${fromSource.length} maps, bundle has ${catalogue.length} — bundle wins`);
   }
 
   const title = (slug) => TITLE_OVERRIDES[slug]
@@ -420,10 +420,10 @@ if (!catalogue?.length) {
   writeFileSync(join(SERVER_GAMES_DIR, 'boards.json'), JSON.stringify(catalogue, null, 1) + '\n');
   writeFileSync(join(SERVER_GAMES_DIR, 'maps.json'),
     JSON.stringify(catalogue.map((m) => ({ id: m.id, slug: m.slug, title: title(m.slug) })), null, 1) + '\n');
-  console.log(`server catalogue: ${catalogue.length} maps written to boards.json + maps.json`);
+  console.info(`server catalogue: ${catalogue.length} maps written to boards.json + maps.json`);
 }
 
-// ── Marqueur ─────────────────────────────────────────────────────────────────
+// ── Installation marker ─────────────────────────────────────────────────────────────────
 writeFileSync(join(DEST, 'INSTALL.json'), JSON.stringify({
   installedAt: new Date().toISOString(),
   prefix: PREFIX, brand: BRAND, wordmark: WORDMARK,
@@ -445,7 +445,7 @@ for (const f of readdirSync(assetsDir)) {
   }
   // Lazy chunks: the Vite preloader must not build root-absolute URLs.
   if (t.includes('__vite__mapDeps') && t.includes('){return"/"+')) {
-    problems.push(`${f}: préchargeur Vite encore en racine (chunk différé en 404)`);
+    problems.push(`${f}: Vite preloader still rooted at / (deferred chunk returns 404)`);
   }
   // Any remaining traces of the original brand.
   for (const m of new Set((t.match(/surfd/gi) || []))) {
@@ -478,7 +478,7 @@ if (entryJs) {
     for (const f of readdirSync(packedDir)) {
       if (f.endsWith('.visual-assets.gz') && !packsVoulus.has(f)) { rmSync(join(packedDir, f)); orphelins++; }
     }
-    console.log(`visual data: ${manifestRefs.size} manifest(s) kept, ${packsVoulus.size} pack(s) kept, ${orphelins} orphan(s) removed`);
+    console.info(`visual data: ${manifestRefs.size} manifest(s) kept, ${packsVoulus.size} pack(s) kept, ${orphelins} orphan(s) removed`);
   }
 }
 
@@ -495,11 +495,11 @@ for (const f of readdirSync(packedDir)) {
 }
 if (existsSync(flythroughManifest)) {
   const raw = readFileSync(flythroughManifest, 'utf8');
-  for (const m of raw.matchAll(/"(\/menu\/[^"]*)"/g)) problems.push(`flythrough: chemin non préfixé ${m[1]}`);
+  for (const m of raw.matchAll(/"(\/menu\/[^"]*)"/g)) problems.push(`flythrough: unprefixed path ${m[1]}`);
 }
 const leftInHtml = html.match(/surfd/gi);
-console.log(`Verified packs: ${packs}`);
+console.info(`Verified packs: ${packs}`);
 if (leftInHtml) problems.push(`index.html : ${leftInHtml.length} « surfd » restant`);
-console.log(problems.length ? `\n⚠ ${problems.length} issue(s) to resolve:\n  ${problems.slice(0, 12).join('\n  ')}`
+console.info(problems.length ? `\n⚠ ${problems.length} issue(s) to resolve:\n  ${problems.slice(0, 12).join('\n  ')}`
                             : '\n✓ clean clone: no unprefixed paths or remaining "surfd" references');
 if (problems.length) process.exitCode = 1;

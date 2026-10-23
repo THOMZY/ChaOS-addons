@@ -27,7 +27,7 @@ import { db } from '../../../server/db/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Tables/indexes belong to the versioned DB bootstrap, before statements are prepared.
+// The add-on initializes its schema before exposing routes.
 
 /** Same limit as the client: it rejects `timeUs >= 36e8`, which is one hour. */
 export const MAX_TIME_MS = 3_600_000;
@@ -138,7 +138,7 @@ export function mapLeaderboard(mapId, limit = 50) {
     entries: entries.map((e, i) => ({
       rank: i + 1,
       accountId: e.accountId,
-      pseudo: e.pseudo ?? 'Joueur',
+      pseudo: e.pseudo ?? 'Player',
       color: e.color ?? null,
       timeMs: e.timeMs,
       runs: e.runs,
@@ -299,7 +299,7 @@ function resultFor(run, attempt, account) {
     previousBestUs: avant === null ? null : avant * 1000,
     leaderboardRank: ligne?.rank ?? null,
     leaderboardTotal: classement.total,
-    name: account?.pseudo ?? ligne?.pseudo ?? 'Joueur',
+    name: account?.pseudo ?? ligne?.pseudo ?? 'Player',
     userId: run.account_id,
     at: run.created_at,
   };

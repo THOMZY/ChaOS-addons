@@ -12,6 +12,9 @@ import { join } from 'node:path';
 process.env.DB_PATH = join(mkdtempSync(join(tmpdir(), 'surf-runs-')), 'hub.db');
 
 const { db } = await import('../../../server/db/index.js');
+// Since site schema 4 the add-on creates its own `surf_*` tables.
+const { ensureSchema } = await import('../server/schema.js');
+ensureSchema();
 // The leaderboard joins chat_user_settings (site nickname and color), so the
 // chat table must exist without importing its module, which has side effects.
 const chatSchema = readFileSync(new URL('../../../server/chat/schema.sql', import.meta.url), 'utf8')
@@ -42,13 +45,13 @@ test('a run is shape-checked', () => {
   assert.equal(validateRun(run('surf_boreas', -5)).ok, false);
   assert.equal(validateRun(run('surf_boreas', MAX_TIME_MS)).ok, false, 'one hour or more is refused');
   assert.equal(validateRun(run('surf_boreas', 2.5)).ok, false, 'a non-integer time is refused');
-  assert.equal(validateRun(run('surf_boreas', 10_000, [3_000, 2_000])).ok, false, 'splits non croissants');
+  assert.equal(validateRun(run('surf_boreas', 10_000, [3_000, 2_000])).ok, false, 'non-increasing splits');
   assert.equal(validateRun(run('surf_boreas', 10_000, [3_000, 11_000])).ok, false, 'split after the finish');
-  assert.equal(validateRun(run('surf_boreas', 10_000, Array(65).fill(1))).ok, false, 'trop de splits');
+  assert.equal(validateRun(run('surf_boreas', 10_000, Array(65).fill(1))).ok, false, 'too many splits');
   assert.equal(validateRun(run('surf_boreas', 10_000, [2_000, 5_000])).ok, true);
 });
 
-test('le premier run ouvre le compteur du joueur', () => {
+test('the first run starts the player count', () => {
   const r = saveRun({ accountId: 'acc-thomzy', run: validateRun(run('surf_boreas', 42_000, [10_000])).value });
   assert.equal(r.improved, true);
   assert.equal(r.previousBestMs, null);
@@ -66,20 +69,20 @@ test('a better time improves, a worse one does not — and nothing is lost', () 
 
   const pire = saveRun({ accountId: 'acc-thomzy', run: validateRun(run('surf_boreas', 55_000)).value });
   assert.equal(pire.improved, false);
-  assert.equal(pire.bestMs, 38_000, 'le record reste le meilleur temps');
+  assert.equal(pire.bestMs, 38_000, 'the record remains the best time');
   assert.equal(pire.runs, 3, 'the run is kept anyway');
 
   assert.equal(bestOf('acc-thomzy', 'surf_boreas'), 38_000);
   assert.equal(bestOf('acc-thomzy', 'surf_lux'), null);
 });
 
-test('le classement retient le meilleur temps de chaque joueur, pseudo et couleur compris', () => {
+test('the leaderboard keeps each player best time, nickname and color', () => {
   saveRun({ accountId: 'acc-zgoung', run: validateRun(run('surf_boreas', 41_000)).value });
   saveRun({ accountId: 'acc-zgoung', run: validateRun(run('surf_boreas', 33_000)).value });
   saveRun({ accountId: 'acc-zgoung', run: validateRun(run('surf_boreas', 60_000)).value });
 
   const c = mapLeaderboard('surf_boreas');
-  assert.equal(c.entries.length, 2, 'une ligne par joueur, pas une par run');
+  assert.equal(c.entries.length, 2, 'one row per player, regardless of run count');
   assert.deepEqual(c.entries.map((e) => [e.rank, e.pseudo, e.timeMs]), [
     [1, 'Zgoung', 33_000],
     [2, 'Thomzy', 38_000],
@@ -111,14 +114,14 @@ test('a replay is attached to the time, then readable by its public id', () => {
   });
 
   const pending = submissionFor(attemptById(ticket.id, 'acc-thomzy'), { pseudo: 'Thomzy' });
-  assert.equal(pending.status, 'issued', 'le client doit envoyer son replay avant la validation');
+  assert.equal(pending.status, 'issued', 'the client must upload its replay before validation');
 
   const claimed = attemptById(ticket.id, 'acc-thomzy');
-  assert.equal(saveReplay(claimed, Buffer.from('replay gzip de test')), true);
+  assert.equal(saveReplay(claimed, Buffer.from('test gzip replay')), true);
   const verified = submissionFor(attemptById(ticket.id, 'acc-thomzy'), { pseudo: 'Thomzy' });
   assert.equal(verified.status, 'verified');
   assert.equal(verified.runId, ticket.id);
-  assert.deepEqual(replayForAttempt(ticket.id).data, Buffer.from('replay gzip de test'));
+  assert.deepEqual(replayForAttempt(ticket.id).data, Buffer.from('test gzip replay'));
   assert.equal(mapLeaderboard('surf_boreas').entries[0].runId, ticket.id,
-    'le tableau pointe le replay du meilleur temps, pas celui d\'un ancien run');
+    'the board points to the best-time replay');
 });

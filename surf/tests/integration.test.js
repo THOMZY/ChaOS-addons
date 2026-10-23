@@ -78,18 +78,18 @@ function waitFor(predicate, what, timeout = 4000) {
   });
 }
 
-test('découverte, ticket, welcome, roster et relais des poses', async (t) => {
+test('discovery, ticket, welcome, roster and pose relay', async (t) => {
   const { server, base } = await boot();
   const sockets = [];
   t.after(() => { for (const c of sockets) { try { c.ws.close(); } catch { /* already closed */ } } server.close(); });
 
   // ── Discovery ──────────────────────────────────────────────────────────────
   const listed = await (await fetch(`${base}/servers`)).json();
-  assert.ok(Array.isArray(listed.servers), 'la liste doit contenir `servers`');
+  assert.ok(Array.isArray(listed.servers), 'the list must contain `servers`');
   const room = listed.servers.find((s) => s.id === 'eu');
-  assert.ok(room, 'la salle eu doit être annoncée');
+  assert.ok(room, 'the eu room must be advertised');
   assert.equal(room.online, true);
-  assert.ok(MAP_ROTATION.includes(room.mapId), 'mapId doit appartenir à la rotation du client');
+  assert.ok(MAP_ROTATION.includes(room.mapId), 'mapId must belong to the client rotation');
 
   // ── Latency measurement ────────────────────────────────────────────────────
   const ping = await fetch(`${base}/servers/eu/ping`);
@@ -97,8 +97,8 @@ test('découverte, ticket, welcome, roster et relais des poses', async (t) => {
 
   // ── A ticket is required ───────────────────────────────────────────────────
   const refused = openSocket(base, 'ticket-bidon');
-  await waitFor(() => refused.error || refused.closed, 'refus sans ticket valide');
-  assert.match(refused.error ?? '', /401/, 'un ticket inconnu doit être refusé');
+  await waitFor(() => refused.error || refused.closed, 'rejection without a valid ticket');
+  assert.match(refused.error ?? '', /401/, 'an unknown ticket must be rejected');
 
   // ── Valid connection ───────────────────────────────────────────────────────
   const ticketA = mintTicket('surf', { accountId: 1, name: 'Alice', color: 'hsl(52, 75%, 60%)' }).token;
@@ -107,21 +107,21 @@ test('découverte, ticket, welcome, roster et relais des poses', async (t) => {
   await waitFor(() => a.messages.some((m) => m.type === 'welcome'), 'welcome de A');
 
   const welcome = a.messages.find((m) => m.type === 'welcome');
-  assert.ok(welcome.player.slot >= 0, 'un slot est attribué');
+  assert.ok(welcome.player.slot >= 0, 'a slot is assigned');
   assert.equal(welcome.player.name, 'Alice');
   assert.ok(Number.isInteger(welcome.state.epoch) && welcome.state.epoch >= 1);
-  assert.ok(MAP_ROTATION.includes(welcome.state.mapId), 'la map imposée doit exister côté client');
-  assert.ok(welcome.serverTime > 0, 'le client a besoin de serverTime (décalage d\'horloge)');
-  assert.deepEqual(welcome.maps.map((m) => m.id), MAP_ROTATION, 'la rotation est annoncée au client');
-  assert.ok(welcome.maps.every((m) => m.title), 'chaque map doit porter son titre');
+  assert.ok(MAP_ROTATION.includes(welcome.state.mapId), 'the forced map must exist in the client');
+  assert.ok(welcome.serverTime > 0, 'the client needs serverTime for clock synchronization');
+  assert.deepEqual(welcome.maps.map((m) => m.id), MAP_ROTATION, 'the rotation is advertised to the client');
+  assert.ok(welcome.maps.every((m) => m.title), 'each map must include its title');
   assert.equal(welcome.players.length, 1);
-  assert.equal(welcome.players[0].points, 0, 'points numérique (toLocaleString côté client)');
+  assert.equal(welcome.players[0].points, 0, 'numeric points for client toLocaleString');
   // ChaOS identity: no guest, and the ChaOS color is converted to the strict
   // format required by the client (#rrggbb), or it would be lost.
-  assert.equal(welcome.player.guest, false, 'plus d\'invité : le client gate le social dessus');
+  assert.equal(welcome.player.guest, false, 'guest mode is disabled so the client enables social features');
   assert.equal(welcome.player.appearance.nameColor, '#e6d14d', 'couleur ChaOS convertie');
-  assert.equal(welcome.player.rank, '', 'aucun rang → rien d\'affiché');
-  assert.equal(welcome.players[0].appearance.nameColor, '#e6d14d', 'la couleur est aussi sur le roster');
+  assert.equal(welcome.player.rank, '', 'no rank means no badge');
+  assert.equal(welcome.players[0].appearance.nameColor, '#e6d14d', 'the roster also includes the color');
 
   // ── A second player joins; both players can see each other ────────────────
   const ticketB = mintTicket('surf', { accountId: 2, name: 'Bob', color: '#824de6' }).token;
@@ -133,7 +133,7 @@ test('découverte, ticket, welcome, roster et relais des poses', async (t) => {
       const last = [...a.messages].reverse().find((m) => m.type === 'roster');
       return last && last.players.length === 2;
     },
-    'roster à 2 joueurs reçu par A',
+    'two-player roster received by A',
   );
   const roster = [...a.messages].reverse().find((m) => m.type === 'roster');
   assert.deepEqual(roster.players.map((p) => p.name).sort(), ['Alice', 'Bob']);
@@ -149,30 +149,30 @@ test('découverte, ticket, welcome, roster et relais des poses', async (t) => {
     yaw: 45, pitch: -5, flags: FLAG.grounded, seconds: 0.48,
   };
   a.ws.send(encodeClientBatch({ sequence: 1, epoch: welcome.state.epoch, samples: [sample] }));
-  await waitFor(() => b.binary.length > 0, 'instantané reçu par B');
+  await waitFor(() => b.binary.length > 0, 'snapshot received by B');
 
   // The server must tag the packet with the sender's REAL slot, not the slot
   // supplied by the client (99 here); this prevents a client from impersonating
   // another player.
   const snap = b.binary[0];
   assert.equal(snap[0], 1, 'version de protocole');
-  assert.equal(snap[1], 2, 'type instantané');
+  assert.equal(snap[1], 2, 'snapshot type');
   assert.equal(snap.readUInt16LE(2), 1, 'un bloc');
-  assert.equal(snap.readUInt16LE(4), slotA, 'bloc étiqueté avec le slot de l\'émetteur');
+  assert.equal(snap.readUInt16LE(4), slotA, 'block tagged with the sender slot');
   assert.equal(snap.readUInt32LE(6), 1, 'sequence transmise');
-  assert.equal(snap[14], 1, 'un échantillon');
+  assert.equal(snap[14], 1, 'one sample');
   assert.equal(snap.readUInt32LE(18), sample.time, 'time transmis');
   assert.ok(Math.abs(snap.readFloatLE(22) - sample.x) < 1e-6, 'x transmis');
   assert.equal(snap.readInt16LE(38), sample.vz, 'vz transmis');
 
   // ── A must not receive its own echo ────────────────────────────────────────
-  assert.equal(a.binary.length, 0, 'pas de renvoi à l\'émetteur');
+  assert.equal(a.binary.length, 0, 'no echo to the sender');
 
   // ── Ping / pong and chat ───────────────────────────────────────────────────
   a.ws.send('ping');
   await waitFor(() => a.messages.includes('pong'), 'pong');
   b.ws.send(JSON.stringify({ type: 'chat', text: 'salut' }));
-  await waitFor(() => a.messages.some((m) => m.type === 'chat'), 'chat relayé');
+  await waitFor(() => a.messages.some((m) => m.type === 'chat'), 'chat relayed');
   const chat = a.messages.find((m) => m.type === 'chat');
   assert.equal(chat.text, 'salut');
   assert.equal(chat.name, 'Bob');
@@ -185,10 +185,10 @@ test('découverte, ticket, welcome, roster et relais des poses', async (t) => {
   await waitFor(() => {
     const last = [...a.messages].reverse().find((m) => m.type === 'roster');
     return last && last.players.length === 1;
-  }, 'roster à 1 joueur après départ');
+  }, 'one-player roster after departure');
 });
 
-test('la map change d\'époque et le client en est informé', async (t) => {
+test('the map changes epoch and notifies the client', async (t) => {
   const { server, base } = await boot();
   const ticket = mintTicket('surf', { accountId: 3, name: 'Carol' }).token;
   const c = openSocket(base, ticket);
@@ -200,20 +200,20 @@ test('la map change d\'époque et le client en est informé', async (t) => {
   // or an accepted vote would.
   const { surfGame } = await import('../server/room.js');
   surfGame.room('eu').setMap(surfGame.room('eu').mapIndex + 1, 'test');
-  await waitFor(() => c.messages.some((m) => m.type === 'state' && m.state.epoch !== before.epoch), 'nouvel état');
+  await waitFor(() => c.messages.some((m) => m.type === 'state' && m.state.epoch !== before.epoch), 'new state');
 
   const next = [...c.messages].reverse().find((m) => m.type === 'state').state;
   assert.equal(next.epoch, (before.epoch + 1) >>> 0);
   assert.notEqual(next.mapId, before.mapId);
-  assert.ok(c.messages.some((m) => m.type === 'notice'), 'un avis est diffusé');
+  assert.ok(c.messages.some((m) => m.type === 'notice'), 'a notice is broadcast');
 });
 
-test('Socket.IO ne ferme pas une montée WebSocket Surf déjà acceptée', async (t) => {
+test('Socket.IO keeps an accepted Surf WebSocket upgrade open', async (t) => {
   const { server, base, io } = await boot({ withSocketIo: true });
   const ticket = mintTicket('surf', { accountId: 4, name: 'Dana' }).token;
   const client = openSocket(base, ticket);
   t.after(() => { try { client.ws.close(); } catch { /* already closed */ } io?.close(); server.close(); });
 
-  await waitFor(() => client.messages.some((m) => m.type === 'welcome'), 'welcome derrière Socket.IO');
-  assert.equal(client.closed, null, 'Engine.IO ne doit pas détruire la socket Surf');
+  await waitFor(() => client.messages.some((m) => m.type === 'welcome'), 'welcome behind Socket.IO');
+  assert.equal(client.closed, null, 'Engine.IO must not destroy the Surf socket');
 });

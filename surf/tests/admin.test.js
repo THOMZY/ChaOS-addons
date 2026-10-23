@@ -21,53 +21,63 @@ function fakeSocket() {
   };
 }
 
-test('snapshot() expose les joueurs de la salle réelle', () => {
+test('snapshot() exposes players in the actual room', () => {
   const room = surfAdmin.listRooms()[0];
   const socket = fakeSocket();
-  room.join(socket, { accountId: 'acc-1', name: 'Testeur', color: 'hsl(200 90% 50%)' });
+  room.join(socket, { accountId: 'acc-1', name: 'Tester', color: 'hsl(200 90% 50%)' });
   try {
     const rooms = surfAdmin.snapshot();
     const eu = rooms.find((r) => r.id === room.id);
     assert.equal(eu.players.length, 1);
-    assert.equal(eu.players[0].name, 'Testeur');
-    assert.ok(eu.players[0].connectionId, 'le connectionId doit être exposé pour le kick');
+    assert.equal(eu.players[0].name, 'Tester');
+    assert.ok(eu.players[0].connectionId, 'connectionId must be exposed for kicking');
   } finally {
     room.connections.clear();
   }
 });
 
-test('setMap() impose la map et incrémente epoch', () => {
+test('setMap() forces the map and increments epoch', () => {
   const room = surfAdmin.listRooms()[0];
   const before = room.epoch;
   const result = surfAdmin.setMap(null, 'surf_lux', 'test');
   assert.equal(result.ok, true);
   assert.equal(room.mapId, 'surf_lux');
   assert.equal(room.epoch, (before + 1) >>> 0);
-  assert.equal(surfAdmin.setMap(null, 'map_inexistante').ok, false);
+  assert.deepEqual(surfAdmin.setMap(null, 'nonexistent_map'), { ok: false, error: 'unknown_map' });
 });
 
-test('broadcast() diffuse un « notice » à la salle', () => {
+test('broadcast() sends a notice to the room', () => {
   const room = surfAdmin.listRooms()[0];
   const socket = fakeSocket();
-  room.join(socket, { accountId: 'acc-2', name: 'Auditeur' });
+  room.join(socket, { accountId: 'acc-2', name: 'Listener' });
   try {
-    assert.equal(surfAdmin.broadcast(null, 'Message admin').ok, true);
+    assert.equal(surfAdmin.broadcast(null, 'Admin message').ok, true);
     const payloads = socket.sent.map((raw) => JSON.parse(raw.toString()));
-    assert.ok(payloads.some((p) => p.type === 'notice' && p.text === 'Message admin'));
-    assert.equal(surfAdmin.broadcast(null, '   ').ok, false);
+    assert.ok(payloads.some((p) => p.type === 'notice' && p.text === 'Admin message'));
+    assert.deepEqual(surfAdmin.broadcast(null, '   '), { ok: false, error: 'empty_message' });
   } finally {
     room.connections.clear();
   }
 });
 
-test('kick() ferme le socket du joueur visé', () => {
+test('admin failures use English error codes', () => {
+  for (const action of [
+    () => surfAdmin.setMap('missing-room', 'surf_lux'),
+    () => surfAdmin.broadcast('missing-room', 'Notice'),
+    () => surfAdmin.kick('missing-room', 'missing-player'),
+    () => surfAdmin.openVote('missing-room'),
+  ]) assert.deepEqual(action(), { ok: false, error: 'unknown_room' });
+  assert.deepEqual(surfAdmin.kick(null, 'missing-player'), { ok: false, error: 'player_not_found' });
+});
+
+test('kick() closes the targeted player socket', () => {
   const room = surfAdmin.listRooms()[0];
   const socket = fakeSocket();
-  const conn = room.join(socket, { accountId: 'acc-3', name: 'Cible' });
+  const conn = room.join(socket, { accountId: 'acc-3', name: 'Target' });
   try {
     const result = surfAdmin.kick(null, conn.player.connectionId);
     assert.equal(result.ok, true);
-    assert.equal(result.name, 'Cible');
+    assert.equal(result.name, 'Target');
     assert.equal(socket.closed.length, 1);
     assert.equal(socket.closed[0].code, 4004);
   } finally {

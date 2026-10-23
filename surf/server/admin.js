@@ -58,11 +58,11 @@ export function snapshot() {
  */
 export function setMap(roomId, mapRef, reason = 'admin') {
   const room = findRoom(roomId);
-  if (!room) return { ok: false, error: 'room_inconnue' };
+  if (!room) return { ok: false, error: 'unknown_room' };
   const index = typeof mapRef === 'number'
     ? mapRef
     : MAP_ROTATION.indexOf(String(mapRef));
-  if (index < 0) return { ok: false, error: 'map_inconnue' };
+  if (index < 0) return { ok: false, error: 'unknown_map' };
   room.setMap(index, reason);
   return { ok: true, mapId: room.mapId, epoch: room.epoch };
 }
@@ -70,9 +70,9 @@ export function setMap(roomId, mapRef, reason = 'admin') {
 /** Broadcast a service message (the client's `notice` banner). */
 export function broadcast(roomId, text) {
   const room = findRoom(roomId);
-  if (!room) return { ok: false, error: 'room_inconnue' };
+  if (!room) return { ok: false, error: 'unknown_room' };
   const clean = String(text ?? '').slice(0, 200).trim();
-  if (!clean) return { ok: false, error: 'message_vide' };
+  if (!clean) return { ok: false, error: 'empty_message' };
   room.broadcast({ type: 'notice', text: clean });
   return { ok: true };
 }
@@ -80,9 +80,9 @@ export function broadcast(roomId, text) {
 /** Kick a player by `connectionId`. */
 export function kick(roomId, connectionId) {
   const room = findRoom(roomId);
-  if (!room) return { ok: false, error: 'room_inconnue' };
+  if (!room) return { ok: false, error: 'unknown_room' };
   const conn = room.connections.get(connectionId);
-  if (!conn) return { ok: false, error: 'joueur_absent' };
+  if (!conn) return { ok: false, error: 'player_not_found' };
   const name = conn.player.name;
   try { conn.socket.close(4004, 'Kicked by admin'); } catch { /* Already closed. */ }
   return { ok: true, name };
@@ -91,7 +91,7 @@ export function kick(roomId, connectionId) {
 /** Start a map-change vote, as a player would with the RTV button. */
 export function openVote(roomId) {
   const room = findRoom(roomId);
-  if (!room) return { ok: false, error: 'room_inconnue' };
+  if (!room) return { ok: false, error: 'unknown_room' };
   room.openVote();
   return { ok: true };
 }

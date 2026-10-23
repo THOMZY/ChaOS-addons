@@ -6,7 +6,8 @@ Le client Surf (Counter-Strike: Source, recompilé pour le navigateur) servi sou
 | --- | --- |
 | `server/addon.js` | point d'entrée : routes `/api/surf` et `/surf`, console d'administration, salles |
 | `server/room.js` | salles sur le socle `games/platform/game-servers/core.js` (rotation des maps, votes, relais des positions) |
-| `server/api.js`, `server/runs.js` | actions JSON du client, temps vérifiés, replays et classements (tables `surf_*` du schéma du site) |
+| `server/api.js`, `server/runs.js` | actions JSON du client, temps vérifiés, replays et classements (tables `surf_*` propres à l’add-on) |
+| `schema.sql`, `server/schema.js` | création transactionnelle et idempotente des tables Surf, appelée explicitement par le point d’entrée ; le registre du site reste intact |
 | `server/admin.js` | console du panneau d'administration (carte, message, éjection, vote) |
 | `server/client-adapter.js` | remplace la couche Supabase du client d'origine, injecté par l'installateur |
 | `server/maps.json`, `server/boards.json` | générés par `install.mjs` à partir du miroir |

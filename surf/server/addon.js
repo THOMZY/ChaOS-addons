@@ -1,7 +1,9 @@
 // Surf add-on entry (ChaOS-games). The site loads it from games/surf/ when the
 // add-on is installed (games/addons.js): HTTP API, client files, rooms on the
 // game-server foundation and the admin-panel console. Without it, the site
-// lists Surf « À installer » and its window reports the game as missing.
+// lists Surf "Install required" and its window reports the game as missing.
+// Own schema first: `surf_*` tables are created by the add-on since site schema 4.
+import { ensureSchema } from './schema.js';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineFeature } from '../../../server/core/features.js';
@@ -18,6 +20,7 @@ export const SURF_CLIENT_ROOT = process.env.GAME_CLIENT_ASSET_ROOT
   ? resolve(process.env.GAME_CLIENT_ASSET_ROOT, 'surf')
   : fileURLToPath(new URL('../data/', import.meta.url));
 
+ensureSchema();
 registerInProcessAdmin('surf', admin);
 
 export default defineFeature({
