@@ -90,3 +90,5 @@ Puis, la première fois, les données (voir le README de l'add-on). Redémarrer 
 | [Peggle](peggle/README.md) | prêt (J7e) |
 | [Fighting / MUGEN](fighting/README.md) | prêt (J8), bac à sable inclus ; moteur inchangé |
 | [Street Fighter II](sf2/README.md) | prêt (J8), indépendant de Fighting |
+| [Hammerfest](hammerfest/README.md) | prêt : client Eternalfest, installateur et tables propres |
+| [Game Boy / Color / Advance](gameboy/README.md) | console partagée, bibliothèque et sauvegardes de cartouche ; cœur natif x64 |
