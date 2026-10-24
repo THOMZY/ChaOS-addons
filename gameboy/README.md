@@ -44,6 +44,8 @@ Le protocole v4 transmet des images indexées/RLE avec deltas XOR, de l’Opus 4
 
 Le proxy doit transmettre `Upgrade` pour `/gameboy-ws`. Le site installe ce code depuis le commit référencé dans `games/addons.lock.json` ; publier le commit ChaOS-games avant celui du site. La disponibilité HTTP du site ne prouve pas à elle seule que les bibliothèques natives chargent : le test natif est obligatoire sur la plateforme cible.
 
+En production, le transport accepte l’origine directe de la requête (notamment `http://localhost:3000` en Docker local) ainsi que `PUBLIC_ORIGIN` pour le proxy TLS. Une autre origine est refusée. Configurer une adresse publique ne doit pas bloquer l’accès local à cette même console.
+
 Le binaire Linux de node-mgba 0.3.2 demande glibc 2.38 et ne charge pas directement sur Debian Bookworm (2.36). L’image du site recompile la même révision mGBA `012919433e331981d265f5a2fc3c550af57183b8` et le shim depuis des sources épinglées et vérifiées par SHA-256 (`scripts/build-mgba-runtime.sh`). zlib et libpng sont présents à l’exécution ; la licence MPL du cœur est conservée dans l’image. La CI démarre les diagnostics natifs dans cette image finale, sans réseau ni données réelles. Une installation Linux hors Docker doit fournir des bibliothèques compatibles et passer ces mêmes diagnostics.
 
 ## Vérification

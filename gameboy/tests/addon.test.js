@@ -146,6 +146,25 @@ test('spectators cannot control the core; account revocation releases authentica
   assert.equal(scene.room.players.size, 0);
 });
 
+test('production accepts the local request origin alongside the public proxy origin', async (context) => {
+  const previousMode = process.env.NODE_ENV;
+  const previousOrigin = process.env.PUBLIC_ORIGIN;
+  process.env.NODE_ENV = 'production';
+  process.env.PUBLIC_ORIGIN = 'https://console.example.org';
+  context.after(() => {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+    if (previousOrigin === undefined) delete process.env.PUBLIC_ORIGIN;
+    else process.env.PUBLIC_ORIGIN = previousOrigin;
+  });
+  const scene = await fixture(context);
+  const local = await scene.connect({ Origin: scene.origin });
+  assert.equal(local.hello.proto, 4);
+  const proxied = await scene.connect({ Origin: 'https://console.example.org' });
+  assert.equal(proxied.hello.proto, 4);
+  await assert.rejects(scene.connect({ Origin: 'https://other.example.org' }), /403/);
+});
+
 test('a core that finishes loading after stop is closed instead of resurrecting the feature', async (context) => {
   let release;
   const pending = new Promise((resolve) => {

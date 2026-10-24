@@ -263,11 +263,11 @@ export function createGameboyFeature({
       let access;
       try {
         const origin = request.headers.origin;
-        const expected =
-          process.env.NODE_ENV === 'production' && process.env.PUBLIC_ORIGIN
-            ? process.env.PUBLIC_ORIGIN
-            : `${request.socket.encrypted ? 'https' : 'http'}://${request.headers.host}`;
-        if (origin && origin !== expected)
+        const requestOrigin = `${request.socket.encrypted ? 'https' : 'http'}://${request.headers.host}`;
+        // Docker also serves its own host directly; PUBLIC_ORIGIN describes the TLS proxy.
+        const publicOrigin =
+          process.env.NODE_ENV === 'production' ? process.env.PUBLIC_ORIGIN : null;
+        if (origin && origin !== requestOrigin && origin !== publicOrigin)
           throw Object.assign(new Error('invalid_origin'), { status: 403 });
         access = readTransportAccess(request);
       } catch (error) {
