@@ -188,7 +188,7 @@
   color: #2f2f38;
 }
 
-/* ---------- écran ---------- */
+/* ---------- screen ---------- */
 .gb-bezel {
   border-radius: 12px;
   padding: 10px 10px 7px;
@@ -242,6 +242,51 @@
   display: none !important;
 }
 
+/* ---------- start screen (▶ button) ---------- */
+.gb-start {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  background: radial-gradient(120% 120% at 50% 18%, rgba(24, 32, 16, 0.92), rgba(6, 10, 4, 0.97));
+  cursor: pointer;
+}
+.gb-start[hidden] {
+  display: none;
+}
+.gb-startbtn {
+  width: 52px;
+  height: 52px;
+  padding-left: 4px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eef3e2;
+  color: #10160b;
+  font: 700 17px/1 system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+.gb-startbtn:hover {
+  transform: scale(1.07);
+}
+.gb-starttxt {
+  font: 700 9px/1 ui-monospace, monospace;
+  letter-spacing: 0.18em;
+  color: #93b45f;
+}
+
+.gb-wait {
+  display: none !important;
+}
+
 .gb-wait {
   position: absolute;
   inset: 0;
@@ -258,7 +303,7 @@
   z-index: 3;
 }
 
-/* ---------- contrôles ---------- */
+/* ---------- controls ---------- */
 .gb-controls {
   display: flex;
   align-items: center;

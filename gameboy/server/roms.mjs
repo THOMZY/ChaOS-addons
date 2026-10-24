@@ -1,8 +1,8 @@
 /**
- * Bibliothèque de ROM : scan du dossier, ajout, identification.
+ * ROM library: folder scan, upload, identification.
  *
- * L'identité d'une ROM se lit dans son en-tête, pas dans son nom de fichier :
- * un utilisateur qui uploade "mario (1).gb" doit quand même être reconnu.
+ * A ROM is identified by its header, not by its file name: a user uploading
+ * "mario (1).gb" must still be recognised.
  */
 import { readFile, writeFile, readdir, lstat, mkdir, rename } from 'node:fs/promises';
 import { existsSync, readFileSync, lstatSync } from 'node:fs';
@@ -31,9 +31,9 @@ export function crc32(buf) {
 }
 
 /* ------------------------------------------------------------------ */
-/* En-tête Game Boy                                                    */
+/* Game Boy header                                                     */
 /* ------------------------------------------------------------------ */
-/** Titre, modèle et système à partir des octets de la cartouche. */
+/** Title, model and system from the cartridge bytes. */
 export function readHeader(buf, filename = '') {
   const ext = extname(filename).toLowerCase();
   const out = { title: '', model: 'DMG', system: 'Game Boy', color: false };
@@ -48,7 +48,7 @@ export function readHeader(buf, filename = '') {
     return out;
   }
 
-  // 15 octets seulement : le 16e (0x143) est le drapeau CGB sur une cartouche couleur
+  // only 15 bytes: the 16th (0x143) is the CGB flag on a colour cartridge
   let title = buf
     .toString('latin1', 0x134, 0x143)
     // eslint-disable-next-line no-control-regex -- Non-text header bytes terminate the cartridge title.
@@ -64,18 +64,18 @@ export function readHeader(buf, filename = '') {
   return out;
 }
 
-/** Un fichier ressemble-t-il à une ROM Game Boy ? */
+/** Does a file look like a Game Boy ROM? */
 export function looksLikeRom(buf, filename = '') {
   if (buf.length < 0x150 || buf.length > MAX_BYTES) return false;
   const ext = extname(filename).toLowerCase();
   if (!ROM_EXT.has(ext)) return false;
-  // le logo Nintendo commence à 0x104 ; on se contente d'un contrôle souple
+  // the Nintendo logo starts at 0x104; a lenient check is enough
   const nintendo = buf[0x104] === 0xce && buf[0x105] === 0xed;
   return ext === '.gba' ? buf[0xb2] === 0x96 : nintendo;
 }
 
 /* ------------------------------------------------------------------ */
-/* Bibliothèque                                                        */
+/* Library                                                             */
 /* ------------------------------------------------------------------ */
 export class RomLibrary {
   constructor(root, indexFile = undefined) {
@@ -96,7 +96,7 @@ export class RomLibrary {
     await this.scan();
   }
 
-  /** Parcourt le dossier et complète l'index (sans relire les fichiers déjà connus). */
+  /** Walks the folder and fills the index (files already known are skipped). */
   async scan() {
     const files = await readdir(this.root);
     for (const f of files) {
@@ -110,8 +110,8 @@ export class RomLibrary {
       }
       const known = this.index.get(f);
 
-      // l'en-tête est relu à chaque scan (350 octets) : corriger le parseur ne doit pas
-      // laisser un vieux titre en cache
+      // the header is re-read on every scan (350 bytes): fixing the parser must
+      // not leave a stale title in the index
       const buf = await readFile(full);
       if (!looksLikeRom(buf, f)) {
         this.index.delete(f);
@@ -125,7 +125,7 @@ export class RomLibrary {
         addedAt: known?.addedAt || Date.now(),
       });
     }
-    // purge des entrées dont le fichier a disparu
+    // drop entries whose file is gone
     for (const f of [...this.index.keys()]) {
       if (!files.includes(f)) this.index.delete(f);
     }
@@ -167,7 +167,7 @@ export class RomLibrary {
     await writeFile(join(dir, 'meta.json'), JSON.stringify(data, null, 2));
   }
 
-  /** Ajoute une ROM uploadée. Renvoie l'entrée créée. */
+  /** Adds an uploaded ROM. Returns the created entry. */
   async add(filename, buf) {
     const safe = basename(filename)
       .replace(/[^\w.\-() ]+/g, '_')

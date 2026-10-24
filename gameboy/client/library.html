@@ -1,787 +1,608 @@
 <!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Bibliothèque — Game Boy</title>
-    <style>
-      :root {
-        --bg: #0b0a09;
-        --room: #130f0c;
-        --wood-a: #4a3527;
-        --wood-b: #2b1f16;
-        --wood-edge: #5c4432;
-        --txt: #f0e9df;
-        --dim: #9a8b7c;
-        --accent: #c6e04a;
-        --amber: #e8b45a;
-        --font: ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      html,
-      body {
-        height: 100%;
-      }
-      body {
-        margin: 0;
-        min-height: 100%;
-        color: var(--txt);
-        font-family: var(--font);
-        background:
-          radial-gradient(900px 460px at 50% -8%, rgba(232, 180, 90, 0.15), transparent 65%),
-          radial-gradient(1200px 700px at 50% 112%, #050404, transparent 60%),
-          linear-gradient(180deg, var(--room), var(--bg));
-        padding: 18px 20px 22px;
-      }
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Boy — library</title>
+  <style>
+    /* ----------------------------------- page --------------------------------- */
+    :root {
+      --wood-a: #74502f;
+      --wood-b: #5f4026;
+      --wood-c: #4b301b;
+      --plank: #8a6039;
+      --ink: #f6ecdc;
+      --led: #9be564;
+      --font: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+    }
 
-      header {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 10px;
-      }
-      h1 {
-        font-size: 18px;
-        margin: 0;
-        font-weight: 650;
-        letter-spacing: 0.01em;
-      }
-      .sub {
-        color: var(--dim);
-        font-size: 11.5px;
-        margin-top: 3px;
-      }
-      .badge {
-        font:
-          600 10px/1 ui-monospace,
-          monospace;
-        padding: 5px 9px;
-        border-radius: 6px;
-        border: 1px solid #33291f;
-        color: var(--dim);
-        background: #171210;
-      }
-      .badge.ok {
-        color: var(--accent);
-        border-color: #3d4a20;
-        background: #151a0e;
-      }
-      .badge.warn {
-        color: var(--amber);
-        border-color: #453318;
-        background: #1b1409;
-      }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
 
-      /* ---------------- étagères ---------------- */
-      .shelf {
-        display: flex;
-        flex-direction: column;
-        margin-top: 10px;
-      }
-      .row {
-        position: relative;
-        display: flex;
-        align-items: flex-end;
-        gap: 24px;
-        padding: 24px 28px 20px;
-        min-height: auto;
-      }
-      .row::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 17px;
-        border-radius: 2px;
-        background: linear-gradient(
-          180deg,
-          var(--wood-edge),
-          var(--wood-a) 20%,
-          var(--wood-b) 75%,
-          #1b140e
-        );
-        box-shadow:
-          0 12px 20px -6px rgba(0, 0, 0, 0.9),
-          inset 0 1px 0 rgba(255, 255, 255, 0.16);
-      }
-      .row::before {
-        content: '';
-        position: absolute;
-        left: 16px;
-        right: 16px;
-        bottom: 13px;
-        height: 30px;
-        pointer-events: none;
-        background: radial-gradient(62% 100% at 50% 0%, rgba(0, 0, 0, 0.6), transparent 72%);
-      }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--ink);
+      overflow: hidden;
+      /* Wooden wall: three layers blended together — fine grain noise, plank
+         seams, then the warm boards themselves. */
+      background-color: var(--wood-c);
+      background-image:
+        url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27220%27%20height%3D%27220%27%3E%3Cfilter%20id%3D%27g%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.42%200.018%27%20numOctaves%3D%274%27%20seed%3D%275%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27220%27%20height%3D%27220%27%20filter%3D%27url%28%23g%29%27%2F%3E%3C%2Fsvg%3E"),
+        repeating-linear-gradient(90deg,
+          rgba(0, 0, 0, 0.34) 0 2px,
+          rgba(255, 238, 208, 0.05) 2px 3px,
+          rgba(0, 0, 0, 0) 3px 186px),
+        linear-gradient(180deg, var(--wood-a) 0%, var(--wood-b) 46%, var(--wood-c) 100%);
+      background-size: 220px 220px, auto, auto;
+      background-blend-mode: soft-light, normal, normal;
+      background-attachment: fixed;
+    }
 
-      /* ---------------- boîte 3D : 6 faces ---------------- */
-      .game {
-        margin-bottom: 26px;
-        position: relative;
-        width: 172px;
-        flex: 0 0 auto;
-        perspective: 820px;
-        perspective-origin: 50% 40%;
-      }
-      /* ombre au sol (pseudo-élément : un filter sur .cube aplatirait la 3D) */
-      .game::after {
-        content: '';
-        position: absolute;
-        left: 50%;
-        bottom: -16px;
-        width: 132px;
-        height: 24px;
-        z-index: -1;
-        transform: translateX(-50%);
-        background: radial-gradient(
-          ellipse at 50% 50%,
-          rgba(0, 0, 0, 0.8),
-          rgba(0, 0, 0, 0.32) 46%,
-          transparent 74%
-        );
-        filter: blur(7px);
-        pointer-events: none;
-      }
+    /* Vignette: darkens the corners so the shelf stands out. */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(120% 90% at 50% 6%, transparent 32%, rgba(0, 0, 0, 0.5) 100%);
+    }
 
-      .cube {
-        --W: 160px;
-        --H: 160px;
-        --D: 30px;
-        --rx: 3deg;
-        --ry: -26deg;
-        position: relative;
-        width: var(--W);
-        height: var(--H);
-        transform-style: preserve-3d;
-        transform: translateY(var(--lift, 0px)) rotateX(var(--rx)) rotateY(var(--ry));
-        transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
-        cursor: grab;
-      }
-      .game:hover .cube {
-        --lift: -6px;
-      }
+    /* ---------------------------------- shelves -------------------------------- */
+    #shelf {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      overflow-y: auto;
+      padding: 16px 18px 24px;
+      display: flex;
+      justify-content: safe center;
+    }
 
-      .face {
-        position: absolute;
-        inset: 0;
-        margin: auto;
-        background-size: 100% 100%;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: var(--edge, #4a4238);
-        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.38);
-      }
-      .front {
-        width: var(--W);
-        height: var(--H);
-        transform: translateZ(calc(var(--D) / 2));
-      }
-      .back {
-        width: var(--W);
-        height: var(--H);
-        transform: rotateY(180deg) translateZ(calc(var(--D) / 2));
-        background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.28));
-      }
-      .left {
-        width: var(--D);
-        height: var(--H);
-        transform: rotateY(-90deg) translateZ(calc(var(--W) / 2));
-        background-image: linear-gradient(
-          180deg,
-          rgba(255, 255, 255, 0.22),
-          transparent 22%,
-          transparent 78%,
-          rgba(0, 0, 0, 0.18)
-        );
-      }
-      .right {
-        width: var(--D);
-        height: var(--H);
-        transform: rotateY(90deg) translateZ(calc(var(--W) / 2));
-        background-image: linear-gradient(
-          180deg,
-          rgba(255, 255, 255, 0.22),
-          transparent 22%,
-          transparent 78%,
-          rgba(0, 0, 0, 0.18)
-        );
-      }
-      .top {
-        width: var(--W);
-        height: var(--D);
-        transform: rotateX(90deg) translateZ(calc(var(--H) / 2));
-        background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(0, 0, 0, 0.08));
-      }
-      .bottom {
-        width: var(--W);
-        height: var(--D);
-        transform: rotateX(-90deg) translateZ(calc(var(--H) / 2));
-        background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.12));
-        filter: brightness(0.85);
-      }
+    /* Wooden bookcase: .case padding is the visible frame. */
+    .case {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1120px;
+      min-height: 100%;
+      padding: 20px 20px 0;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #d79a63 0%, #c07a45 10%, #a9612f 62%, #8e4c24 100%);
+      box-shadow:
+        0 26px 48px rgba(0, 0, 0, 0.55),
+        inset 0 2px 0 rgba(255, 238, 214, 0.5),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+        inset 2px 0 0 rgba(255, 238, 214, 0.18),
+        inset -2px 0 0 rgba(0, 0, 0, 0.25);
+    }
 
-      /* reflet qui glisse sur la face avant */
-      .front::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: linear-gradient(
-          105deg,
-          transparent calc(var(--sheen, 38%) - 26%),
-          rgba(255, 255, 255, 0.16) var(--sheen, 38%),
-          transparent calc(var(--sheen, 38%) + 22%)
-        );
-        mix-blend-mode: screen;
-        opacity: 0.75;
-      }
+    .case-body {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: #4a2712;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
 
-      .flatbox {
-        width: 100%;
-        height: auto;
-        display: block;
-        filter: drop-shadow(0 12px 12px rgba(0, 0, 0, 0.55));
-        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.25, 1);
-      }
-      .game:hover .flatbox {
-        transform: translateY(-8px) scale(1.03);
-      }
+    /* One shelf: a dark recess with the wooden board the boxes stand on. */
+    .shelf {
+      position: relative;
+      isolation: isolate;
+      display: flex;
+      align-items: flex-end;
+      gap: 26px;
+      --board: 20px;              /* board thickness */
+      --pad-b: 32px;              /* gap between the boxes and the board */
+      min-height: 280px;          /* every shelf has the same height, empty or not */
+      padding: 28px 26px var(--pad-b);
+      background: linear-gradient(180deg, #5d3219 0%, #502a13 48%, #43220f 100%);
+      box-shadow:
+        inset 0 18px 26px -16px rgba(0, 0, 0, 0.62),
+        inset 0 -10px 18px -14px rgba(0, 0, 0, 0.55);
+    }
 
-      .cover {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 11px 10px;
-        color: #fff;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-      }
-      .cover img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      .cover .t {
-        position: relative;
-        font: 800 12.5px/1.22 var(--font);
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      .cover .b {
-        position: relative;
-        font:
-          700 8px/1 ui-monospace,
-          monospace;
-        letter-spacing: 0.16em;
-        opacity: 0.85;
-      }
-      .front::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 2px;
-        pointer-events: none;
-        box-shadow:
-          inset 0 0 0 1px rgba(255, 255, 255, 0.16),
-          inset 0 -46px 60px -34px rgba(0, 0, 0, 0.7);
-      }
+    /* Board: light top face, darker front, thin highlight line. */
+    .shelf::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      height: var(--board);
+      background: linear-gradient(180deg, #e0a06a 0 5px, #b9713f 5px 13px, #8a4a24 13px 18px, #5c3018 18px var(--board));
+      box-shadow:
+        0 -1px 0 rgba(255, 236, 210, 0.45),
+        0 10px 16px -6px rgba(0, 0, 0, 0.8);
+    }
 
-      .spine {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-      }
-      .spine span {
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-        font: 700 8.5px/1 var(--font);
-        letter-spacing: 0.04em;
-        color: rgba(255, 255, 255, 0.92);
-        max-height: 90%;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-      }
+    /* Contact shadow between the boxes and the board. */
+    .shelf::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: var(--board);
+      height: 46px;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.45));
+    }
 
-      /* Bouton play : simple pastille ronde, uniquement au survol, et qui ne
-     capte pas les clics quand elle est invisible. */
-      .play {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.18s;
-        z-index: 3;
-      }
-      .play span {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: rgba(245, 248, 238, 0.94);
-        color: #11160c;
-        font: 700 15px/1 var(--font);
-        padding-left: 3px;
-        box-shadow:
-          0 10px 26px rgba(0, 0, 0, 0.6),
-          0 0 0 1px rgba(0, 0, 0, 0.25);
-        transform: scale(0.86);
-        transition: transform 0.18s;
-      }
-      .game:hover .play span {
-        transform: scale(1);
-      }
-      .game:hover .play {
-        opacity: 1;
-        pointer-events: auto;
-      }
-      .game:hover .play span {
-        transform: scale(1);
-      }
-      .game.current .play {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .game.current {
-        outline: 1px solid var(--accent);
-        outline-offset: 6px;
-        border-radius: 2px;
-      }
+    /* Slatted wooden base of the bookcase. */
+    .case-base {
+      flex: 1 1 auto;
+      min-height: 76px;
+      background:
+        radial-gradient(70% 130% at 50% 100%, rgba(255, 236, 210, 0.16), transparent 62%),
+        repeating-linear-gradient(90deg, #8b4a26 0 22px, #b3713f 22px 25px, #7d4020 25px 26px);
+      box-shadow: inset 0 8px 14px -6px rgba(0, 0, 0, 0.6);
+    }
 
-      .caption {
-        margin-top: 10px;
-        font-size: 10px;
-        color: var(--dim);
-        line-height: 1.3;
-        text-align: center;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        cursor: pointer;
-      }
-      .game.current .caption {
-        color: var(--accent);
-      }
+    /* ----------------------------------- boxes --------------------------------- */
+    .game {
+      position: relative;
+      z-index: 2;
+      flex: 0 0 auto;
+      perspective: 900px;
+      perspective-origin: 50% 40%;
+      cursor: pointer;
+    }
 
-      /* ---------------- emplacement d'ajout ---------------- */
-      .slot {
-        width: 112px;
-        height: 215px;
-        flex: 0 0 auto;
-        border: 1.5px dashed #3a2e23;
-        border-radius: 3px;
-        display: grid;
-        place-items: center;
-        text-align: center;
-        color: var(--dim);
-        font-size: 10px;
-        line-height: 1.5;
-        cursor: pointer;
-        transition: 0.15s;
-        background: rgba(255, 255, 255, 0.012);
-        margin-bottom: 4px;
-      }
-      .slot:hover {
-        border-color: #5c4a37;
-        color: var(--txt);
-        background: rgba(255, 255, 255, 0.035);
-      }
-      .slot b {
-        display: block;
-        font-size: 20px;
-        margin-bottom: 3px;
-        opacity: 0.5;
-      }
-      .empty {
-        color: var(--dim);
-        font-size: 12px;
-        text-align: center;
-        padding: 34px 10px;
-      }
+    /* Shadow the box casts on the plank. */
+    .game::before {
+      content: '';
+      position: absolute;
+      left: -6%;
+      right: -6%;
+      bottom: -4px;
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(50% 100% at 50% 50%, rgba(0, 0, 0, 0.55), transparent 72%);
+      filter: blur(4px);
+      pointer-events: none;
+    }
 
-      footer {
-        margin-top: 14px;
-        color: #6a5c4d;
-        font-size: 10.5px;
-        line-height: 1.6;
-      }
-      footer code {
-        background: #161210;
-        border: 1px solid #322820;
-        border-radius: 4px;
-        padding: 1px 5px;
-        font-size: 10px;
-      }
-      .toast {
-        position: fixed;
-        left: 50%;
-        bottom: 18px;
-        transform: translateX(-50%) translateY(12px);
-        background: #191408;
-        border: 1px solid #4a3a1a;
-        color: var(--amber);
-        padding: 9px 15px;
-        border-radius: 9px;
-        font-size: 11.5px;
-        opacity: 0;
-        transition: 0.2s;
-        pointer-events: none;
-        max-width: 90vw;
-        z-index: 20;
-      }
-      .toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-      .toast.err {
-        background: #1d1012;
-        border-color: #4a2028;
-        color: #e08a93;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div>
-        <h1>Bibliothèque</h1>
-        <div class="sub" id="sub">chargement…</div>
-      </div>
-      <div class="badge" id="emu">Artwork : RetroBase (gratuit)</div>
-    </header>
+    .cube {
+      --w: 160px;
+      --h: 160px;
+      --d: 30px;
+      --ry: -26deg;
+      --rx: 3deg;
+      --edge: #2a1c10;
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      transform-style: preserve-3d;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+      transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.25, 1);
+    }
 
-    <div class="shelf" id="shelf"></div>
+    /* Never put a filter on .cube: it would flatten the 3D context. */
+    .face {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      background-color: var(--edge);
+      background-size: 100% 100%;
+      background-position: center;
+      background-repeat: no-repeat;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42);
+    }
 
-    <footer>
-      Dépose un fichier <code>.gb</code> / <code>.gbc</code> / <code>.gba</code> n'importe où sur la
-      page. Les trois faces viennent de <strong>RetroBase Collection</strong> (gratuit, sans compte,
-      identification par CRC32) : <code>box-2D</code>, <code>box-2D-side</code> et
-      <code>box-2D-back</code> sont téléchargées séparément et assemblées en volume — plus le titre,
-      l'année, l'éditeur, le genre et le synopsis.
-    </footer>
+    .front  { width: var(--w); height: var(--h); transform: translateZ(calc(var(--d) / 2)); }
+    .back   { width: var(--w); height: var(--h); transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); }
+    .left   { width: var(--d); height: var(--h); transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+    .right  { width: var(--d); height: var(--h); transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); }
+    .top    { width: var(--w); height: var(--d); transform: rotateX(90deg) translateZ(calc(var(--h) / 2)); }
+    .bottom { width: var(--w); height: var(--d); transform: rotateX(-90deg) translateZ(calc(var(--h) / 2)); }
 
-    <input type="file" id="file" accept=".gb,.gbc,.gba" hidden />
-    <div class="toast" id="toast"></div>
+    .left,
+    .right {
+      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 22%, transparent 78%, rgba(0, 0, 0, 0.2));
+    }
+    .top { background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.1)); }
+    .bottom { background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1)); }
 
-    <script>
-      const $ = (s) => document.querySelector(s);
-      const esc = (s) =>
-        String(s).replace(
-          /[&<>"]/g,
-          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
-        );
+    /* Cover drawn by the page when a game has no artwork. */
+    .fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 10px;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    }
+    .fallback b { font: 800 12.5px/1.22 var(--font); overflow: hidden; }
+    .fallback span { font: 700 8px/1 ui-monospace, monospace; letter-spacing: 0.16em; opacity: 0.85; }
 
-      let currentFile = '';
-      let lastRoms = [];
-      let toastTimer = null;
+    /* Green LED in the plank under the game loaded on the shared console. */
+    .game.current::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      /* sit the LED in the middle of the board (board centre = board / 2) */
+      bottom: calc(-1 * var(--pad-b) + (var(--board) - 7px) / 2);
+      width: 7px;
+      height: 7px;
+      margin-left: -3.5px;
+      border-radius: 50%;
+      background: var(--led);
+      box-shadow: 0 0 9px var(--led);
+    }
 
-      function toast(msg, err = false) {
-        const t = $('#toast');
-        t.textContent = msg;
-        t.className = 'toast show' + (err ? ' err' : '');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => {
-          t.className = 'toast';
-        }, 4500);
-      }
+    /* --------------------------------- add tile -------------------------------- */
+    .add {
+      position: relative;
+      z-index: 2;
+      flex: 0 0 auto;
+      width: 116px;
+      height: 215px;
+      display: grid;
+      place-items: center;
+      grid-auto-rows: min-content;
+      gap: 12px;
+      border: 1.5px dashed rgba(255, 232, 200, 0.4);
+      border-radius: 4px;
+      background: rgba(255, 236, 205, 0.05);
+      color: rgba(255, 236, 205, 0.72);
+      font: 300 34px/1 var(--font);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .add::after {
+      content: 'Ajouter';
+      font: 400 10px/1 var(--font);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
 
-      /** Teinte stable déduite du titre : chaque jeu obtient sa boîte, sans donnée externe. */
-      function hueOf(str) {
-        let h = 0;
-        for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360;
-        return h;
-      }
+    .add:hover { color: var(--ink); border-color: rgba(255, 232, 200, 0.6); background: rgba(255, 236, 205, 0.09); }
 
-      function prettyName(rom) {
-        const fromFile = String(rom.file || '')
-          .replace(/\.[a-z0-9]+$/i, '')
-          .replace(/\([^)]*\)/g, ' ')
-          .replace(/\[[^\]]*\]/g, ' ')
-          .replace(/\s{2,}/g, ' ')
-          .trim();
-        // l'en-tête Game Boy est limité à 15 caractères et contient des codes région :
-        // on préfère le nom de fichier dès qu'il est plus lisible
-        const t = String(rom.title || '').trim();
-        if (fromFile && fromFile.length >= 4) return fromFile;
-        return t || rom.file;
-      }
+    /* ----------------------------------- toast --------------------------------- */
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      z-index: 10;
+      max-width: min(560px, 86vw);
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 236, 205, 0.22);
+      background: rgba(24, 14, 6, 0.94);
+      color: var(--ink);
+      font-size: 12.5px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(14px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    #toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.bad { border-color: #8c3b32; }
 
-      const BASE_RX = 12,
-        BASE_RY = -26;
+    /* A ROM file is being dragged over the page. */
+    body.dropping::before {
+      background: radial-gradient(120% 90% at 50% 6%, rgba(155, 229, 100, 0.14) 32%, rgba(0, 0, 0, 0.5) 100%);
+    }
 
-      /** Couleur de carton : moyenne des bords de la jaquette (pour dos, tranches, chants). */
-      function edgeColor(img) {
-        try {
-          const n = 16;
-          const c = document.createElement('canvas');
-          c.width = c.height = n;
-          const g = c.getContext('2d', { willReadFrequently: true });
-          g.drawImage(img, 0, 0, n, n);
-          const d = g.getImageData(0, 0, n, n).data;
-          let r = 0,
-            gg = 0,
-            b = 0,
-            k = 0;
-          for (let y = 0; y < n; y++) {
-            for (let x = 0; x < n; x++) {
-              if (!(x < 2 || y < 2 || x >= n - 2 || y >= n - 2)) continue;
-              const i = (y * n + x) * 4;
-              r += d[i];
-              gg += d[i + 1];
-              b += d[i + 2];
-              k++;
-            }
-          }
-          if (!k) return null;
-          const f = (v) => Math.round(Math.min(255, (v / k) * 0.82));
-          return `rgb(${f(r)},${f(gg)},${f(b)})`;
-        } catch {
-          return null;
+    @media (prefers-reduced-motion: reduce) {
+      .cube { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main id="shelf">
+  <div class="case">
+    <div class="case-body" id="caseBody"></div>
+    <div class="case-base"></div>
+  </div>
+</main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="file" accept=".gb,.gbc,.gba" hidden>
+</body>
+<script type="module">
+  const API = '/gameboy-api';
+  const HEIGHT = 215;   // shared box height so every shelf stays aligned
+  const GAP = 26;
+  const PADDING = 52;   // .case-body horizontal padding, both sides
+
+  /* Only our own cached faces may become a CSS background. */
+  const FACE_URL = /^\/gameboy-media\/[a-f0-9]{8}\/(front|spine|back)\.(png|jpg|jpeg|webp)$/;
+
+  const shelf = document.getElementById('shelf');
+  const caseBody = document.getElementById('caseBody');
+  const toastEl = document.getElementById('toast');
+  const fileInput = document.getElementById('file');
+
+  let roms = [];
+  let currentFile = null;
+  let toastTimer = 0;
+
+  /* ---------------------------------- helpers -------------------------------- */
+  const esc = (value) =>
+    String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+  const prettyName = (rom) =>
+    String(rom.file || '')
+      .replace(/\.[a-z0-9]+$/i, '')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || rom.title || 'Game';
+
+  function toast(message, bad = false) {
+    toastEl.textContent = message;
+    toastEl.classList.toggle('bad', bad);
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('on'), 3200);
+  }
+
+  /* Stable hue per title: gives every game its own fallback colour. */
+  function hueOf(text) {
+    let hue = 0;
+    for (const ch of String(text)) hue = (hue * 31 + ch.codePointAt(0)) % 360;
+    return hue;
+  }
+
+  /* Cardboard colour: average of the cover edges, used for the box sides. */
+  function edgeColor(img) {
+    try {
+      const size = 16;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let n = 0;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (!(x < 2 || y < 2 || x >= size - 2 || y >= size - 2)) continue;
+          const i = (y * size + x) * 4;
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          n++;
         }
       }
+      if (!n) return null;
+      const tone = (v) => Math.round(Math.min(255, (v / n) * 0.82));
+      return `rgb(${tone(r)},${tone(g)},${tone(b)})`;
+    } catch {
+      return null; /* tainted canvas: keep the default edge colour */
+    }
+  }
 
-      /**
-       * Animation : à l'entrée, la boîte fait un tour complet sur elle-même (360°).
-       * Ensuite, tant que la souris reste dessus, sa position horizontale fait
-       * pivoter la boîte. À la sortie, retour au repos.
-       */
-      function wireSpin(el, cube) {
-        const REST_RY = -26,
-          REST_RX = 3; // pose 3/4 : on voit la tranche au repos
-        let spinning = false;
-        let lastX = 0;
+  /* -------------------------------- animation -------------------------------- */
+  /**
+   * On pointer enter the box does a full turn (360deg). While the pointer stays
+   * on it, its horizontal position rotates the box. On leave it settles back.
+   */
+  function wireSpin(el, cube) {
+    const REST_Y = -26;
+    const REST_X = 3;
+    let spinning = false;
+    let lastX = 0;
 
-        const set = (ry, rx, ms, ease) => {
-          cube.style.transition = ms ? `transform ${ms}ms ${ease}` : 'none';
-          cube.style.setProperty('--ry', ry.toFixed(1) + 'deg');
-          cube.style.setProperty('--rx', rx.toFixed(1) + 'deg');
-        };
-        const follow = () => {
-          const r = el.getBoundingClientRect();
-          const nx = Math.max(-1, Math.min(1, ((lastX - r.left) / r.width) * 2 - 1));
-          set(REST_RY + nx * 40, REST_RX, 120, 'linear');
-        };
+    const pose = (ry, rx, ms, ease) => {
+      cube.style.transition = ms ? `transform ${ms}ms ${ease}` : 'none';
+      cube.style.setProperty('--ry', `${ry.toFixed(1)}deg`);
+      cube.style.setProperty('--rx', `${rx.toFixed(1)}deg`);
+    };
 
-        el.addEventListener('pointerenter', (e) => {
-          spinning = true;
-          lastX = e.clientX;
-          set(REST_RY + 360, REST_RX, 900, 'cubic-bezier(.35,.75,.25,1)'); // tour complet
-          setTimeout(() => {
-            set(REST_RY, REST_RX, 0); // 360° == 0° : on revient à la pose sans saut
-            void cube.offsetWidth;
-            spinning = false;
-            follow(); // la souris reprend la main
-          }, 910);
-        });
+    const follow = () => {
+      const box = el.getBoundingClientRect();
+      const nx = Math.max(-1, Math.min(1, ((lastX - box.left) / box.width) * 2 - 1));
+      pose(REST_Y + nx * 40, REST_X, 120, 'linear');
+    };
 
-        el.addEventListener('pointermove', (e) => {
-          lastX = e.clientX;
-          if (spinning) return;
-          follow();
-        });
+    el.addEventListener('pointerenter', (event) => {
+      spinning = true;
+      lastX = event.clientX;
+      pose(REST_Y + 360, REST_X, 900, 'cubic-bezier(.35,.75,.25,1)');
+      setTimeout(() => {
+        pose(REST_Y, REST_X, 0); /* 360deg looks like 0deg: restart without a jump */
+        void cube.offsetWidth;
+        spinning = false;
+        follow();
+      }, 910);
+    });
 
-        el.addEventListener('pointerleave', () => {
-          spinning = false;
-          set(REST_RY, REST_RX, 420, 'cubic-bezier(.25,.8,.3,1)');
-        });
-      }
+    el.addEventListener('pointermove', (event) => {
+      lastX = event.clientX;
+      if (!spinning) follow();
+    });
 
-      function makeBox(rom) {
-        const title = prettyName(rom);
-        const hue = hueOf(title);
-        const c1 = `hsl(${hue} 40% 36%)`;
-        const c2 = `hsl(${(hue + 30) % 360} 44% 17%)`;
-        const media = rom.media || {};
+    el.addEventListener('pointerleave', () => {
+      spinning = false;
+      pose(REST_Y, REST_X, 420, 'cubic-bezier(.25,.8,.3,1)');
+    });
+  }
 
-        const frontArt = media.front || media.cover || null; // face avant réelle
-        const backArt = media.back || null; // dos réel
-        const spineArt = media.spine || null; // tranche réelle si un jour dispo
+  /* --------------------------------- rendering ------------------------------- */
+  function makeBox(rom) {
+    const title = prettyName(rom);
+    const media = rom.media || {};
+    const front = media.front || media.cover || null;
+    const back = media.back || null;
+    const spine = media.spine || null;
 
-        // géométrie : hauteur commune pour aligner l'étagère, proportions du visuel
-        const aspect = Math.min(1.6, Math.max(0.45, Number(media.aspect) || 1));
-        const H = 215;
-        const W = Math.round(H * aspect);
-        const D = Math.max(14, Math.round(W * (media.spineRatio || 0.2)));
-        const bg = (u) =>
-          typeof u === 'string' &&
-          /^\/gameboy-media\/[a-f0-9]{8}\/(front|spine|back)\.(png|jpg|webp)$/.test(u)
-            ? ` style="background-image:url('${esc(u)}')"`
-            : '';
+    /* Geometry: shared height for the shelf, real proportions from the artwork. */
+    const aspect = Math.min(1.6, Math.max(0.45, Number(media.aspect) || 1));
+    const width = Math.round(HEIGHT * aspect);
+    const depth = Math.max(14, Math.round(width * (Number(media.spineRatio) || 0.2)));
+    const bg = (url) => (typeof url === 'string' && FACE_URL.test(url) ? ` style="background-image:url('${esc(url)}')"` : '');
 
-        const frontContent = frontArt
-          ? ''
-          : `<div class="cover" style="background:linear-gradient(155deg,${c1},${c2})">
-         <div class="t">${esc(title)}</div>
-         <div class="b">${esc(String(rom.system).toUpperCase())}</div>
-       </div>`;
+    const hue = hueOf(title);
+    const edge = `hsl(${(hue + 30) % 360} 44% 17%)`;
+    const fallback = front
+      ? ''
+      : `<div class="fallback" style="background:linear-gradient(155deg,hsl(${hue} 40% 36%),${edge})">
+           <b>${esc(title)}</b><span>${esc(String(rom.system || '').toUpperCase())}</span>
+         </div>`;
 
-        // tranche : l'API ne fournit aucune texture -> bande sobre avec le titre
-        const spine = (u) => (u ? '' : `<div class="spine"><span>${esc(title)}</span></div>`);
+    const el = document.createElement('div');
+    el.className = `game${rom.file === currentFile ? ' current' : ''}`;
+    el.title = rom.file;
+    el.style.width = `${width}px`;
+    el.innerHTML = `
+      <div class="cube" style="--w:${width}px;--h:${HEIGHT}px;--d:${depth}px;--edge:${edge}">
+        <div class="face front"${bg(front)}>${fallback}</div>
+        <div class="face back"${bg(back)}></div>
+        <div class="face left"${bg(spine)}></div>
+        <div class="face right"${bg(spine)}></div>
+        <div class="face top"></div>
+        <div class="face bottom"></div>
+      </div>`;
 
-        const el = document.createElement('div');
-        el.className = 'game' + (rom.file === currentFile ? ' current' : '');
-        el.title = rom.file;
-        el.dataset.moved = '0';
-        el.style.width = W + 'px';
-        el.innerHTML = `
-    <div class="cube" style="--W:${W}px;--H:${H}px;--D:${D}px;--edge:${c2}">
-      <div class="face front"${bg(frontArt)}>${frontContent}</div>
-      <div class="face back"${bg(backArt)}></div>
-      <div class="face left"${bg(spineArt)}>${spine(spineArt)}</div>
-      <div class="face right"${bg(spineArt)}>${spine(spineArt)}</div>
-      <div class="face top"></div>
-      <div class="face bottom"></div>
-    </div>
-    <div class="play" title="Jouer"><span>▶</span></div>
-    <div class="caption" title="${esc(title)}">${esc(title)}</div>
-  `;
+    /* The sides take the colour of the real front's edge. */
+    if (front) {
+      const probe = new Image();
+      probe.onload = () => {
+        const colour = edgeColor(probe);
+        if (colour) el.querySelector('.cube').style.setProperty('--edge', colour);
+      };
+      probe.src = front;
+    }
 
-        // les chants prennent la teinte du bord de la vraie face avant
-        if (frontArt) {
-          const probe = new Image();
-          probe.onload = () => {
-            const c = edgeColor(probe);
-            if (c) el.querySelector('.cube').style.setProperty('--edge', c);
-          };
-          probe.src = frontArt;
-        }
+    wireSpin(el, el.querySelector('.cube'));
+    el.addEventListener('click', () => {
+      if (rom.file !== currentFile) void play(rom.file);
+    });
+    return { el, width };
+  }
 
-        wireSpin(el, el.querySelector('.cube'));
+  function makeAddTile() {
+    const el = document.createElement('div');
+    el.className = 'add';
+    el.textContent = '+';
+    el.title = 'Add a ROM';
+    el.addEventListener('click', () => fileInput.click());
+    return el;
+  }
 
-        el.querySelector('.play').addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (el.dataset.moved === '1') return;
-          if (rom.file !== currentFile)
-            void play(rom.file).catch((error) => toast(error.message, true));
-        });
-        return el;
-      }
+  /** Fills shelf rows with the boxes, wrapping when the width runs out. */
+  function layout() {
+    caseBody.replaceChildren();
+    const available = caseBody.clientWidth - PADDING;
+    let row = null;
+    let used = 0;
 
-      function makeSlot() {
-        const el = document.createElement('div');
-        el.className = 'slot';
-        el.innerHTML = '<div><b>+</b>Déposer une ROM</div>';
-        el.addEventListener('click', () => $('#file').click());
-        return el;
-      }
+    const newRow = () => {
+      row = document.createElement('div');
+      row.className = 'shelf';
+      caseBody.append(row);
+      used = 0;
+    };
 
-      /** Range les boîtes en étagères selon la largeur disponible. */
-      function layout(roms) {
-        lastRoms = roms;
-        const shelf = $('#shelf');
-        shelf.innerHTML = '';
-        if (!roms.length) {
-          const e = document.createElement('div');
-          e.className = 'empty';
-          e.textContent = 'Étagère vide — dépose un fichier .gb, .gbc ou .gba.';
-          shelf.appendChild(e);
-        }
-        const perRow = Math.max(2, Math.floor((shelf.clientWidth - 56) / 156));
-        const items = roms.map(makeBox);
-        items.push(makeSlot());
-        for (let i = 0; i < items.length; i += perRow) {
-          const row = document.createElement('div');
-          row.className = 'row';
-          for (const it of items.slice(i, i + perRow)) row.appendChild(it);
-          shelf.appendChild(row);
-        }
-      }
+    newRow();
+    for (const rom of roms) {
+      const { el, width } = makeBox(rom);
+      if (used > 0 && used + width + GAP > available) newRow();
+      row.append(el);
+      used += width + GAP;
+    }
+    row.append(makeAddTile());
 
-      async function refresh() {
-        const r = await fetch('/gameboy-api/roms');
-        const d = await r.json();
-        currentFile = d.current ? d.current.file : null;
-        $('#sub').textContent =
-          `${d.roms.length} jeu${d.roms.length > 1 ? 'x' : ''} sur l'étagère` +
-          (d.current ? ` · en cours : ${d.current.title}` : ' · aucune console allumée');
-        const emu = $('#emu');
-        emu.textContent = 'Artwork : RetroBase (gratuit)';
-        emu.className = 'badge ok';
-        layout(d.roms);
-      }
+    // A bookcase always shows a few shelves: empty ones keep the frame honest.
+    // Their count follows the available height so the case fits the window.
+    const room = shelf.clientHeight - 16 - 24 - 40 - 76;   // #shelf padding + frame + base
+    const wanted = Math.min(5, Math.max(1, Math.floor(room / 280)));
+    while (caseBody.children.length < wanted) {
+      const empty = document.createElement('div');
+      empty.className = 'shelf';
+      caseBody.append(empty);
+    }
+  }
 
-      async function play(file) {
-        const r = await fetch('/gameboy-api/load', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ file }),
-        });
-        const d = await r.json();
-        if (!r.ok) return toast(d.error || 'échec du chargement', true);
-        toast(`« ${d.title} » est sur la console`);
-        window.opener?.postMessage({ type: 'gameboy:rom-loaded' }, location.origin);
-        await refresh();
-      }
-
-      async function upload(file) {
-        if (!file) return;
-        if (!/\.(gb|gbc|gba)$/i.test(file.name))
-          return toast('extension attendue : .gb, .gbc ou .gba', true);
-        toast('envoi de ' + file.name + '…');
-        try {
-          const r = await fetch('/gameboy-api/roms?name=' + encodeURIComponent(file.name), {
-            method: 'POST',
-            headers: { 'content-type': 'application/octet-stream' },
-            body: file,
-          });
-          const d = await r.json();
-          if (!r.ok) return toast(d.error || 'envoi refusé', true);
-          const m = d.media || {};
-          if (m.status === 'ok') toast(`« ${d.rom.title} » ajoutée, jaquette récupérée`);
-          else if (m.status === 'empty')
-            toast(`« ${d.rom.title} » ajoutée — aucune jaquette trouvée`);
-          else toast(`« ${d.rom.title} » ajoutée — pas de jaquette (${m.status})`);
-          await refresh();
-        } catch (e) {
-          toast('échec : ' + e.message, true);
-        }
-      }
-
-      $('#file').addEventListener('change', (e) => upload(e.target.files[0]));
-
-      let dragDepth = 0;
-      document.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        dragDepth++;
-        document.body.style.outline = '2px dashed #c6e04a';
+  /* ---------------------------------- actions -------------------------------- */
+  async function play(file) {
+    try {
+      const res = await fetch(`${API}/load`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ file }),
       });
-      document.addEventListener('dragleave', () => {
-        if (--dragDepth <= 0) {
-          dragDepth = 0;
-          document.body.style.outline = '';
-        }
-      });
-      document.addEventListener('dragover', (e) => e.preventDefault());
-      document.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dragDepth = 0;
-        document.body.style.outline = '';
-        upload(e.dataTransfer.files[0]);
-      });
+      const data = await res.json();
+      if (!res.ok) return toast(data.error || 'Could not load the game', true);
+      toast(`${prettyName({ file })} is now on the console`);
+      window.opener?.postMessage({ type: 'gameboy:rom-loaded' }, location.origin);
+      await refresh();
+    } catch {
+      toast('Server unreachable', true);
+    }
+  }
 
-      let resizeTimer = null;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => layout(lastRoms), 120);
+  async function upload(file) {
+    if (!file) return;
+    if (!/\.(gb|gbc|gba)$/i.test(file.name)) return toast('Only .gb, .gbc or .gba files', true);
+    toast(`Uploading ${file.name}…`);
+    try {
+      const res = await fetch(`${API}/roms?name=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/octet-stream' },
+        body: file,
       });
+      const data = await res.json();
+      if (!res.ok) return toast(data.error || 'Upload refused', true);
+      const name = prettyName(data.rom || {});
+      const status = (data.media || {}).status;
+      toast(status === 'ok' ? `${name} added — artwork found` : `${name} added — no artwork found`, status !== 'ok');
+      await refresh();
+    } catch {
+      toast('Upload failed', true);
+    }
+  }
 
-      refresh().catch((e) => toast('serveur injoignable : ' + e.message, true));
-    </script>
-  </body>
+  async function refresh() {
+    try {
+      const res = await fetch(`${API}/roms`);
+      const data = await res.json();
+      currentFile = data.current ? data.current.file : null;
+      roms = data.roms || [];
+      layout();
+    } catch {
+      toast('Server unreachable', true);
+    }
+  }
+
+  /* ----------------------------------- events -------------------------------- */
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (file) void upload(file);
+    fileInput.value = '';
+  });
+
+  let dragDepth = 0;
+  window.addEventListener('dragenter', (event) => {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    dragDepth++;
+    document.body.classList.add('dropping');
+  });
+  window.addEventListener('dragleave', () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (!dragDepth) document.body.classList.remove('dropping');
+  });
+  window.addEventListener('dragover', (event) => {
+    if (event.dataTransfer?.types?.includes('Files')) event.preventDefault();
+  });
+  window.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dragDepth = 0;
+    document.body.classList.remove('dropping');
+    const file = event.dataTransfer?.files?.[0];
+    if (file) void upload(file);
+  });
+
+  new ResizeObserver(() => layout()).observe(caseBody);
+  void refresh();
+</script>
 </html>

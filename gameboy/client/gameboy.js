@@ -34,6 +34,10 @@ const SHELL = `
     <div class="gb-brand"><span>DOT MATRIX WITH STEREO SOUND</span><em>GAME BOY</em></div>
     <div class="gb-screen" id="gb-screen">
       <canvas id="gb-canvas" width="160" height="144"></canvas>
+      <div class="gb-start" id="gb-start" hidden>
+        <button type="button" class="gb-startbtn" id="gb-startbtn" aria-label="Allumer la console">▶</button>
+        <span class="gb-starttxt">JOUER</span>
+      </div>
       <div class="gb-wait" id="gb-wait">CONNEXION…</div>
     </div>
   </div>
@@ -77,6 +81,8 @@ const KEYMAP = {
 };
 
 let mounted = null;
+/** The user pressed ▶ at least once: the console may connect. */
+let started = false;
 
 export function mountWindow() {
   const host = document.getElementById('gameboy-body');
@@ -85,13 +91,13 @@ export function mountWindow() {
     mounted.reconnect();
     return mounted;
   }
-  // une seule console vivante : sinon la socket précédente resterait ouverte
-  // et la salle continuerait de tourner après la fermeture de la fenêtre
+  // a single live console: otherwise the previous socket would stay open
+  // and the room would keep running after the window closes
   if (mounted) {
     try {
       mounted.destroy();
     } catch {
-      /* sans conséquence */
+      /* ignore */
     }
   }
   mounted = create(host);
@@ -120,15 +126,15 @@ function create(host) {
   };
 
   /**
-   * La coque a une taille fixe (430 px). Dans une petite fenêtre elle serait
-   * rognée : on la met à l'échelle et on réserve la hauteur correspondante.
+   * The shell has a fixed size (430 px). In a small window it would be
+   * clipped: we scale it down and reserve the matching height.
    */
   const fit = host.querySelector('.gb-fit');
   const shell = host.querySelector('.gb-shell');
   function rescale() {
-    // La coque a une taille naturelle de 430 px. On la met à l'échelle dans les
-    // deux sens : réduite pour tenir dans une petite fenêtre, agrandie (jusqu'à
-    // 1,6x) quand la fenêtre est grande — le jeu et le SVG suivent ensemble.
+    // The shell has a natural size of 430 px. We scale it both ways: down to
+    // fit a small window, up (to 1.6x) when the window is large — the game and
+    // the SVG scale together.
     const w = shell.offsetWidth,
       h = shell.offsetHeight;
     if (!w || !h) return;
@@ -305,6 +311,8 @@ function create(host) {
   }
 
   const scrEl = $('gb-screen');
+  const startEl = $('gb-start');
+  const startBtn = $('gb-startbtn');
   const powerEl = $('gb-power');
   const ledEl = $('gb-led');
 
@@ -324,7 +332,7 @@ function create(host) {
     try {
       if (ws?.readyState === 1) ws.send(JSON.stringify({ type: 'sleep', on: !powerOn }));
     } catch {
-      /* sans conséquence */
+      /* ignore */
     }
     if (powerOn) {
       lastFrameAt = performance.now();
@@ -337,10 +345,10 @@ function create(host) {
       ctx2d.putImageData(img, 0, 0);
   }
 
-  /* ---------------- réseau ---------------- */
+  /* ---------------- network ---------------- */
   function connect() {
     if (destroyed) return;
-    // une seule socket vivante : sinon la salle garde un joueur fantôme
+    // a single live socket: otherwise the room keeps a ghost player
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
     closing = false;
     stopped = false;
@@ -396,7 +404,7 @@ function create(host) {
             try {
               ws.close();
             } catch {
-              /* sans conséquence */
+              /* ignore */
             }
             return;
           }
@@ -409,14 +417,14 @@ function create(host) {
             try {
               ws.send(JSON.stringify({ type: 'caps', opus: false }));
             } catch {
-              /* sans conséquence */
+              /* ignore */
             }
           }
           if (!powerOn) {
             try {
               ws.send(JSON.stringify({ type: 'sleep', on: true }));
             } catch {
-              /* sans conséquence */
+              /* ignore */
             }
           }
           lastFrameAt = performance.now();
@@ -469,7 +477,7 @@ function create(host) {
           );
           opusTs += 20000;
         } catch {
-          /* sans conséquence */
+          /* ignore */
         }
         return;
       }
@@ -520,7 +528,7 @@ function create(host) {
     };
   }
 
-  /* ---------------- volume / power / bibliothèque ---------------- */
+  /* ---------------- volume / power / library ---------------- */
   if (volEl) {
     volEl.value = String(volume);
     listen(volEl, 'input', () => {
@@ -536,11 +544,30 @@ function create(host) {
   }
 
   listen(powerEl, 'click', () => {
+    if (!started) {
+      begin();
+      return;
+    }
     ensureAudio();
     if (actx?.state === 'suspended') actx.resume().catch(() => {});
     powerOn = !powerOn;
     applyPower();
   });
+
+  function begin() {
+    if (started) return;
+    started = true;
+    if (startEl) startEl.hidden = true;
+    ensureAudio();
+    if (actx?.state === 'suspended') actx.resume().catch(() => {});
+    powerOn = true;
+    applyPower();
+    showOverlay('CONNEXION…');
+    connect();
+  }
+
+  if (startBtn) listen(startBtn, 'click', begin);
+  if (startEl) listen(startEl, 'click', begin);
 
   listen($('gb-lib'), 'click', () => {
     const w = 980,
@@ -554,7 +581,7 @@ function create(host) {
     );
   });
 
-  /* ---------------- entrées ---------------- */
+  /* ---------------- input ---------------- */
   function send(btn, down, source = 'pointer') {
     if (!canControl || (down && (!powerOn || stopped))) return;
     const sources = inputSources.get(btn) || new Set();
@@ -569,7 +596,7 @@ function create(host) {
     try {
       if (ws?.readyState === 1) ws.send(JSON.stringify({ type: 'input', btn, down }));
     } catch {
-      /* sans conséquence */
+      /* ignore */
     }
   }
 
@@ -657,7 +684,7 @@ function create(host) {
       try {
         ws.send(JSON.stringify({ type: 'resync' }));
       } catch {
-        /* sans conséquence */
+        /* ignore */
       }
       lastFrameAt = now;
     }
@@ -683,13 +710,13 @@ function create(host) {
     try {
       ws?.close();
     } catch {
-      /* sans conséquence */
+      /* ignore */
     }
     ws = null;
     try {
       adec?.close();
     } catch {
-      /* sans conséquence */
+      /* ignore */
     }
     adec = null;
     if (actx)
@@ -703,9 +730,9 @@ function create(host) {
     if (el) el.textContent = 'en veille';
   }
 
-  /* Le bureau « ferme » une fenêtre en la masquant : on surveille donc la
-     visibilité réelle (fenêtre masquée, réduite, ou onglet en arrière-plan)
-     pour couper le flux réseau. Rouvrir relance la console. */
+  /* The desktop "closes" a window by hiding it, so we watch the real
+     visibility (hidden window, minimized, or background tab) to cut the
+     network stream. Reopening starts the console again. */
   const isVisible = () => {
     if (document.hidden || host.closest('.wm-win')?.dataset.minimized === '1') return false;
     const box = host.closest('.wm-win') || host;
@@ -715,7 +742,7 @@ function create(host) {
     return r.width > 4 && r.height > 4;
   };
   const watchdog = setInterval(() => {
-    if (destroyed) return;
+    if (destroyed || !started) return;
     if (!isVisible()) {
       if (ws) stopStream();
       return;
@@ -736,23 +763,23 @@ function create(host) {
     if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
     clearInterval(statusTimer);
     clearInterval(watchdog);
-    // fermer la fenêtre doit couper le flux : sinon la salle continue de tourner
+    // closing the window must cut the stream: otherwise the room keeps running
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('keyup', offKey);
     stopStream();
     host.dataset.gbMounted = '0';
   }
 
-  /* Fermeture / réouverture : le bureau signale « wm:close » puis marque la
-     fenêtre data-minimized="1". On coupe le flux sur les deux signaux et on
-     le relance quand la fenêtre revient. */
+  /* Close / reopen: the desktop fires "wm:close" then marks the window
+     data-minimized="1". We cut the stream on both signals and start it again
+     when the window comes back. */
   const winEl = host.closest('.wm-win');
   if (winEl) {
     listen(winEl, 'wm:close', () => {
       try {
         stopStream();
       } catch {
-        /* sans conséquence */
+        /* ignore */
       }
     });
     observe(
@@ -796,15 +823,21 @@ function create(host) {
       event.data?.type !== 'gameboy:rom-loaded'
     )
       return;
-    if (isVisible() && !destroyed) {
-      closing = false;
-      stopped = false;
-      connect();
+    if (!destroyed) {
+      // loading a ROM from the library counts as an explicit start
+      started = true;
+      if (startEl) startEl.hidden = true;
+      if (isVisible()) {
+        closing = false;
+        stopped = false;
+        showOverlay('CONNEXION…');
+        connect();
+      }
     }
   });
   listen(document, 'visibilitychange', () => {
     if (document.hidden) stopStream();
-    else if (isVisible() && !destroyed) {
+    else if (started && isVisible() && !destroyed) {
       stopped = false;
       connect();
     }
@@ -817,14 +850,21 @@ function create(host) {
     }
   });
 
-  showOverlay('CONNEXION…');
-  connect();
+  // The console no longer connects on its own: we show the start screen and
+  // the ▶ button launches the game (the ROM is already picked server-side).
   applyPower();
+  if (started) {
+    showOverlay('CONNEXION…');
+    connect();
+  } else if (startEl) {
+    startEl.hidden = false;
+    hideOverlay();
+  }
 
   return {
     host,
     reconnect: () => {
-      if (!destroyed && isVisible()) {
+      if (!destroyed && started && isVisible()) {
         stopped = false;
         connect();
       }
