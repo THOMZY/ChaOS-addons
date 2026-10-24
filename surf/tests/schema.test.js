@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import Database from 'better-sqlite3';
-import { migrateDatabase, inspectDatabaseSchema } from '../../../server/db/migrations.js';
+import { SCHEMA_VERSION, migrateDatabase, inspectDatabaseSchema } from '../../../server/db/migrations.js';
 import { ensureSchema } from '../server/schema.js';
 
 test('Surf initializes a fresh site database and preserves its ledger and rows on repetition', t => {
@@ -21,8 +21,8 @@ test('Surf initializes a fresh site database and preserves its ledger and rows o
   ensureSchema(database);
   assert.deepEqual(tables.map(table => database.prepare(`SELECT * FROM ${table}`).all()), rows);
   assert.deepEqual(database.prepare('SELECT * FROM _chaos_migrations').all(), ledger);
-  assert.deepEqual(inspectDatabaseSchema(database), { version: 4, pending: [] });
-  assert.deepEqual(migrateDatabase(database), { from: 4, to: 4, applied: [] });
+  assert.deepEqual(inspectDatabaseSchema(database), { version: SCHEMA_VERSION, pending: [] });
+  assert.deepEqual(migrateDatabase(database), { from: SCHEMA_VERSION, to: SCHEMA_VERSION, applied: [] });
   database.exec("DELETE FROM accounts WHERE id = 'player'");
   assert.deepEqual(tables.map(table => database.prepare(`SELECT * FROM ${table}`).all()), [[], [], []]);
   assert.deepEqual(database.pragma('foreign_key_check'), []);
@@ -35,5 +35,5 @@ test('Surf schema initialization rolls back partial DDL on failure', t => {
   database.exec('CREATE VIEW surf_attempts AS SELECT 1 AS id');
   assert.throws(() => ensureSchema(database));
   assert.equal(database.prepare("SELECT name FROM sqlite_master WHERE name = 'surf_runs'").get(), undefined);
-  assert.deepEqual(inspectDatabaseSchema(database), { version: 4, pending: [] });
+  assert.deepEqual(inspectDatabaseSchema(database), { version: SCHEMA_VERSION, pending: [] });
 });
