@@ -1,3 +1,4 @@
+import { createWormsInput } from './worms-input.js';
 import { createWormsMenuView } from './worms-menu-view.js';
 import { createWormsGameView } from './worms-game-view.js';
 import { createWormsHud } from './worms-hud.js';
@@ -151,9 +152,8 @@ let _wsSynced    = false;
 
 // Input
 const _keys  = new Set();
-const arenaInput = createGameInput(scope, () => _root, () => { _keys.clear(); _chargeStart = null; });
+const arenaInput = createGameInput(scope, () => _root, () => gameInput.release());
 let attachedArena = null;
-let _keyAbort     = null;
 let _chargeStart  = null;
 let _power        = 0;
 let _aimAngle     = 0;
@@ -287,6 +287,26 @@ const { updateHUD: _updateHUD, updateTimerDisplay: _updateTimerDisplay,
   updateHealthBar: _updateHealthBar, updateWeaponBtns: _updateWeaponBtns,
   updateFuseDisplay: _updateFuseDisplay, showTurnAnnouncement: _showTurnAnnouncement,
   drawTurnAnnouncement: _drawTurnAnnouncement } = hud;
+
+const gameInput = createWormsInput({
+  getState: () => ({ keys: _keys, physics: _ws, worms: _worms, activeWormId: _activeWormId,
+    myUserId: _myUserId, isMyTurn: _myTurn(), hasShotFired: _shotFired, isAnimating: _animating,
+    selectedWeapon: _selectedWeapon, isPhysicsSynced: _wsSynced,
+    get chargeStart() { return _chargeStart; }, set chargeStart(value) { _chargeStart = value; },
+    get power() { return _power; }, set power(value) { _power = value; },
+    get aimAngle() { return _aimAngle; }, set aimAngle(value) { _aimAngle = value; },
+    get mouseX() { return _mouseX; }, set mouseX(value) { _mouseX = value; },
+    get mouseY() { return _mouseY; }, set mouseY(value) { _mouseY = value; },
+    get grenadeFuse() { return _grenadefuse; }, set grenadeFuse(value) { _grenadefuse = value; },
+    get teleportTarget() { return _teleportTarget; }, set teleportTarget(value) { _teleportTarget = value; },
+  }),
+  eventTarget: document, on: scope.on, off: scope.off,
+  ownsInput: event => arenaInput.owns(event), isVisible: () => arenaInput.visible(),
+  fuseWeapons: FUSE_WEAPONS, selectWeapon: _selectWeapon, updateFuseDisplay: _updateFuseDisplay,
+  selectWorm: wormId => _socket.emit('worms:select_worm', { roomId: _roomId, wormId }),
+  playSound: _playSound, playRandomSpeech: _playRandomSpeech, fire: _doFire,
+  isActive: () => scope.active, width: WORLD_W, height: WORLD_H,
+});
 
 const gameView = createWormsGameView({
   getState: () => ({ selectedWeapon: _selectedWeapon, isSpectateMode: _spectateMode,
@@ -522,7 +542,7 @@ function _centerCameraOnActive(worms, activeWormId) {
 
 function _finishGameSetup() {
   _initWsTurn();
-  _bindGameInput();
+  if (!_bindGameInput()) return;
   _startRaf();
   _updateHUD();
   scope.timeout(() => _playSound('StartRound', 0.5), 200);
@@ -663,174 +683,8 @@ function _syncActiveWormPosition() {
   _ws._lastSync = Date.now();
   _socket.emit('worms:pos', { roomId: _roomId, wormId: _activeWormId, cx: _ws.cx, cy: _ws.cy });
 }
-function _updateAim() {
-  if (!_myTurn() || _shotFired) return;
-  // Don't override keyboard aim if W/S is currently held
-  if (_keys.has('z') || _keys.has('s') || _keys.has('arrowup') || _keys.has('arrowdown')) return;
-  const aw = _worms.find(w => w.id === _activeWormId);
-  if (!aw) return;
-  const awCx = _wsSynced ? _ws.cx : aw.cx;
-  const awCy = _wsSynced ? _ws.cy : aw.cy;
-  _aimAngle = Math.atan2(_mouseY - awCy, _mouseX - awCx);
-  if (Math.cos(_aimAngle) > 0) _ws.facing = 1;
-  else if (Math.cos(_aimAngle) < 0) _ws.facing = -1;
-}
-
-function _canChargeShot() {
-  return _myTurn() && !_shotFired && !_animating;
-}
-
-function _beginCharge() {
-  _chargeStart = Date.now();
-  _playSound('THROWPOWERUP', 0.35);
-}
-
-function _releaseCharge() {
-  if (_chargeStart !== null && _canChargeShot()) {
-    _power = Math.max(0.08, Math.min(1, (Date.now() - _chargeStart) / 1500));
-    _chargeStart = null;
-    _playRandomSpeech('fire');
-    _doFire();
-  } else {
-    _chargeStart = null;
-  }
-}
-
-function _updatePointerWorld(e) {
-  if (!_canvas) return;
-  const rect = _canvas.getBoundingClientRect();
-  const aspect = WORLD_W / WORLD_H;
-  const rAspect = rect.width / rect.height;
-  let cw, ch, cx0, cy0;
-  if (rAspect > aspect) {
-    ch = rect.height; cw = ch * aspect;
-    cx0 = rect.left + (rect.width - cw) / 2; cy0 = rect.top;
-  } else {
-    cw = rect.width; ch = cw / aspect;
-    cx0 = rect.left; cy0 = rect.top + (rect.height - ch) / 2;
-  }
-  if (cw <= 0 || ch <= 0) return;
-  _mouseX = Math.max(0, Math.min(WORLD_W, (e.clientX - cx0) * (WORLD_W / cw)));
-  _mouseY = Math.max(0, Math.min(WORLD_H, (e.clientY - cy0) * (WORLD_H / ch)));
-  _updateAim();
-}
-
-// ── Input binding ────────────────────────────────────────────────────────────
-function _bindGameInput() {
-  _keyAbort = new AbortController();
-  const sig = { signal: _keyAbort.signal };
-
-  const stop = (e) => {
-    const k = e.key.toLowerCase();
-    if (['q','d','z','s',' ','arrowleft','arrowright','arrowup','arrowdown','backspace'].includes(k)) {
-      e.preventDefault();
-    }
-  };
-
-  scope.on(document, 'keydown', (e) => {
-    if (!arenaInput.owns(e)) return;
-    stop(e);
-    const k = e.key.toLowerCase();
-    _keys.add(k);
-    if (!_handleFuseKey(k)) _handleWeaponHotkey(k);
-    _handleWormCycleKey(e, k);
-  }, sig);
-
-  scope.on(document, 'keyup', (e) => {
-    if (!arenaInput.owns(e)) return;
-    _keys.delete(e.key.toLowerCase());
-  }, sig);
-
-  _canvas?.addEventListener('pointermove', (e) => {
-    _updatePointerWorld(e);
-  }, sig);
-
-  _canvas?.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || !_myTurn() || _shotFired || _animating) return;
-    e.preventDefault();
-    _updatePointerWorld(e);
-    _canvas.setPointerCapture?.(e.pointerId);
-    // Teleport: single click = set target + fire immediately
-    if (_selectedWeapon === 'teleport') {
-      _teleportTarget = { x: _mouseX, y: _mouseY };
-      _power = 1;
-      _playRandomSpeech('fire');
-      _doFire();
-      return;
-    }
-    _beginCharge();
-  }, sig);
-
-  _canvas?.addEventListener('pointerup', (e) => {
-    if (e.button !== 0) return;
-    _releaseCharge();
-  }, sig);
-
-  _canvas?.addEventListener('pointercancel', () => {
-    _chargeStart = null;
-  }, sig);
-
-  // Enter key = fire (like original)
-  scope.on(document, 'keydown', (e) => {
-    if (!arenaInput.owns(e)) return;
-    if (e.key === 'Enter' && _canChargeShot()) {
-      e.preventDefault();
-      if (_chargeStart === null) _beginCharge();
-    }
-  }, sig);
-  scope.on(document, 'keyup', (e) => {
-    if (!arenaInput.owns(e)) return;
-    if (e.key === 'Enter' && _chargeStart !== null) _releaseCharge();
-  }, sig);
-}
-
-const WORM_WEAPON_HOTKEYS = {
-  '1': 'bazooka',
-  '2': 'hand_grenade',
-  '3': 'cluster_bomb',
-  '4': 'shotgun',
-  '5': 'minigun',
-  '6': 'mortar',
-  '7': 'airstrike',
-  '8': 'drill',
-  '9': 'dynamite',
-  '0': 'holy_grenade',
-  a: 'banana_bomb',
-  e: 'napalm',
-  r: 'land_mine',
-  t: 'ninja_rope',
-  y: 'jetpack',
-  u: 'bat',
-  i: 'teleport',
-};
-
-function _handleFuseKey(k) {
-  const canSetFuse = FUSE_WEAPONS.has(_selectedWeapon) && _myTurn() && !_shotFired && !_animating;
-  if (!canSetFuse || !['1', '2', '3', '4', '5'].includes(k)) return false;
-  _grenadefuse = parseInt(k);
-  _updateFuseDisplay();
-  return true;
-}
-
-function _handleWeaponHotkey(k) {
-  const weapon = WORM_WEAPON_HOTKEYS[String(k)];
-  if (weapon) _selectWeapon(weapon);
-}
-
-function _handleWormCycleKey(e, k) {
-  if (k !== 'c' || e.repeat || !_myTurn() || _shotFired || _animating) return;
-  e.preventDefault();
-  const myWorms = _worms.filter(w => w.playerId === _myUserId && w.alive);
-  if (myWorms.length <= 1) return;
-  const cur = myWorms.findIndex(w => w.id === _activeWormId);
-  const next = myWorms[(cur + 1) % myWorms.length];
-  _socket.emit('worms:select_worm', { roomId: _roomId, wormId: next.id });
-}
-function _unbindGameInput() {
-  if (_keyAbort) { _keyAbort.abort(); _keyAbort = null; }
-  _keys.clear();
-  _chargeStart = null;
-}
+function _bindGameInput() { return gameInput.bind(_canvas); }
+function _unbindGameInput() { gameInput.reset(); }
 
 function _doFire() {
   if (!_myTurn() || _shotFired || _animating) return;
@@ -1360,9 +1214,9 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); menuView.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); menuView.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
-  const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
+  const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { gameInput.release(); }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
   return instance;
 }
