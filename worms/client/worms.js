@@ -1,3 +1,4 @@
+import { createWormsTerrain } from './worms-terrain.js';
 import { createWormsMedia } from './worms-media.js';
 import { randomIndex, randomUnit } from '/core/js/secure-random.js';
 import { setSafeHtml } from '/core/js/safe-dom.js';
@@ -23,7 +24,6 @@ function createController(socket, getMe, pushSystem, scope) {
 // Exports:
 //   initWorms(socket, getMe, pushSystem)   — bind socket events (games.js imports this module on demand)
 //   activateWorms(root, onExit)            — show worms UI (lobby → game → results), starts the asset preload
-
 
 // ── World constants (must mirror server) ─────────────────────────────────────
 const WORLD_W  = 960;
@@ -217,25 +217,26 @@ let _teleportTarget = null; // {x, y} — pending teleport destination
 let _crates           = [];    // [{id,cx,cy,type,weapon,landed,fallingCy}]
 let _turnAnnouncement = null;  // {text,color,startMs}
 
-// Background
-let _terrainSeed = 0;
-let _terrainMask = null;  // Uint8Array(WORLD_W * WORLD_H) — extracted from level image
-let _clouds      = [];   // [{x,y,scale,speed}]
-let _theme       = 0;    // index into LEVELS array
+// Collision
+let _terrainMask = null;  // Server heights drive collision; image pixels never do.
 
 // Assets — fetched lazily, only once the player opens Worms (see _ensureAssets).
 const media = createWormsMedia({ levels: LEVELS, randomIndex,
   isActive: () => scope.active, isMuted: () => _muted });
 const { getImage: _assetImage, ensureAssets: _ensureAssets, playSound: _playSound,
   playRandomSpeech: _playRandomSpeech, playExplosionSound: _playExplosionSound } = media;
+const terrainRenderer = createWormsTerrain({
+  width: WORLD_W, height: WORLD_H, getImage: _assetImage, getLevel: _levelDef,
+  getState: () => ({ terrain: _terrain, holes: _holes, waterLevel: _waterLevel, suddenDeath: _suddenDeath }),
+  isActive: () => scope.active,
+});
+const { redraw: _redrawTerrain, drawBackground: _drawWorldBackground } = terrainRenderer;
 const _wormCanvas = new Map();   // wormId → {canvas,tctx,frame,color}
 
 // DOM
 let _container  = null;
 let _canvas     = null;
 let _ctx        = null;
-let _offscreen  = null;
-let _offCtx     = null;
 let _timerEl    = null;
 let _turnLabel  = null;
 let _windEl     = null;
@@ -550,26 +551,11 @@ function _renderWaiting(room) {
 }
 
 // ── Game canvas setup ─────────────────────────────────────────────────────────
-// Extract alpha-based pixel mask from a level image (stretched to WORLD_W × WORLD_H)
-// Build terrain mask from the server-authoritative heights array.
-// This ensures client collision exactly matches server collision regardless of
-// which image file is loaded for visuals (full PNG vs small PNG differ at 960×480).
-function _buildTerrainMaskFromHeights(heights) {
-  const mask = new Uint8Array(WORLD_W * WORLD_H);
-  for (let x = 0; x < WORLD_W; x++) {
-    const h = Math.max(0, Math.min(WORLD_H, heights.at(x) ?? WORLD_H));
-    for (let y = h; y < WORLD_H; y++) {
-      mask[y * WORLD_W + x] = 1;
-    }
-  }
-  return mask;
-}
 
 function _setupGame(data) {
   if (_root) _root.dataset.gameMode = 'worms-game';
   _resetGameData(data);
-  _prepareTerrainVisuals(data);
-  _setupClouds();
+  _terrainMask = terrainRenderer.prepare(data, _roomId);
   _buildGameLayout();
   _updateHealthBar();
   _centerCameraOnActive(data.worms, data.activeWormId);
@@ -610,34 +596,6 @@ function _resetGameData(data) {
   _ammo         = myAmmo ? { ...myAmmo } : {};
   _teleportTarget = null;
   _turnAnnouncement = null;
-}
-
-function _prepareTerrainVisuals(data) {
-  // Derive terrain seed and visual theme from roomId
-  _terrainSeed = _roomId ? (parseInt(_roomId.slice(0, 8), 16) || 1337) : 1337;
-  _theme       = data.levelIndex ?? data.theme ?? 0;
-
-  // Build collision mask from server-authoritative heights array.
-  // Do NOT override with image pixels — client PNG differs from server's small PNG → mismatch.
-  _terrainMask = data.terrain ? _buildTerrainMaskFromHeights(data.terrain) : null;
-
-  // Trigger visual redraw once level image is available (mask stays from heights)
-  const level = _levelDef(_theme);
-  const lvlImg = _assetImage(level ? `level_${level.file}` : null);
-  if (!lvlImg) return;
-  if (lvlImg.complete && lvlImg.naturalWidth > 0) _redrawTerrain();
-  else lvlImg.onload = () => { if (scope.active) _redrawTerrain(); };
-}
-
-function _setupClouds() {
-  // Generate animated clouds — scattered randomly across sky, varied sizes & speeds
-  const cr = _lcgRng(_terrainSeed + 77);
-  _clouds = Array.from({ length: 18 }, () => ({
-    x:     cr() * WORLD_W,
-    y:     8 + cr() * 90,
-    scale: 0.35 + cr() * 0.5,  // 0.35–0.85
-    speed: 4 + cr() * 10,
-  }));
 }
 
 function _buildGameLayout() {
@@ -693,11 +651,7 @@ function _buildCanvasArea() {
   _container.appendChild(_canvas);
   _ctx = _canvas.getContext('2d');
 
-  _offscreen = document.createElement('canvas');
-  _offscreen.width  = WORLD_W;
-  _offscreen.height = WORLD_H;
-  _offCtx = _offscreen.getContext('2d');
-  _redrawTerrain();
+  terrainRenderer.mount();
   return _container;
 }
 
@@ -853,93 +807,6 @@ function _finishGameSetup() {
   _updateHUD();
   scope.timeout(() => _playSound('StartRound', 0.5), 200);
 }
-// ── Terrain rendering ─────────────────────────────────────────────────────────
-function _redrawTerrain() {
-  if (!_offCtx) return;
-  const ctx = _offCtx;
-  ctx.clearRect(0, 0, WORLD_W, WORLD_H);
-  _drawTerrainBase(ctx);
-  _eraseTerrainHoles(ctx);
-  _drawWaterZone(ctx);
-  _drawSuddenDeathWaterLine(ctx);
-}
-
-function _drawTerrainBase(ctx) {
-  const lvl = _levelDef(_theme);
-  const lvlImg = _assetImage(`level_${lvl.file}`);
-
-  if (lvlImg?.complete && lvlImg.naturalWidth > 0) {
-    // Draw real Worms level image stretched to fill canvas
-    ctx.drawImage(lvlImg, 0, 0, WORLD_W, WORLD_H);
-  } else if (_terrain) {
-    // Fallback: minimal procedural fill (used until image loads or if missing)
-    ctx.beginPath();
-    ctx.moveTo(0, WORLD_H);
-    for (let x = 0; x < WORLD_W; x++) ctx.lineTo(x, Math.floor(_terrain.at(x) ?? WORLD_H));
-    ctx.lineTo(WORLD_W - 1, WORLD_H);
-    ctx.closePath();
-    const dGrad = ctx.createLinearGradient(0, 0, 0, WORLD_H);
-    dGrad.addColorStop(0, '#7a5020'); dGrad.addColorStop(0.3, '#5a3810'); dGrad.addColorStop(1, '#3a240a');
-    ctx.fillStyle = dGrad; ctx.fill();
-    ctx.lineWidth = 5; ctx.strokeStyle = '#4a9a28';
-    ctx.beginPath();
-    ctx.moveTo(0, Math.floor(_terrain.at(0) ?? WORLD_H));
-    for (let x = 1; x < WORLD_W; x++) ctx.lineTo(x, Math.floor(_terrain.at(x) ?? WORLD_H));
-    ctx.stroke();
-  }
-}
-
-function _eraseTerrainHoles(ctx) {
-  // Punch out explosion holes using destination-out.
-  // MUST use fully-opaque fillStyle — if the water pattern (semi-transparent) is
-  // still set as fillStyle, destination-out will only partially erase terrain,
-  // leaving visible "wave" traces inside every hole.
-  if (_holes.length === 0) return;
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillStyle = '#000000';  // fully opaque — erase 100% of each hole pixel
-  for (const h of _holes) {
-    ctx.beginPath();
-    ctx.arc(h.cx, h.cy, h.r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalCompositeOperation = 'source-over';
-}
-
-function _drawWaterZone(ctx) {
-  // Water zone — use dynamic _waterLevel (rises in sudden death)
-  const waterImg = _assetImage('water3');
-  if (waterImg?.complete && waterImg.naturalWidth > 0) {
-    const pat = _offCtx.createPattern(waterImg, 'repeat-x');
-    if (pat) {
-      ctx.globalAlpha = 0.82;
-      ctx.fillStyle = pat;
-      ctx.fillRect(0, _waterLevel, WORLD_W, WORLD_H - _waterLevel);
-      ctx.globalAlpha = 1;
-    }
-  } else {
-    ctx.fillStyle = 'rgba(0, 80, 200, 0.55)';
-    ctx.fillRect(0, _waterLevel, WORLD_W, WORLD_H - _waterLevel);
-    ctx.fillStyle = 'rgba(100,180,255,0.15)';
-    ctx.fillRect(0, _waterLevel, WORLD_W, 3);
-  }
-}
-
-function _drawSuddenDeathWaterLine(ctx) {
-  // Sudden death warning line (flashing red)
-  if (!_suddenDeath) return;
-  const alpha = 0.5 + 0.5 * Math.sin(Date.now() / 200);
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = '#ff3300';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 6]);
-  ctx.beginPath();
-  ctx.moveTo(0, _waterLevel); ctx.lineTo(WORLD_W, _waterLevel);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-}
-
 // ── Main render loop ──────────────────────────────────────────────────────────
 function _startRaf() {
   if (_raf) scope.cancelFrame(_raf);
@@ -964,6 +831,7 @@ function _stopGame() {
   _weaponAnim = null;
   _prevWeapon = null;
   _terrainMask = null;
+  terrainRenderer.reset();
   _crates = [];
   _turnAnnouncement = null;
   if (_fuseInterval) { scope.clearInterval(_fuseInterval); _fuseInterval = null; }
@@ -1022,45 +890,6 @@ function _applyScreenShake(ctx, now) {
   if (now >= _shakeUntil) return;
   const mag = 5 * Math.max(0, 1 - (now - (_shakeUntil - 300)) / 300);
   ctx.translate((randomUnit() - 0.5) * mag, (randomUnit() - 0.5) * mag);
-}
-
-function _drawWorldBackground(ctx, dt) {
-  const lvl = _levelDef(_theme);
-  _drawSky(ctx, lvl);
-  if (lvl.stars) _drawStars(ctx);
-  _drawClouds(ctx, dt);
-  ctx.clearRect(0, 0, 0, 0); // no-op, just for clarity
-  if (_offscreen) ctx.drawImage(_offscreen, 0, 0);
-}
-
-function _drawSky(ctx, lvl) {
-  const sky = ctx.createLinearGradient(0, 0, 0, WORLD_H);
-  sky.addColorStop(0,    lvl.skyA);
-  sky.addColorStop(0.45, lvl.skyB);
-  sky.addColorStop(1,    lvl.skyC);
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
-}
-
-function _drawStars(ctx) {
-  const starR = _lcgRng(_terrainSeed + 5);
-  for (let i = 0; i < 90; i++) {
-    const sx = starR() * WORLD_W;
-    const sy = starR() * WORLD_H * 0.65;
-    const sr = 0.5 + starR() * 1.2;
-    const sa = 0.3 + starR() * 0.7;
-    ctx.beginPath();
-    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${sa})`;
-    ctx.fill();
-  }
-}
-
-function _drawClouds(ctx, dt) {
-  for (const c of _clouds) {
-    c.x = (c.x + c.speed * dt + WORLD_W) % WORLD_W;
-    _drawCloud(ctx, c.x, c.y, c.scale);
-  }
 }
 
 function _drawWorms(ctx, now, dt) {
@@ -3053,34 +2882,6 @@ function _drawCrate(ctx, cx, cy, type, weapon, falling, now) {
   ctx.restore();
 }
 
-// Seeded LCG RNG — returns a function that produces floats in [0,1)
-function _lcgRng(seed) {
-  let s = seed >>> 0;
-  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
-}
-
-// Draw a fluffy cloud at (cx,cy) scaled by sc — procedural (PNG spritesheets cause column artefacts)
-function _drawCloud(ctx, cx, cy, sc) {
-  ctx.save();
-  ctx.globalAlpha = 0.55;
-  ctx.fillStyle   = '#c8d8f0';
-  const puffs = [
-    [0,   0,  22 * sc],
-    [18 * sc, -6 * sc, 18 * sc],
-    [-18 * sc, -4 * sc, 16 * sc],
-    [32 * sc,  4 * sc, 14 * sc],
-    [-30 * sc,  4 * sc, 13 * sc],
-    [8 * sc,  8 * sc, 16 * sc],
-  ];
-  for (const [px, py, pr] of puffs) {
-    ctx.beginPath();
-    ctx.arc(cx + px, cy + py, pr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  ctx.restore();
-}
-
 // Draw grave sprite for a dead worm
 function _drawGrave(ctx, w) {
   const { cx, cy } = w;
@@ -3141,7 +2942,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
