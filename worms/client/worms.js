@@ -1,3 +1,4 @@
+import { createWormsMedia } from './worms-media.js';
 import { randomIndex, randomUnit } from '/core/js/secure-random.js';
 import { setSafeHtml } from '/core/js/safe-dom.js';
 import { createGameScope } from '/core/js/games/game-scope.js';
@@ -16,7 +17,6 @@ export function activateWorms(...args) { return current?.active ? current.activa
 function createController(socket, getMe, pushSystem, scope) {
   socket = createGameEvents(socket);
   scope.signal.addEventListener('abort', () => socket.stop(), { once: true });
-  const playingSounds = new Set();
 // ChaOS — Worms FFA — client game module
 // Canvas 2D, vanilla JS, matches the existing games pattern.
 //
@@ -224,9 +224,10 @@ let _clouds      = [];   // [{x,y,scale,speed}]
 let _theme       = 0;    // index into LEVELS array
 
 // Assets — fetched lazily, only once the player opens Worms (see _ensureAssets).
-const _imgs       = Object.create(null);          // name → HTMLImageElement (preloaded)
-const _snds       = Object.create(null);          // name → HTMLAudioElement (preloaded)
-let _assetsStarted = false;                       // _preloadAssets() already kicked off
+const media = createWormsMedia({ levels: LEVELS, randomIndex,
+  isActive: () => scope.active, isMuted: () => _muted });
+const { getImage: _assetImage, ensureAssets: _ensureAssets, playSound: _playSound,
+  playRandomSpeech: _playRandomSpeech, playExplosionSound: _playExplosionSound } = media;
 const _wormCanvas = new Map();   // wormId → {canvas,tctx,frame,color}
 
 // DOM
@@ -265,11 +266,6 @@ function _unlimitedAmmo(count) {
 
 function _levelDef(index) {
   return Number.isInteger(index) && index >= 0 && index < LEVELS.length ? (LEVELS.at(index) ?? LEVELS.at(0)) : LEVELS.at(0);
-}
-
-function _assetImage(name) {
-  if (typeof name !== 'string') return null;
-  return Object.prototype.hasOwnProperty.call(_imgs, name) ? Reflect.get(_imgs, name) : null;
 }
 
 function _activeWormPosition() {
@@ -2979,92 +2975,6 @@ function _renderResults(data) {
   _root.appendChild(wrap);
 }
 
-// ── Audio ──────────────────────────────────────────────────────────────────
-
-// Kick off the sprite/sound preload exactly once. Called from activateWorms():
-// the ~96 worm assets (~3.7 MB) must never be pulled by a plain site load.
-function _ensureAssets() {
-  if (_assetsStarted) return;
-  _assetsStarted = true;
-  _preloadAssets();
-}
-
-function _preloadAssets() {
-  // Images — all worm sprites from original
-  const imgs = [
-    'wselbak','wwalk','wfall','wflyup','wbackflp','wdie','wbrth2','wwinner',
-    'wthrgrn','wthrhgr','wshotp','wmini','wminif','wshotf','wshotg',
-    'wgrnlnk','whgrlnk','wshglnk','wmgnlnk','wdrllnk','wdynlnk','wjetlnk','wbazlnk','wbatlnk',
-    'wbaz','wbataim','wjetbak',
-    'arrowdnb','crshairr',
-    'missile','grenade','hgrenade','dynamite',
-    'cloudl','cloudm','clouds',
-    'water3',
-    'grave1','grave2','grave3','grave4','grave5','grave6',
-  ];
-  for (const n of imgs) {
-    const img = new Image(); img.src = `${WORMS_ASSETS}/images/${n}.png`; Reflect.set(_imgs, n, img);
-  }
-  // Level images (real Worms maps)
-  for (const lvl of LEVELS) {
-    const img = new Image(); img.src = `${WORMS_ASSETS}/images/levels/${lvl.file}.png`; Reflect.set(_imgs, `level_${lvl.file}`, img);
-  }
-  const icons = ['iconbazooka','icongrenade','iconhgrenade','icondynamite','iconminigun','iconshotgun','drill','iconrope','iconjetpack','iconmine','iconblowtorch','iconsheep'];
-  for (const n of icons) {
-    const img = new Image(); img.src = `${WORMS_ASSETS}/images/weaponicons/${n}.png`; Reflect.set(_imgs, n, img);
-  }
-  // Sounds (Audio elements)
-  const snds = ['explosion1','explosion2','explosion3','ShotGunFire','MiniGunFire',
-                 'drill','THROWPOWERUP','THROWRELEASE','ROCKETPOWERUP','WormLanding',
-                 'GRENADEIMPACT','HOLYGRENADEIMPACT','StartRound','fuse',
-                 'JUMP1','WalkExpand','WalkCompress','TIMERTICK','SHOTGUNRELOAD'];
-  for (const n of snds) {
-    const ext = n === 'JUMP1' || n === 'TIMERTICK' ? '.WAV' : '.wav';
-    const a = new Audio(`${WORMS_ASSETS}/sounds/${n}${ext}`); a.preload = 'auto'; Reflect.set(_snds, n, a);
-  }
-  // Speech sounds
-  const speech = ['byebye','fatality','fire','grenade','hurry','incoming',
-                  'justyouwait','laugh','ohdear','ow1','ow2','ow3',
-                  'traitor','victory','watchthis','yessir','youllregretthat'];
-  for (const n of speech) {
-    const a = new Audio(`${WORMS_ASSETS}/sounds/Speech/Irish/${n}.wav`); a.preload = 'auto'; Reflect.set(_snds, `speech_${n}`, a);
-  }
-}
-
-function _playRandomSpeech(type) {
-  const map = {
-    fire:   ['watchthis','fire','incoming','grenade'],
-    ohdear: ['ohdear','ow1','ow2','ow3','youllregretthat'],
-    byebye: ['byebye','fatality','laugh'],
-    yessir: ['yessir'],
-    victory: ['victory'],
-    hurry:  ['hurry'],
-    traitor: ['traitor'],
-  };
-  const list = Object.hasOwn(map, type) ? Reflect.get(map, type) : [];
-  if (!list.length) return;
-  const name = list.at(randomIndex(list.length));
-  _playSound(`speech_${name}`, 0.6);
-}
-
-function _playSound(name, vol = 0.45) {
-  if (!scope.active || _muted) return;
-  const snd = typeof name === 'string' && Object.hasOwn(_snds, name) ? Reflect.get(_snds, name) : null;
-  if (!snd) return;
-  try {
-    const clone = snd.cloneNode(true);
-    clone.volume = vol; playingSounds.add(clone);
-    const release=()=>{playingSounds.delete(clone);clone.removeEventListener('ended',release);clone.removeEventListener('error',release);};
-    clone.addEventListener('ended',release,{once:true}); clone.addEventListener('error',release,{once:true});
-    clone.play().catch(release);
-  } catch { /* ignore */ }
-}
-
-function _playExplosionSound() {
-  const names = ['explosion1', 'explosion2', 'explosion3'];
-  _playSound(names[randomIndex(names.length)]);
-}
-
 // ── Utility ──────────────────────────────────────────────────────────────────
 
 // Rounded rectangle helper (polyfill for older browsers)
@@ -3231,7 +3141,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); for (const a of [...playingSounds,...Object.values(_snds)]) { a.pause(); a.src=''; } _root = null; });
+  scope.cleanup(() => { _stopGame(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
