@@ -9,6 +9,7 @@ Le Worms du site (parties à plusieurs, mises, tickets) : salles, règles et min
 | `client/worms.js`, `client/style.css` | contrôleur du navigateur et style du champ de bataille, servis sous `/games/worms/client/` |
 | `client/worms-media.js` | propriétaire des sprites, sons préchargés et clones audio en lecture ; construction inactive, chargement au premier affichage, arrêt terminal et ressources consultables |
 | `client/worms-terrain.js` | masque de hauteurs serveur, terrain/ciel/eau/nuages, canvas intermédiaire et écouteurs de chargement possédés par manche ; reset réutilisable, stop terminal |
+| `client/worms-sprites.js` | rendu des vers vivants/morts, animations, noms/PV et flèche active ; bitmaps privés, clear réutilisable et stop terminal |
 | `media/` | images (niveaux, armes) et sons, servis sous `/worms-assets/` ; les niveaux sont aussi lus par le serveur |
 
 Le site garde la fenêtre « Worms » (`website/features/worms/`), son entrée légère `website/core/js/games/worms-entry.js` (liste des événements, chargement du contrôleur à l'ouverture ou à l'admission dans une salle) et ses textes (`worms.*` dans les catalogues du site). Le contrôleur importe les modules du site par URL (`/core/js/...`).
@@ -39,4 +40,15 @@ Le noyau passe de 3 149 à 2 950 lignes ; `worms-terrain.js` compte 319 lignes. 
 
 Les formules de ciel, étoiles, nuages, eau, cratères et remplissage sont conservées ; les PNG ne déterminent jamais les collisions. Les 166 fonctions conservées sont syntaxiquement identiques ; seuls quatre raccords de composition/cycle de vie changent. Vingt tests couvrent masque, tracés, graines numériques d’origine et libération ; deux défauts de callback/bitmap ont été reproduits dans les fonctions d’origine avant extraction. Chromium vérifie les pixels réels d’un canvas avec un PNG synthétique, le masque indépendant, les trous et l’eau, puis le changement de manche et l’arrêt. Le banc distingue les interceptions CDP annulées par preuve réseau des erreurs non expliquées.
 
-Le noyau reste au-dessus de 800 lignes. Suite : A9-worms-c, rendu des vers, sprites et libellés ; autres dessins/effets, physique, interface/entrées et événements restent à découper.
+Le noyau reste au-dessus de 800 lignes. Le lot A9-worms-c ci-dessous poursuit le rendu ; les autres dessins/effets, la physique, l’interface/les entrées et les événements restent à découper.
+
+
+## Découpage du client — A9-worms-c (25/10/2026)
+
+Le noyau passe de 2 950 à 2 683 lignes ; `worms-sprites.js` compte 499 lignes. `createWormsSprites` reçoit les lectures d’état/image, le créateur de canvas, l’horloge, le rayon et l’état actif. La construction ne lit ni état ni DOM. `draw` conserve poses locales/distantes, réactions aux impacts, priorités et cadences des animations, orientation/rotation, dessin de secours, noms/PV, flèche active, mort et tombes. Les états physiques, impacts et morts restent possédés par le noyau ; le rendu fait progresser les deux derniers comme auparavant. Les images restent au propriétaire des médias.
+
+Le cache privé tient compte de l’identité de l’image et de la hauteur des frames, en plus du nom/frame et des dimensions cibles. `clear` met chaque bitmap à zéro et invalide les lectures/allocations en cours ; il est raccordé à la nouvelle manche, au changement de tour/ver sélectionné et à la fin de manche. `stop` est terminal. Une allocation interrompue ne peut pas repeupler le cache ; une absence de contexte 2D utilise le dessin de secours.
+
+Trente-deux tests couvrent ces contrats ; les défauts d’image remplacée non repeinte et de bitmap conservé après vidage sont reproduits sur la fonction d’origine. Les 147 fonctions conservées sont syntaxiquement identiques ; seuls cinq raccords changent. Chromium vérifie des pixels natifs avec des sprites synthétiques asymétriques, leur orientation, le remplacement d’image et la libération/reprise/fin du cache. Les trois propriétaires restent différés, hors premier écran. Tests complets du site : 2 918 verts ; qualité, Chromium frontend et budget froid/chaud vérifiés.
+
+Suite : **A9-worms-d, projectiles et effets** ; puis physique, interface/entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes. Aucun lot Worms complet n’est déclaré terminé.

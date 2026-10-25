@@ -1,3 +1,4 @@
+import { createWormsSprites } from './worms-sprites.js';
 import { createWormsTerrain } from './worms-terrain.js';
 import { createWormsMedia } from './worms-media.js';
 import { randomIndex, randomUnit } from '/core/js/secure-random.js';
@@ -231,7 +232,13 @@ const terrainRenderer = createWormsTerrain({
   isActive: () => scope.active,
 });
 const { redraw: _redrawTerrain, drawBackground: _drawWorldBackground } = terrainRenderer;
-const _wormCanvas = new Map();   // wormId → {canvas,tctx,frame,color}
+const wormRenderer = createWormsSprites({
+  getState: () => ({ worms: _worms, activeWormId: _activeWormId,
+    isPhysicsSynced: _wsSynced, physics: _ws, bumps: _wormBumps, dying: _dyingWorms,
+    weaponAnimation: _weaponAnim, aimAngle: _aimAngle }),
+  getImage: _assetImage, isActive: () => scope.active, wormRadius: WORM_R,
+});
+const { draw: _drawWorms } = wormRenderer;
 
 // DOM
 let _container  = null;
@@ -553,6 +560,7 @@ function _renderWaiting(room) {
 // ── Game canvas setup ─────────────────────────────────────────────────────────
 
 function _setupGame(data) {
+  wormRenderer.clear();
   if (_root) _root.dataset.gameMode = 'worms-game';
   _resetGameData(data);
   _terrainMask = terrainRenderer.prepare(data, _roomId);
@@ -825,7 +833,7 @@ function _startRaf() {
 function _stopGame() {
   if (_raf) { scope.cancelFrame(_raf); _raf = null; }
   _unbindGameInput();
-  _wormCanvas.clear();
+  wormRenderer.clear();
   _wormBumps.clear();
   _dyingWorms.clear();
   _weaponAnim = null;
@@ -890,69 +898,6 @@ function _applyScreenShake(ctx, now) {
   if (now >= _shakeUntil) return;
   const mag = 5 * Math.max(0, 1 - (now - (_shakeUntil - 300)) / 300);
   ctx.translate((randomUnit() - 0.5) * mag, (randomUnit() - 0.5) * mag);
-}
-
-function _drawWorms(ctx, now, dt) {
-  for (const w of _worms) {
-    if (!_drawDeadWorm(ctx, w, now)) _drawLiveWorm(ctx, w, now, dt);
-  }
-}
-
-function _drawDeadWorm(ctx, w, now) {
-  if (w.alive) return false;
-  const dying = _dyingWorms.get(w.id);
-  if (dying && _drawDyingWorm(ctx, w, dying, now)) return true;
-  _drawGrave(ctx, w);
-  return true;
-}
-
-function _drawDyingWorm(ctx, w, dying, now) {
-  const dieImg = _assetImage('wdie');
-  if (!(dieImg?.complete && dieImg.naturalWidth > 0)) return false;
-  const DFRAMES = 60, DMS = 5;
-  const dframe = Math.min(DFRAMES - 1, Math.floor((now - dying.startMs) / DMS));
-  const dfh    = Math.floor(dieImg.naturalHeight / DFRAMES);
-  const dsc    = (WORM_R * 1.9) / dieImg.naturalWidth;
-  const ddW    = Math.ceil(dieImg.naturalWidth * dsc);
-  const ddH    = Math.ceil(dfh * dsc);
-  ctx.save();
-  if (w._facing < 0) { ctx.translate(w.cx, w.cy); ctx.scale(-1,1); ctx.translate(-w.cx,-w.cy); }
-  ctx.drawImage(dieImg, 0, dframe * dfh, dieImg.naturalWidth, dfh, w.cx - ddW/2, w.cy - ddH, ddW, ddH);
-  ctx.restore();
-  if (now - dying.startMs > DFRAMES * DMS + 500) _dyingWorms.delete(w.id);
-  return true;
-}
-
-function _drawLiveWorm(ctx, w, now, dt) {
-  const pose = _wormDrawPose(w, dt);
-  _drawWormChar(ctx, { ...w, cx: pose.cx, cy: pose.cy }, pose.facing, pose.active, pose.falling, pose.walking, pose.backflipAngle, pose.jumping, now);
-  if (pose.active) _drawBounceArrow(ctx, pose.cx, pose.cy, now);
-}
-
-function _wormDrawPose(w, dt) {
-  const active = w.id === _activeWormId;
-  const synced = active && _wsSynced;
-  const bump = _wormBumps.get(w.id);
-  let cx = synced ? _ws.cx : w.cx;
-  let cy = synced ? _ws.cy : w.cy;
-  if (bump) {
-    bump.vx *= Math.exp(-4 * dt);
-    bump.vy += 350 * dt;
-    bump.dx += bump.vx * dt;
-    bump.dy += bump.vy * dt;
-    if (bump.vy > 0 && Math.abs(bump.dx) < 1 && bump.dy > 0) _wormBumps.delete(w.id);
-    else { cx += bump.dx; cy += bump.dy; }
-  }
-  return {
-    active,
-    cx,
-    cy,
-    facing: synced ? _ws.facing : (w._facing ?? 1),
-    falling: synced && !_ws.onGround && _ws.vy > 80,
-    jumping: synced && !_ws.onGround && _ws.vy < 0,
-    walking: synced && _ws.walking,
-    backflipAngle: synced ? _ws.backflipAngle : 0,
-  };
 }
 
 function _drawRope(ctx) {
@@ -1340,169 +1285,7 @@ function _updateTimerDisplay() {
   _timerEl.textContent = `⏱ ${String(s).padStart(2, '0')}s`;
   _timerEl.style.color = s <= 5 ? '#ff2222' : s <= 8 ? '#ff8844' : '#ffcc00';
 }
-function _drawWormChar(ctx, w, facing, isActive, isFalling = false, isWalking = false, backflipAngle = 0, isJumping = false, now = 0) {
-  const anim = _wormSpriteAnim(isActive, isFalling, isWalking, backflipAngle, isJumping, w.hp);
-  const drawn = _drawWormSprite(ctx, w, facing, isActive, isFalling, backflipAngle, anim, now);
-  if (!drawn) _drawProceduralWorm(ctx, w, facing, isActive);
-  _drawWormNameHp(ctx, w, isActive);
-}
 
-function _wormSpriteAnim(isActive, isFalling, isWalking, backflipAngle, isJumping, hp) {
-  if (backflipAngle !== 0) return { key: 'wbackflp', frames: 22, ms: 50, frameY: 0 };
-  if (isJumping) return { key: 'wflyup', frames: 2, ms: 100, frameY: 0 };
-  if (isFalling) return { key: 'wfall', frames: 2, ms: 100, frameY: 0 };
-  if (isWalking) return { key: 'wwalk', frames: 15, ms: 50, frameY: 0 };
-  if (isActive && _weaponAnim) {
-    return { key: _weaponAnim.img, frames: _weaponAnim.frames, ms: _weaponAnim.ms, frameY: _weaponAnim.frameY ?? 0 };
-  }
-  if (hp < 30) return { key: 'wbrth2', frames: 13, ms: 150, frameY: 0 };
-  return { key: 'wselbak', frames: 12, ms: 200, frameY: 0 };
-}
-
-function _drawWormSprite(ctx, w, facing, isActive, isFalling, backflipAngle, anim, now) {
-  const img = _assetImage(anim.key) || _assetImage('wselbak');
-  if (!(img?.complete && img.naturalWidth > 0)) return false;
-  const frame = _wormSpriteFrame(anim, isActive, now);
-  const frameH = Math.floor(img.naturalHeight / anim.frames);
-  const tgtH = WORM_R * 2 + 2;  // 22px — consistent worm body height for all sprites
-  const sc   = tgtH / frameH;
-  const dW   = Math.ceil(img.naturalWidth * sc);
-  const dH   = tgtH;
-  const entry = _wormSpriteCacheEntry(w.id, img, anim.key, frame, frameH, dW, dH);
-  _paintWormSprite(ctx, w, facing, isActive, isFalling, backflipAngle, entry, dW, dH);
-  return true;
-}
-
-function _wormSpriteFrame(anim, isActive, now) {
-  const t = now || Date.now();
-  const phase = isActive && _weaponAnim ? _weaponAnim.phase : null;
-  if (phase === 'aim') {
-    // Map aim angle to sprite frame: -π/2 (up) → last frame, +π/2 (down) → frame 0
-    return Math.max(0, Math.min(anim.frames - 1,
-      Math.round((-_aimAngle + Math.PI / 2) / Math.PI * (anim.frames - 1))
-    ));
-  }
-  if (anim.frames > 1 && isActive) return Math.floor(t / anim.ms) % anim.frames;
-  return 0;
-}
-
-function _wormSpriteCacheEntry(wormId, img, spriteKey, frame, frameH, dW, dH) {
-  const cacheKey = `${spriteKey}:${frame}`;
-  let entry = _wormCanvas.get(wormId);
-  if (!entry) {
-    const tc = document.createElement('canvas');
-    tc.width = dW; tc.height = dH;
-    entry = { canvas: tc, tctx: tc.getContext('2d'), cacheKey: '', dW: 0, dH: 0 };
-    _wormCanvas.set(wormId, entry);
-  }
-  if (entry.cacheKey === cacheKey && entry.dW === dW && entry.dH === dH) return entry;
-  if (entry.canvas.width !== dW || entry.canvas.height !== dH) {
-    entry.canvas.width = dW; entry.canvas.height = dH;
-  }
-  const tc = entry.tctx;
-  tc.clearRect(0, 0, dW, dH);
-  tc.drawImage(img, 0, frame * frameH, img.naturalWidth, frameH, 0, 0, dW, dH);
-  entry.cacheKey = cacheKey; entry.dW = dW; entry.dH = dH;
-  return entry;
-}
-
-function _paintWormSprite(ctx, w, facing, isActive, isFalling, backflipAngle, entry, dW, dH) {
-  ctx.save();
-  ctx.translate(w.cx, w.cy);
-  if (backflipAngle !== 0) ctx.rotate(backflipAngle);
-  if (isActive) { ctx.shadowBlur = 14; ctx.shadowColor = '#fff'; }
-  else          { ctx.shadowBlur =  5; ctx.shadowColor = w.color ?? '#44cc44'; }
-  ctx.scale(-facing, 1);  // wselbak / most sprites face left — flip to match facing
-  if (!backflipAngle && isFalling) ctx.rotate(facing * 0.38);
-  ctx.drawImage(entry.canvas, -dW / 2, WORM_R - dH);
-  ctx.restore();
-}
-
-function _drawProceduralWorm(ctx, w, facing, isActive) {
-  const { cx, cy, color } = w;
-  ctx.save();
-  ctx.translate(cx, cy);
-  if (isActive) { ctx.shadowBlur = 12; ctx.shadowColor = '#ffffff'; }
-  ctx.save();
-  ctx.scale(facing, 1);
-  ctx.beginPath(); ctx.ellipse(0, 3, 6.5, 9, 0, 0, Math.PI * 2);
-  ctx.fillStyle = color ?? '#44cc44'; ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.65)'; ctx.lineWidth = 1.8; ctx.stroke();
-  for (let sy = -2; sy <= 8; sy += 4) {
-    ctx.beginPath(); ctx.ellipse(0, sy, 5.5, 1.2, 0, Math.PI * 0.05, Math.PI * 0.95);
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
-  }
-  ctx.beginPath(); ctx.arc(1, -7, 7.5, 0, Math.PI * 2);
-  ctx.fillStyle = color ?? '#44cc44'; ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.65)'; ctx.lineWidth = 1.8; ctx.stroke();
-  ctx.beginPath(); ctx.arc(5, -8, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
-  ctx.beginPath(); ctx.arc(5.8, -8, 2.2, 0, Math.PI * 2); ctx.fillStyle = '#1166cc'; ctx.fill();
-  ctx.beginPath(); ctx.arc(6.2, -8, 1.1, 0, Math.PI * 2); ctx.fillStyle = '#000'; ctx.fill();
-  ctx.beginPath(); ctx.arc(5.5, -9, 0.8, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fill();
-  ctx.beginPath(); ctx.moveTo(2, -13.5); ctx.quadraticCurveTo(5, -14.5, 9, -12.5);
-  ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.lineWidth = 1.8; ctx.stroke();
-  ctx.beginPath(); ctx.arc(4, -4.5, 2, 0.2, Math.PI - 0.2);
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1.2; ctx.stroke();
-  ctx.fillStyle = '#1a1a2a'; ctx.strokeStyle = '#000'; ctx.lineWidth = 0.7;
-  ctx.beginPath(); ctx.ellipse(1, -16, 7.5, 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.rect(-3.5, -26, 9, 11); ctx.fillStyle = '#1a1a2a'; ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#cc2222'; ctx.fillRect(-3.5, -17, 9, 2.5);
-  ctx.restore();
-  ctx.restore();
-}
-
-function _drawWormNameHp(ctx, w, isActive) {
-  const { cx, cy, name, hp } = w;
-  ctx.save();
-  ctx.translate(cx, cy);
-  _drawWormHpBar(ctx, hp);
-  if (isActive) _drawActiveWormLabel(ctx, name, hp);
-  else _drawInactiveWormLabel(ctx, name);
-  ctx.restore();
-}
-
-function _drawWormHpBar(ctx, hp) {
-  const hpFrac = hp / 80;
-  const bW = 26, bH = 5;
-  const bx = -bW / 2, by = -22;
-  ctx.fillStyle = '#000';
-  ctx.fillRect(bx - 1, by - 1, bW + 2, bH + 2);
-  ctx.fillStyle = hpFrac > 0.5 ? '#22dd22' : hpFrac > 0.25 ? '#ffcc00' : '#ff2222';
-  ctx.fillRect(bx, by, bW * hpFrac, bH);
-}
-
-function _drawActiveWormLabel(ctx, name, hp) {
-  const bH = 5, by = -22;
-  ctx.shadowBlur  = 0;
-  ctx.font        = 'bold 9px monospace';
-  ctx.fillStyle   = '#fff';
-  ctx.textAlign   = 'center';
-  ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-  ctx.lineWidth   = 2.5;
-  ctx.strokeText(name ?? '?', 0, by - 3);
-  ctx.fillText(name ?? '?', 0, by - 3);
-  ctx.font      = 'bold 8px monospace';
-  ctx.fillStyle = '#fff';
-  ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-  ctx.lineWidth = 1.5;
-  const hpTxt = `${hp}`;
-  ctx.strokeText(hpTxt, 0, by + bH - 0.5);
-  ctx.fillText(hpTxt, 0, by + bH - 0.5);
-  ctx.textAlign = 'left';
-}
-
-function _drawInactiveWormLabel(ctx, name) {
-  const by = -22;
-  ctx.shadowBlur  = 0;
-  ctx.font        = '8px monospace';
-  ctx.fillStyle   = 'rgba(220,220,220,0.8)';
-  ctx.textAlign   = 'center';
-  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-  ctx.lineWidth   = 2;
-  ctx.strokeText(name ?? '?', 0, by - 2);
-  ctx.fillText(name ?? '?', 0, by - 2);
-  ctx.textAlign = 'left';
-}
 function _drawAimCrosshair(ctx, now) {
   const aw = _worms.find(w => w.id === _activeWormId);
   if (!aw) return;
@@ -1536,32 +1319,6 @@ function _drawAimCrosshair(ctx, now) {
     ctx.arc(tx, ty, 4, 0, Math.PI * 2);
     ctx.fillStyle = _weaponDef(_selectedWeapon)?.color ?? '#ff7700';
     ctx.fill();
-  }
-}
-
-// Bounce arrow above worm (arrowdnb — 30 frames, 10ms)
-function _drawBounceArrow(ctx, cx, cy, now) {
-  const img = _assetImage('arrowdnb');
-  if (img?.complete && img.naturalWidth > 0) {
-    const AF = 30, AMS = 10;
-    const af  = Math.floor(now / AMS) % AF;
-    const afh = Math.floor(img.naturalHeight / AF);
-    const asc = 20 / Math.max(img.naturalWidth, 1);
-    const aw2 = img.naturalWidth * asc, ah2 = afh * asc;
-    ctx.drawImage(img, 0, af * afh, img.naturalWidth, afh, cx - aw2/2, cy - WORM_R - ah2 - 28, aw2, ah2);
-  } else {
-    // Procedural arrow fallback
-    const bob = Math.sin(now / 200) * 3;
-    const ay  = cy - WORM_R - 26 + bob;
-    ctx.save();
-    ctx.fillStyle = '#ffff00';
-    ctx.beginPath();
-    ctx.moveTo(cx, ay + 10);
-    ctx.lineTo(cx - 6, ay);
-    ctx.lineTo(cx + 6, ay);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
   }
 }
 
@@ -2399,7 +2156,7 @@ function _applyNextTurn(turn) {
   _updateTurnAmmo(turn);
   if (turn.worms) _applyWormStates(turn.worms);
   _showTurnAnnouncement(turn);
-  _wormCanvas.clear(); // clear sprite cache so new weapon anim picks correct img
+  wormRenderer.clear(); // clear sprite cache so new weapon anim picks correct img
   _initWsTurn();
   _updateHUD();
   if (_myTurn()) _playRandomSpeech('yessir');
@@ -2692,7 +2449,7 @@ function _bindSocketEvents() {
   _socket.on('worms:worm_selected', ({ activeWormId }) => {
     if (_state !== 'game') return;
     _activeWormId = activeWormId;
-    _wormCanvas.clear();
+    wormRenderer.clear();
     _initWsTurn();
     _updateHUD();
   });
@@ -2882,30 +2639,6 @@ function _drawCrate(ctx, cx, cy, type, weapon, falling, now) {
   ctx.restore();
 }
 
-// Draw grave sprite for a dead worm
-function _drawGrave(ctx, w) {
-  const { cx, cy } = w;
-  const graveKeys = ['grave1','grave2','grave3','grave4','grave5','grave6'];
-  const idx = w.id ? (w.id.charCodeAt(0) % 6) : 0;
-  const img = _assetImage(graveKeys.at(idx));
-  if (img?.complete && img.naturalWidth > 0) {
-    // Graves are sprite sheets: 20 frames stacked vertically
-    // Show the last frame (fully revealed gravestone)
-    const GRAVE_FRAMES = 20;
-    const frameH = Math.floor(img.naturalHeight / GRAVE_FRAMES);
-    const lastFrameY = (GRAVE_FRAMES - 1) * frameH;
-    const targetH = 34;
-    const scale   = targetH / Math.max(frameH, 1);
-    const gw = Math.ceil(img.naturalWidth * scale);
-    const gh = Math.ceil(frameH * scale);
-    ctx.drawImage(img, 0, lastFrameY, img.naturalWidth, frameH, cx - gw / 2, cy - gh, gw, gh);
-  } else {
-    ctx.fillStyle = '#888';
-    ctx.fillRect(cx - 2, cy - 20, 4, 16);
-    ctx.fillRect(cx - 8, cy - 15, 16, 4);
-  }
-}
-
 // Spawn debris particles at an explosion origin
 function _spawnParticles(cx, cy, n) {
   for (let i = 0; i < n; i++) {
@@ -2942,7 +2675,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
