@@ -1,3 +1,4 @@
+import { createWormsEvents } from './worms-events.js';
 import { createWormsActions } from './worms-actions.js';
 import { createWormsInput } from './worms-input.js';
 import { createWormsMenuView } from './worms-menu-view.js';
@@ -181,7 +182,6 @@ let _retreatEnd   = 0;
 let _round        = 0;
 let _suddenDeath  = false;
 let _waterLevel   = WATER_Y;
-let _fuseInterval = null;
 let _grenadefuse  = 3;     // grenade fuse in seconds (1–5), selectable with number keys
 let _muted        = false; // global sound mute
 let _fuseEl       = null;  // DOM span: fuse timer indicator
@@ -338,6 +338,69 @@ const gameView = createWormsGameView({
   width: WORLD_W, height: WORLD_H, assetsBase: WORMS_ASSETS,
 });
 
+const events = createWormsEvents({
+  socket, getState: () => ({
+    openRooms: _openRooms,
+    liveRooms: _liveRooms,
+    get mode() { return _state; }, set mode(value) { _state = value; },
+    get roomId() { return _roomId; }, set roomId(value) { _roomId = value; },
+    get isSpectateMode() { return _spectateMode; }, set isSpectateMode(value) { _spectateMode = value; },
+    get myUserId() { return _myUserId; }, set myUserId(value) { _myUserId = value; },
+    get lastBet() { return _lastBet; }, set lastBet(value) { _lastBet = value; },
+    get worms() { return _worms; }, set worms(value) { _worms = value; },
+    get players() { return _players; }, set players(value) { _players = value; },
+    get isAnimating() { return _animating; }, set isAnimating(value) { _animating = value; },
+    get chargeStart() { return _chargeStart; }, set chargeStart(value) { _chargeStart = value; },
+    get ammo() { return _ammo; }, set ammo(value) { _ammo = value; },
+    get projectiles() { return _projectiles; }, set projectiles(value) { _projectiles = value; },
+    get selectedWeapon() { return _selectedWeapon; }, set selectedWeapon(value) { _selectedWeapon = value; },
+    get activeWormId() { return _activeWormId; }, set activeWormId(value) { _activeWormId = value; },
+    get dynamites() { return _dynamites; }, set dynamites(value) { _dynamites = value; },
+    get mines() { return _mines; }, set mines(value) { _mines = value; },
+    wormBumps: _wormBumps,
+    get pendingNextTurn() { return _pendingNextTurn; }, set pendingNextTurn(value) { _pendingNextTurn = value; },
+    get isRetreating() { return _retreating; }, set isRetreating(value) { _retreating = value; },
+    get retreatEnd() { return _retreatEnd; }, set retreatEnd(value) { _retreatEnd = value; },
+    get hasShotFired() { return _shotFired; }, set hasShotFired(value) { _shotFired = value; },
+    get hasMovementToolUsed() { return _movementToolUsed; }, set hasMovementToolUsed(value) { _movementToolUsed = value; },
+    get rope() { return _rope; }, set rope(value) { _rope = value; },
+    get isJetpackActive() { return _jetpackActive; }, set isJetpackActive(value) { _jetpackActive = value; },
+    get crates() { return _crates; }, set crates(value) { _crates = value; },
+    get hasRoot() { return !!_root; },
+    get hasExit() { return !!_onExit; },
+  }),
+  services: {
+    noteRoomOpen: _noteRoomOpen,
+    noteRoomClosed: _noteRoomClosed,
+    upsertRoom: _upsertRoom,
+    enterWaitingRoom: _enterWaitingRoom,
+    renderLobby: _renderLobby,
+    renderWaiting: _renderWaiting,
+    setupGame: _setupGame,
+    stopGame: _stopGame,
+    renderResults: _renderResults,
+    exit: _exit,
+    updateWeaponBtns: _updateWeaponBtns,
+    playSound: _playSound,
+    playRandomSpeech: _playRandomSpeech,
+    applyTerrainHoles: _applyTerrainHoles,
+    playHoleExplosions: _playHoleExplosions,
+    spawnParticles: _spawnParticles,
+    bumpDamagedWorms: _bumpDamagedWorms,
+    applyWormStates: _applyWormStates,
+    addDamageLabels: _addDamageLabels,
+    updateHealthBar: _updateHealthBar,
+    applyNextTurn: _applyNextTurn,
+    weaponLabel: _weaponLabel,
+    updateHUD: _updateHUD,
+    initWsTurn: _initWsTurn,
+    notify: message => _pushSys?.(message), onExit: () => _onExit?.(),
+    clearSprites: () => wormRenderer.clear(), markRematchWaiting: () => menuView.markRematchWaiting(),
+  },
+  translate: t, fuseWeapons: FUSE_SOUND_WEAPONS, isActive: () => scope.active,
+  timers: { setTimeout: scope.timeout, clearTimeout: scope.clearTimeout, setInterval: scope.interval, clearInterval: scope.clearInterval },
+});
+
 // DOM
 let _canvas     = null;
 let _ctx        = null;
@@ -491,6 +554,7 @@ function _setupGame(data) {
 }
 
 function _resetGameData(data) {
+  events.reset();
   actions.reset();
   turnAnimations.reset();
   wormPhysics.reset();
@@ -580,6 +644,7 @@ function _startRaf() {
 }
 
 function _stopGame() {
+  events.reset();
   actions.reset();
   wormPhysics.reset();
   overlaysRenderer.reset();
@@ -598,7 +663,6 @@ function _stopGame() {
   terrainRenderer.reset();
   _crates = [];
   hud.reset();
-  if (_fuseInterval) { scope.clearInterval(_fuseInterval); _fuseInterval = null; }
   _rope          = null;
   _jetpackActive = false;
   _jetpackFuel   = 0;
@@ -775,33 +839,6 @@ function _addDamageLabels(wormDamages) {
   }
 }
 
-function _showResultsAfter(data, delayMs = 900) {
-  scope.timeout(() => {
-    _stopGame();
-    _state = 'results';
-    if (_root) _renderResults({ winner: data.winner, draw: !data.winner, payout: 0 });
-  }, delayMs);
-}
-
-// ── Apply delayed explosion (dynamite detonation or mine trigger) ─────────────
-function _applyDelayedExplosion(data) {
-  // data: { weapon, newHoles, wormDamages, worms, gameOver, winner, cx?, cy? }
-  const holes = _applyTerrainHoles(data.newHoles);
-
-  if (_fuseInterval) { scope.clearInterval(_fuseInterval); _fuseInterval = null; }
-
-  _playHoleExplosions(holes, 16, 400);
-  _bumpDamagedWorms(data.wormDamages, holes);
-
-  scope.timeout(() => {
-    _applyWormStates(data.worms);
-    _addDamageLabels(data.wormDamages);
-    _updateHealthBar();
-    _wormBumps.clear();
-    if (data.gameOver) _showResultsAfter(data);
-  }, 560);
-}
-
 // ── Apply next turn ───────────────────────────────────────────────────────────
 function _applyNextTurn(turn) {
   _resetTurnState(turn);
@@ -853,297 +890,7 @@ function _updateTurnAmmo({ currentTurn, ammo }) {
 }
 
 // ── Socket events ─────────────────────────────────────────────────────────────
-function _bindSocketEvents() {
-  _socket.on('worms:rooms', ({ rooms, liveRooms }) => {
-    _openRooms.length = 0; _openRooms.push(...rooms);
-    _liveRooms.length = 0; _liveRooms.push(...liveRooms);
-    if (_state === 'lobby') _renderLobby();
-  });
-
-  _socket.on('worms:open', (room) => _noteRoomOpen(_openRooms, room));
-
-  _socket.on('worms:closed', ({ roomId }) => {
-    _noteRoomClosed(_openRooms, roomId);
-    if (_roomId === roomId && _state === 'waiting') {
-      _pushSys?.(t('games.worms.roomCancelled'));
-      _state = 'lobby';
-      _roomId = null;
-      _socket.emit('worms:rooms_request');
-      if (_root) _renderLobby();
-    }
-  });
-
-  _socket.on('worms:live_open', (room) => _noteRoomOpen(_liveRooms, room));
-
-  _socket.on('worms:live_closed', ({ roomId }) => {
-    _noteRoomClosed(_liveRooms, roomId);
-    // Force-exit spectate if the room we were watching closed
-    if (_spectateMode && _roomId === roomId) {
-      _spectateMode = false; _state = 'idle'; _roomId = null;
-      _stopGame();
-      if (_onExit) _onExit();
-    }
-  });
-
-  // Spectate: receive full game snapshot and render read-only game view
-  _socket.on('worms:spectate_start', (data) => {
-    if (!_spectateMode || !_root) return;
-    _roomId = data.roomId ?? _roomId;
-    _state  = 'game';
-    _myUserId = null; // never our turn
-    _setupGame(data);
-  });
-
-  _socket.on('worms:lobby_update', (room) => {
-    _upsertRoom(_openRooms, room);
-    if (_state === 'waiting' && _roomId === room.id) _renderWaiting(room);
-    else if (_state === 'lobby') _renderLobby();
-  });
-
-  ['worms:created', 'worms:joined'].forEach(eventName => {
-    _socket.on(eventName, ({ roomId, room }) => _enterWaitingRoom(roomId, room));
-  });
-
-  _socket.on('worms:start', (data) => {
-    if (!_root) return;
-    _lastBet = data.bet ?? _lastBet;
-    _state = 'game';
-    _setupGame(data);
-  });
-
-  _socket.on('worms:pos_update', ({ wormId, cx, cy }) => {
-    if (_state !== 'game') return;
-    const w = _worms.find(w => w.id === wormId);
-    // Update any worm that's not the local player's (includes spectate where _myUserId = null)
-    if (w) { w.cx = cx; w.cy = cy; }
-  });
-
-  _socket.on('worms:fire_result', (data) => {
-    if (_state !== 'game') return;
-    _animating   = true;
-    // NOTE: do NOT reset _shotFired here — keep it true until _applyNextTurn
-    // to prevent the player from firing a second shot in the 2600ms window
-    _chargeStart = null;
-    if (data.playerId === _myUserId && data.ammo) {
-      _ammo = { ...data.ammo };
-      _updateWeaponBtns();
-    }
-
-    // Fuse sound for thrown grenades
-    if (FUSE_SOUND_WEAPONS.has(data.weapon)) {
-      _playSound('fuse', 0.5);
-      if (_fuseInterval) scope.clearInterval(_fuseInterval);
-      _fuseInterval = scope.interval(() => _playSound('fuse', 0.5), 900);
-    }
-
-    // Start projectile animations — terrain stays intact until impact
-    const _projStartMs = performance.now();
-    _projectiles = (data.trajectories ?? []).map(traj => ({
-      trajectory: traj, idx: 0, done: false, weapon: data.weapon ?? _selectedWeapon,
-      startMs: _projStartMs,
-      fuseMs:  data.fuseMs ?? null,
-    }));
-
-    // Calculate how long projecting takes
-    // Minimum 500ms so even short-trajectory shots show the explosion
-    const maxLen = Math.max(1, ...(_projectiles.map(p => p.trajectory.length)));
-    // At PROJ_PTS_PER_SEC=20, animation takes maxLen/20 seconds. Add 200ms buffer.
-    const projMs = Math.max(500, Math.ceil(maxLen * 1000 / 20) + 200);
-
-    scope.timeout(() => {
-      // Apply terrain holes at impact moment (synchronized with explosion FX)
-      const impactHoles = _applyTerrainHoles(data.newHoles);
-
-      // Stop fuse sound
-      if (_fuseInterval) { scope.clearInterval(_fuseInterval); _fuseInterval = null; }
-
-      // Explosions at impact points (skip for planted / teleport)
-      if (_playHoleExplosions(impactHoles, 14, 320)) {
-        // Explosion handled by shared VFX helper.
-      } else if (data.teleported) {
-        // Small teleport pop FX at landing position
-        const lw = _worms.find(w => w.id === _activeWormId);
-        if (lw) _spawnParticles(data.cx ?? lw.cx, data.cy ?? lw.cy, 7);
-        _playSound('TELEPORT', 0.5);
-      } else if (data.planted) {
-        // Placement sound
-        _playSound('PLACE', 0.4);
-        // Store dynamite/mine client-side
-        if (data.planted && data.weapon === 'dynamite' && data.dynId) {
-          // placedAt derived from server fuseStarted so countdown stays in sync across clients
-          const elapsedMs = data.fuseStarted ? (Date.now() - data.fuseStarted) : 0;
-          _dynamites.push({ id: data.dynId, cx: data.cx, cy: data.cy, fuseMs: data.fuseMs ?? 5000,
-            placedAt: performance.now() - elapsedMs });
-        }
-        if (data.planted && data.weapon === 'land_mine' && data.mineId) {
-          _mines.push({ id: data.mineId, cx: data.cx, cy: data.cy });
-        }
-      }
-
-      // ── Visual hit-reaction: push damaged worms away from nearest explosion
-      _bumpDamagedWorms(data.wormDamages, impactHoles, { bat: data.weapon === 'bat' });
-
-      scope.timeout(() => {
-        // Apply worm states and damage labels
-        _applyWormStates(data.worms, { teleported: data.teleported });
-        _addDamageLabels(data.wormDamages);
-        _updateHealthBar();
-        _projectiles = [];
-        _wormBumps.clear();  // snap to final server positions
-        _animating   = false;
-
-        if (data.gameOver) {
-          _showResultsAfter(data);
-        } else if (_pendingNextTurn) {
-          _applyNextTurn(_pendingNextTurn);
-          _pendingNextTurn = null;
-        }
-      }, 560);
-    }, projMs);
-  });
-
-  _socket.on('worms:tool_used', ({ playerId, ammo }) => {
-    if (_state !== 'game' || playerId !== _myUserId || !ammo) return;
-    _ammo = { ...ammo };
-    _updateWeaponBtns();
-  });
-
-  _socket.on('worms:drowned', (data) => {
-    if (_state !== 'game') return;
-    _applyWormStates(data.worms);
-    _addDamageLabels(data.wormDamages);
-    _updateHealthBar();
-    _playRandomSpeech('byebye');
-  });
-
-  _socket.on('worms:next_turn', (data) => {
-    if (_state !== 'game') return;
-    if (_animating) {
-      _pendingNextTurn = data;
-    } else {
-      _applyNextTurn(data);
-    }
-  });
-
-  _socket.on('worms:delayed_explosion', (data) => {
-    if (_state !== 'game') return;
-    // Remove from local lists
-    if (data.weapon === 'dynamite' && data.dynId) {
-      _dynamites = _dynamites.filter(d => d.id !== data.dynId);
-    }
-    if (data.weapon === 'land_mine' && data.mineId) {
-      _mines = _mines.filter(m => m.id !== data.mineId);
-    }
-    _applyDelayedExplosion(data);
-  });
-
-  _socket.on('worms:game_over', (data) => {
-    if (_state !== 'game' && _state !== 'results') return;
-    if (_spectateMode) {
-      const winner = data.winner?.pseudo;
-      _spectateMode = false; _state = 'idle'; _roomId = null;
-      _stopGame();
-      if (_onExit) _onExit();
-      if (winner) _pushSys?.(t('games.worms.spectatorWinner', { player: winner }));
-      return;
-    }
-    _stopGame();
-    _state = 'results';
-    if (_root) _renderResults(data);
-  });
-
-  _socket.on('worms:rematch_waiting', ({ roomId }) => {
-    if (_roomId !== roomId) return;
-    menuView.markRematchWaiting();
-  });
-
-  _socket.on('worms:rematch_lobby', ({ roomId, room }) => {
-    _roomId = roomId;
-    _lastBet = room?.bet ?? _lastBet;
-    _state = 'waiting';
-    _renderWaiting(room);
-  });
-
-  _socket.on('worms:post_exit', ({ roomId, reason }) => {
-    if (_roomId && roomId !== _roomId) return;
-    if (reason === 'insufficient_balance') _pushSys?.(t('games.worms.rematchInsufficientBalance'));
-    _exit();
-  });
-
-  _socket.on('worms:forfeit_player', ({ userId, pseudo }) => {
-    if (_state !== 'game') return;
-    const p = _players.find(p => p.userId === userId);
-    _pushSys?.(t('games.worms.playerForfeited', { player: p?.pseudo ?? pseudo }));
-  });
-
-  _socket.on('worms:retreat', ({ retreatMs }) => {
-    if (_state !== 'game') return;
-    _retreating = true;
-    _retreatEnd = Date.now() + (retreatMs ?? 5000);
-    // Allow movement but no firing during retreat
-    _shotFired = true;
-  });
-
-  _socket.on('worms:worm_selected', ({ activeWormId }) => {
-    if (_state !== 'game') return;
-    _activeWormId = activeWormId;
-    wormRenderer.clear();
-    _initWsTurn();
-    _updateHUD();
-  });
-
-  _socket.on('worms:crate_spawn', ({ crate }) => {
-    if (_state !== 'game' || !crate) return;
-    // Crate starts at top of screen and falls down to its landing y
-    _crates.push({ ...crate, landed: false, fallingCy: -30 });
-    _playSound('CrateOpen', 0.4);
-  });
-
-  _socket.on('worms:crate_collected', ({ crateId, type, weapon, wormId, hp, ammo }) => {
-    if (_state !== 'game') return;
-    _crates = _crates.filter(c => c.id !== crateId);
-    const worm = _worms.find(w => w.id === wormId);
-    if (worm && hp !== undefined) worm.hp = hp;
-    // Apply updated ammo if this worm belongs to us
-    if (ammo && wormId === _activeWormId) {
-      _ammo = ammo;
-      _updateWeaponBtns();
-    }
-    if (type === 'health') {
-      _pushSys?.(t('games.worms.healthPickup', { worm: worm?.name ?? '?' }));
-      if (wormId === _activeWormId) _playRandomSpeech('yessir');
-    } else if (weapon) {
-      _pushSys?.(t('games.worms.weaponPickup', { worm: worm?.name ?? '?', weapon: _weaponLabel(weapon) }));
-      if (wormId === _activeWormId) _playRandomSpeech('yessir');
-    }
-    _updateHealthBar();
-  });
-
-  _socket.on('worms:error', ({ error }) => {
-    const msgs = {
-      insufficient_balance: t('games.worms.error.insufficientBalance'),
-      already_in_room:      t('games.worms.error.alreadyInRoom'),
-      not_found:            t('games.worms.error.notFound'),
-      room_full:            t('games.worms.error.roomFull'),
-      already_started:      t('games.worms.error.alreadyStarted'),
-      not_your_turn:        t('games.worms.error.notYourTurn'),
-      need_more_players:    t('games.worms.error.needMorePlayers'),
-      no_ammo:              t('games.worms.error.noAmmo'),
-      invalid_target:       t('games.worms.error.invalidTarget'),
-      invalid_angle:        t('games.worms.error.invalidAngle'),
-      action_taken:         t('games.worms.error.actionTaken'),
-    };
-    if (['no_ammo', 'invalid_target', 'invalid_angle'].includes(error)) {
-      _shotFired = false;
-      _movementToolUsed = false;
-      _rope = null;
-      _jetpackActive = false;
-      _chargeStart = null;
-      _updateHUD();
-    }
-    _pushSys?.(Object.hasOwn(msgs, error) ? Reflect.get(msgs, error) : `❌ Worms: ${t('games.unknownError')}`);
-  });
-}
+function _bindSocketEvents() { events.bind(); }
 
 // ── Results screen ────────────────────────────────────────────────────────────
 function _renderResults(data) { if (_root) menuView.mount(_root, 'results', data); }
@@ -1169,7 +916,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); actions.stop(); menuView.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); actions.stop(); events.stop(); menuView.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { gameInput.release(); }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });

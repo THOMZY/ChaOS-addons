@@ -18,10 +18,10 @@ class Socket {
 }
 
 test('the site inventory of Worms events covers every socket registration of the controller', async () => {
-  const source = await readFile(CLIENT, 'utf8');
-  const events = [...source.matchAll(/(?:_socket|socket)\.on\('([^']+)'/g)].map((match) => match[1]);
+  const source = await readFile(new URL('../client/worms-events.js', import.meta.url), 'utf8');
+  const events = [...source.matchAll(/listen\('([^']+)'/g)].map((match) => match[1]);
   events.push('worms:created', 'worms:joined');
-  for (const event of events) assert.ok(WORMS_EVENTS.includes(event), event);
+  assert.deepEqual([...new Set(events)].sort(), [...WORMS_EVENTS].sort());
   assert.equal(new Set(WORMS_EVENTS).size, WORMS_EVENTS.length);
 });
 
