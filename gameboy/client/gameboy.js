@@ -117,7 +117,10 @@ function create(host) {
     canControl = false,
     libraryWindow = null;
   const listen = (target, type, callback, options = {}) =>
-    target.addEventListener(type, callback, { ...options, signal: scope.signal });
+    target.addEventListener(type, callback, {
+      ...options,
+      signal: scope.signal,
+    });
   const observe = (Observer, target, options, callback) => {
     const observer = new Observer(callback);
     observer.observe(target, options);

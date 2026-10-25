@@ -58,3 +58,8 @@ npm run test:gameboy:browser
 ```
 
 Les tests couvrent l’authentification, la révocation, les uploads, les chemins, le remplacement d’une ROM, les callbacks tardifs, le codec et les téléchargements de jaquettes. Le vrai cœur démarre trois ROM de diagnostic écrites pour les tests (GB/GBC/GBA), produit images et audio, ferme puis rouvre les cartouches sans utiliser les jeux du développeur. Le banc Chromium vérifie le premier lancement vide et sa bibliothèque, deux clients indépendants, Opus et PCM, le clavier, le sommeil local, le démontage complet et l’upload/changement partagé en GBA. Aucun ROM commercial ni firmware n’est fourni par ces tests.
+
+
+## Formatage des sources
+
+Le contrôle `format:check` du site vérifie aussi les sources Game Boy installées. Appliquer Prettier dans ce dépôt avec la configuration du site (`--config ../THOMZY.com/.prettierrc.json`), puis réinstaller le code depuis le site avec `node scripts/games-install.mjs gameboy --from ../ChaOS-games`. Les cartouches et sauvegardes sont conservées. Actualiser ensuite le verrou du site avec le commit source validé.

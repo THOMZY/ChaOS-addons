@@ -185,7 +185,12 @@ export class RomLibrary {
       throw Object.assign(new Error('rom_already_exists'), { status: 409 });
     }
     const head = readHeader(buf, safe);
-    const entry = { crc: crc32(buf), ...head, size: buf.length, addedAt: Date.now() };
+    const entry = {
+      crc: crc32(buf),
+      ...head,
+      size: buf.length,
+      addedAt: Date.now(),
+    };
     this.index.set(safe, entry);
     await this.save();
     return { file: safe, ...entry };

@@ -267,7 +267,9 @@
   place-items: center;
   background: #eef3e2;
   color: #10160b;
-  font: 700 17px/1 system-ui, sans-serif;
+  font:
+    700 17px/1 system-ui,
+    sans-serif;
   cursor: pointer;
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.55),
@@ -278,7 +280,9 @@
   transform: scale(1.07);
 }
 .gb-starttxt {
-  font: 700 9px/1 ui-monospace, monospace;
+  font:
+    700 9px/1 ui-monospace,
+    monospace;
   letter-spacing: 0.18em;
   color: #93b45f;
 }
