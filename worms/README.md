@@ -11,6 +11,7 @@ Le Worms du site (parties à plusieurs, mises, tickets) : salles, règles et min
 | `client/worms-terrain.js` | masque de hauteurs serveur, terrain/ciel/eau/nuages, canvas intermédiaire et écouteurs de chargement possédés par manche ; reset réutilisable, stop terminal |
 | `client/worms-sprites.js` | rendu des vers vivants/morts, animations, noms/PV et flèche active ; bitmaps privés, clear réutilisable et stop terminal |
 | `client/worms-effects.js` | rendu des projectiles et comptes à rebours ; explosions, particules et dégâts flottants privés ; reset par manche et stop terminal |
+| `client/worms-overlays.js` | rendu des caisses/objets posés, outils et aides de visée ; lectures injectées, reset des rendus en cours et stop terminal |
 | `media/` | images (niveaux, armes) et sons, servis sous `/worms-assets/` ; les niveaux sont aussi lus par le serveur |
 
 Le site garde la fenêtre « Worms » (`website/features/worms/`), son entrée légère `website/core/js/games/worms-entry.js` (liste des événements, chargement du contrôleur à l'ouverture ou à l'admission dans une salle) et ses textes (`worms.*` dans les catalogues du site). Le contrôleur importe les modules du site par URL (`/core/js/...`).
@@ -63,4 +64,15 @@ Le noyau passe de 2 683 à 2 492 lignes ; `worms-effects.js` compte 297 lignes. 
 
 Vingt tests de caractérisation passent avant et après extraction : cadence à 20 points/s, traînée bornée, orientation des missiles, sprites/horloge, dégradés, gravité/fondu, textes et mèches. Onze tests supplémentaires couvrent arrêt, reset, réentrance et propagation des erreurs réelles. Les 130 fonctions conservées sont syntaxiquement identiques ; cinq raccords changent. Le banc Chromium du site vérifie des pixels synthétiques natifs de missile, explosion et particules, puis reset/reprise/arrêt. Le propriétaire reste hors premier écran ; aucun plafond de budget n’augmente.
 
-Suite : **A9-worms-e, rendu des objets et aides de visée** (caisses, objets posés, outils et indicateurs) ; puis physique, interface/entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes.
+Le lot A9-worms-e ci-dessous poursuit le rendu des objets et aides de visée ; physique, interface/entrées et événements restent à découper.
+
+
+## Découpage du client — A9-worms-e (25/10/2026)
+
+Le noyau passe de 2 492 à 2 219 lignes ; `worms-overlays.js` compte 430 lignes. Sa factory `createWormsOverlays` reçoit lectures d’état/image/arme, son, traduction, deux horloges, dimensions/rayon et armes ciblées. Construction inactive, sans boucle, cache, média ni canvas créé. Les caisses, mines, dynamites, états d’outils/physique et images sont empruntés. Le rendu fait progresser la chute des caisses comme auparavant (38 px/s et un son à l’atterrissage) ; le noyau garde la propriété de leurs tableaux.
+
+Les neuf entrées de dessin conservent leurs points d’appel : corde, carburant du jetpack, réticule et ciblage, caisses, dynamites, mines, téléportation, parachute et charge. La dynamite garde le temps monotone ; la charge garde l’horloge civile et sa traduction. `reset` au début/à la fin de manche invalide les lectures interrompues, `stop` est terminal/idempotent, `status` expose l’arrêt. Aucun objet ou média emprunté n’est détruit. Le dessin d’une caisse restaure son contexte canvas via `finally`, y compris si une lecture d’arme échoue ou invalide le rendu ; ce contexte oublié après exception est reproduit sur la fonction d’origine.
+
+Vingt-trois tests de caractérisation passent sur les fonctions d’origine puis extraites ; douze tests supplémentaires couvrent arrêt, reset, réentrance, conservation des objets et erreurs réelles. Les 116 fonctions conservées sont syntaxiquement identiques ; trois raccords changent. Chromium vérifie des pixels natifs synthétiques de caisse de santé, mine, dynamite et réticule, puis restauration du contexte et reset/reprise/arrêt. Le module reste hors premier écran et aucun plafond frontend n’augmente.
+
+Suite : **A9-worms-f, physique locale et collisions** ; puis interface/HUD/annonces, entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes.

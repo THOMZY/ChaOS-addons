@@ -1,3 +1,4 @@
+import { createWormsOverlays } from './worms-overlays.js';
 import { createWormsEffects } from './worms-effects.js';
 import { createWormsSprites } from './worms-sprites.js';
 import { createWormsTerrain } from './worms-terrain.js';
@@ -246,6 +247,22 @@ const { drawProjectiles: _drawProjectiles, drawExplosions: _drawExplosions,
   drawParticles: _drawParticles, drawDamageLabels: _drawDamageLabels,
   drawFuseCountdowns: _drawFuseCountdowns, tickDamageLabels: _tickDmgLabels,
   spawnParticles: _spawnParticles } = effectsRenderer;
+const overlaysRenderer = createWormsOverlays({
+  getState: () => ({ isMyTurn: _myTurn(), worms: _worms, activeWormId: _activeWormId,
+    isPhysicsSynced: _wsSynced, physics: _ws, rope: _rope,
+    isJetpackActive: _jetpackActive, jetpackFuel: _jetpackFuel,
+    hasShotFired: _shotFired, isAnimating: _animating, selectedWeapon: _selectedWeapon,
+    mouseX: _mouseX, mouseY: _mouseY, aimAngle: _aimAngle, chargeStart: _chargeStart,
+    crates: _crates, dynamites: _dynamites, mines: _mines }),
+  getImage: _assetImage, getWeaponDefinition: _weaponDef, playSound: _playSound,
+  translate: t, isActive: () => scope.active, targetedWeapons: TARGETED_WEAPONS,
+  width: WORLD_W, height: WORLD_H, wormRadius: WORM_R,
+});
+const { drawRope: _drawRope, drawJetpackFuel: _drawJetpackFuel,
+  drawAimAndTargeting: _drawAimAndTargeting, drawCratesFrame: _drawCratesFrame,
+  drawDynamites: _drawDynamites, drawMines: _drawMines,
+  drawTeleportPreview: _drawTeleportPreview, drawParachute: _drawParachute,
+  drawChargeBar: _drawChargeBar } = overlaysRenderer;
 
 // DOM
 let _container  = null;
@@ -281,14 +298,6 @@ function _unlimitedAmmo(count) {
 
 function _levelDef(index) {
   return Number.isInteger(index) && index >= 0 && index < LEVELS.length ? (LEVELS.at(index) ?? LEVELS.at(0)) : LEVELS.at(0);
-}
-
-function _activeWormPosition() {
-  const active = _worms.find(w => w.id === _activeWormId);
-  return {
-    cx: _wsSynced ? _ws.cx : (active?.cx ?? _ws.cx),
-    cy: _wsSynced ? _ws.cy : (active?.cy ?? _ws.cy),
-  };
 }
 
 function _upsertRoom(list, room) {
@@ -565,6 +574,7 @@ function _setupGame(data) {
 }
 
 function _resetGameData(data) {
+  overlaysRenderer.reset();
   _terrain      = data.terrain;
   _holes        = data.holes  ?? [];
   _worms        = data.worms.map(w => ({ ...w, _facing: 1 }));
@@ -823,6 +833,7 @@ function _startRaf() {
 }
 
 function _stopGame() {
+  overlaysRenderer.reset();
   if (_raf) { scope.cancelFrame(_raf); _raf = null; }
   _unbindGameInput();
   wormRenderer.clear();
@@ -893,193 +904,6 @@ function _applyScreenShake(ctx, now) {
   ctx.translate((randomUnit() - 0.5) * mag, (randomUnit() - 0.5) * mag);
 }
 
-function _drawRope(ctx) {
-  if (!_rope || !_myTurn()) return;
-  const { cx: wCx, cy: wCy } = _activeWormPosition();
-  const tipCx = _rope.state === 'attached' ? _rope.anchorX : _rope.cx;
-  const tipCy = _rope.state === 'attached' ? _rope.anchorY : _rope.cy;
-  ctx.save();
-  ctx.strokeStyle = '#aaddaa';
-  ctx.lineWidth   = 2;
-  ctx.setLineDash([4, 3]);
-  ctx.beginPath();
-  ctx.moveTo(wCx, wCy);
-  ctx.lineTo(tipCx, tipCy);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.arc(tipCx, tipCy, 4, 0, Math.PI * 2);
-  ctx.fillStyle = _rope.state === 'attached' ? '#ffdd44' : '#aaddaa';
-  ctx.fill();
-  ctx.restore();
-}
-
-function _drawJetpackFuel(ctx) {
-  if (!_jetpackActive || !_myTurn()) return;
-  const { cx: wCx, cy: wCy } = _activeWormPosition();
-  const barW = 30, barH = 4;
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(wCx - barW / 2, wCy + WORM_R + 5, barW, barH);
-  ctx.fillStyle = `hsl(${_jetpackFuel * 120},90%,55%)`;
-  ctx.fillRect(wCx - barW / 2, wCy + WORM_R + 5, barW * _jetpackFuel, barH);
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(wCx - barW / 2, wCy + WORM_R + 5, barW, barH);
-}
-
-function _drawAimAndTargeting(ctx, now) {
-  if (!_myTurn() || _shotFired || _animating) return;
-  _drawAimCrosshair(ctx, now);
-  if (TARGETED_WEAPONS.has(_selectedWeapon)) _drawAirstrikeTargeting(ctx);
-}
-
-function _drawAirstrikeTargeting(ctx) {
-  const targetX = Math.max(24, Math.min(WORLD_W - 24, _mouseX));
-  ctx.save();
-  ctx.setLineDash([6, 5]);
-  ctx.lineWidth   = 1.5;
-  ctx.strokeStyle = 'rgba(255,80,80,0.75)';
-  for (const ox of [-30, 0, 30]) {
-    ctx.beginPath();
-    ctx.moveTo(targetX + ox, 0);
-    ctx.lineTo(targetX + ox, WORLD_H);
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
-  ctx.restore();
-}
-
-function _drawCratesFrame(ctx, dt, now) {
-  for (const crate of _crates) {
-    _updateFallingCrate(crate, dt);
-    _drawCrate(ctx, crate.cx, crate.landed ? crate.cy : crate.fallingCy, crate.type, crate.weapon, !crate.landed, now);
-  }
-}
-
-function _updateFallingCrate(crate, dt) {
-  if (crate.landed) return;
-  crate.fallingCy = (crate.fallingCy ?? -30) + 38 * dt;
-  if (crate.fallingCy < crate.cy) return;
-  crate.fallingCy = crate.cy;
-  crate.landed = true;
-  _playSound('GRENADEIMPACT', 0.35);
-}
-
-function _drawDynamites(ctx) {
-  for (const dyn of _dynamites) _drawDynamite(ctx, dyn);
-}
-
-function _drawDynamite(ctx, dyn) {
-  const elapsedS  = (performance.now() - dyn.placedAt) / 1000;
-  const remaining = Math.max(0, dyn.fuseMs / 1000 - elapsedS);
-  const flash     = remaining < 2 && Math.floor(elapsedS * 5) % 2 === 0;
-  ctx.save();
-  ctx.fillStyle = flash ? '#ff5555' : '#cc2222';
-  ctx.fillRect(dyn.cx - 4, dyn.cy - 10, 8, 16);
-  ctx.fillStyle = '#333';
-  ctx.fillRect(dyn.cx - 2, dyn.cy - 13, 4, 4);
-  if (Math.floor(elapsedS * 8) % 2 === 0) {
-    ctx.fillStyle = '#ffdd00';
-    ctx.beginPath();
-    ctx.arc(dyn.cx, dyn.cy - 13, 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle   = '#ffffff';
-  ctx.font        = 'bold 9px monospace';
-  ctx.textAlign   = 'center';
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth   = 2;
-  ctx.strokeText(remaining.toFixed(1), dyn.cx, dyn.cy - 17);
-  ctx.fillText(remaining.toFixed(1), dyn.cx, dyn.cy - 17);
-  ctx.restore();
-}
-
-function _drawMines(ctx) {
-  for (const mine of _mines) _drawMine(ctx, mine);
-}
-
-function _drawMine(ctx, mine) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(mine.cx, mine.cy, 8, 0, Math.PI * 2);
-  ctx.fillStyle   = '#556655';
-  ctx.fill();
-  ctx.strokeStyle = '#cc3300';
-  ctx.lineWidth   = 2;
-  ctx.stroke();
-  ctx.fillStyle   = '#ff4444';
-  ctx.font        = 'bold 8px monospace';
-  ctx.textAlign   = 'center';
-  ctx.fillText('!', mine.cx, mine.cy + 3);
-  ctx.restore();
-}
-
-function _drawTeleportPreview(ctx) {
-  if (_selectedWeapon !== 'teleport' || !_myTurn() || _shotFired || _animating) return;
-  ctx.save();
-  ctx.strokeStyle = '#aa44ff';
-  ctx.lineWidth   = 1.5;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.arc(_mouseX, _mouseY, WORM_R, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  const s = 14;
-  ctx.beginPath();
-  ctx.moveTo(_mouseX - s, _mouseY); ctx.lineTo(_mouseX + s, _mouseY);
-  ctx.moveTo(_mouseX, _mouseY - s); ctx.lineTo(_mouseX, _mouseY + s);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function _drawParachute(ctx) {
-  if (!_myTurn() || !_ws.parachute || _ws.onGround) return;
-  const aw = _worms.find(w => w.id === _activeWormId);
-  if (!aw) return;
-  const px = _ws.cx, py = _ws.cy;
-  ctx.save();
-  ctx.strokeStyle = '#fff';
-  ctx.fillStyle   = 'rgba(220,220,255,0.75)';
-  ctx.lineWidth   = 1.5;
-  ctx.beginPath();
-  ctx.arc(px, py - WORM_R - 22, 18, Math.PI, 0);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(200,200,200,0.8)';
-  ctx.lineWidth   = 0.8;
-  for (const [ox, oy] of [[-18,0],[0,0],[18,0],[-10,-16],[10,-16]]) {
-    ctx.beginPath();
-    ctx.moveTo(px + ox, py - WORM_R - 22 + oy);
-    ctx.lineTo(px, py - WORM_R);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function _drawChargeBar(ctx) {
-  if (_chargeStart === null || !_myTurn() || _shotFired) return;
-  const aw = _worms.find(w => w.id === _activeWormId);
-  if (!aw) return;
-  const chargePct = Math.min(1, (Date.now() - _chargeStart) / 1500);
-  const barW = 90, barH = 10;
-  const wCx  = _wsSynced ? _ws.cx : aw.cx;
-  const wCy  = _wsSynced ? _ws.cy : aw.cy;
-  const bx = wCx - barW / 2, by = wCy - WORM_R - 26;
-  ctx.fillStyle = '#000';
-  ctx.fillRect(bx - 1, by - 1, barW + 2, barH + 2);
-  ctx.fillStyle = chargePct < 0.5 ? '#44ee44' : chargePct < 0.8 ? '#ffcc00' : '#ff4400';
-  ctx.fillRect(bx, by, barW * chargePct, barH);
-  ctx.strokeStyle = '#888';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(bx, by, barW, barH);
-  ctx.font      = 'bold 8px monospace';
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${t('games.worms.power')} ${Math.round(chargePct * 100)}%`, wCx, by - 3);
-  ctx.textAlign = 'left';
-}
-
 function _drawTurnAnnouncement(ctx, now) {
   if (!_turnAnnouncement) return;
   const elapsed = now - _turnAnnouncement.startMs;
@@ -1118,42 +942,6 @@ function _updateTimerDisplay() {
   const s = Math.max(0, Math.ceil((_turnDeadline - Date.now()) / 1000));
   _timerEl.textContent = `⏱ ${String(s).padStart(2, '0')}s`;
   _timerEl.style.color = s <= 5 ? '#ff2222' : s <= 8 ? '#ff8844' : '#ffcc00';
-}
-
-function _drawAimCrosshair(ctx, now) {
-  const aw = _worms.find(w => w.id === _activeWormId);
-  if (!aw) return;
-  const wCx = _wsSynced ? _ws.cx : aw.cx;
-  const wCy = _wsSynced ? _ws.cy : aw.cy;
-  // Dashed aim line
-  const len = 44;
-  const tx  = wCx + Math.cos(_aimAngle) * len;
-  const ty  = wCy + Math.sin(_aimAngle) * len;
-  ctx.save();
-  ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-  ctx.lineWidth   = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(wCx, wCy);
-  ctx.lineTo(tx, ty);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-
-  // Animated crosshair sprite (crshairr — 32 frames, 50ms)
-  const chImg = _assetImage('crshairr');
-  if (chImg?.complete && chImg.naturalWidth > 0) {
-    const CF = 32, CMS = 50;
-    const cf = Math.floor(now / CMS) % CF;
-    const cfh = Math.floor(chImg.naturalHeight / CF);
-    const csz = 24;
-    ctx.drawImage(chImg, 0, cf * cfh, chImg.naturalWidth, cfh, tx - csz/2, ty - csz/2, csz, csz);
-  } else {
-    ctx.beginPath();
-    ctx.arc(tx, ty, 4, 0, Math.PI * 2);
-    ctx.fillStyle = _weaponDef(_selectedWeapon)?.color ?? '#ff7700';
-    ctx.fill();
-  }
 }
 
 // ── HUD updates ────────────────────────────────────────────────────────────────
@@ -2404,67 +2192,6 @@ function _roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Draw a crate at (cx, cy) — weapon (brown) or health (white cross)
-function _drawCrate(ctx, cx, cy, type, weapon, falling, now) {
-  const sz = 14;
-  ctx.save();
-  // Parachute when falling
-  if (falling) {
-    ctx.strokeStyle = '#ddd';
-    ctx.fillStyle   = 'rgba(200,200,255,0.7)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.arc(cx, cy - sz - 14, 12, Math.PI, 0);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    // Cords
-    ctx.strokeStyle = 'rgba(180,180,180,0.8)';
-    ctx.lineWidth   = 0.7;
-    [[-12, 0], [0, 0], [12, 0]].forEach(([ox]) => {
-      ctx.beginPath();
-      ctx.moveTo(cx + ox, cy - sz - 14);
-      ctx.lineTo(cx, cy - sz / 2);
-      ctx.stroke();
-    });
-  }
-  // Crate box
-  const col = type === 'health' ? '#e8e8e8' : '#8b6914';
-  ctx.fillStyle   = col;
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth   = 1.5;
-  ctx.fillRect(cx - sz / 2, cy - sz, sz, sz);
-  ctx.strokeRect(cx - sz / 2, cy - sz, sz, sz);
-  // Cross straps
-  ctx.strokeStyle = type === 'health' ? '#888' : '#5a4010';
-  ctx.lineWidth   = 1;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - sz); ctx.lineTo(cx, cy);
-  ctx.moveTo(cx - sz / 2, cy - sz / 2); ctx.lineTo(cx + sz / 2, cy - sz / 2);
-  ctx.stroke();
-  if (type === 'health') {
-    ctx.strokeStyle = '#cc0000'; ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - sz + 3); ctx.lineTo(cx, cy - 3);
-    ctx.moveTo(cx - sz / 2 + 3, cy - sz / 2); ctx.lineTo(cx + sz / 2 - 3, cy - sz / 2);
-    ctx.stroke();
-  } else if (weapon) {
-    const icon = _weaponDef(weapon)?.icon ?? '?';
-    ctx.font      = 'bold 7px monospace';
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.fillText(icon, cx, cy - sz / 2 + 3);
-    ctx.textAlign = 'left';
-  }
-  // Pulse glow when landed
-  if (!falling) {
-    const pulse = 0.3 + 0.2 * Math.sin(now / 400);
-    ctx.strokeStyle = type === 'health' ? `rgba(255,80,80,${pulse})` : `rgba(255,200,50,${pulse})`;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(cx - sz / 2 - 2, cy - sz - 2, sz + 4, sz + 4);
-  }
-  ctx.restore();
-}
-
 function _el(tag, attrs = {}, text = null) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -2484,7 +2211,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
