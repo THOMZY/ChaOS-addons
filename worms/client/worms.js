@@ -1,3 +1,4 @@
+import { createWormsActions } from './worms-actions.js';
 import { createWormsInput } from './worms-input.js';
 import { createWormsMenuView } from './worms-menu-view.js';
 import { createWormsGameView } from './worms-game-view.js';
@@ -288,6 +289,21 @@ const { updateHUD: _updateHUD, updateTimerDisplay: _updateTimerDisplay,
   updateFuseDisplay: _updateFuseDisplay, showTurnAnnouncement: _showTurnAnnouncement,
   drawTurnAnnouncement: _drawTurnAnnouncement } = hud;
 
+const actions = createWormsActions({
+  getState: () => ({ roomId: _roomId, physics: _ws, isMyTurn: _myTurn(), isAnimating: _animating,
+    selectedWeapon: _selectedWeapon, aimAngle: _aimAngle, power: _power, mouseX: _mouseX, grenadeFuse: _grenadefuse,
+    get hasShotFired() { return _shotFired; }, set hasShotFired(value) { _shotFired = value; },
+    get hasMovementToolUsed() { return _movementToolUsed; }, set hasMovementToolUsed(value) { _movementToolUsed = value; },
+    get rope() { return _rope; }, set rope(value) { _rope = value; },
+    get isJetpackActive() { return _jetpackActive; }, set isJetpackActive(value) { _jetpackActive = value; },
+    get jetpackFuel() { return _jetpackFuel; }, set jetpackFuel(value) { _jetpackFuel = value; },
+    get teleportTarget() { return _teleportTarget; }, set teleportTarget(value) { _teleportTarget = value; },
+  }),
+  sendCommand: (name, payload) => _socket.emit(name, payload), playSound: _playSound,
+  targetedWeapons: TARGETED_WEAPONS, fuseWeapons: FUSE_WEAPONS, wormRadius: WORM_R,
+  isActive: () => scope.active,
+});
+
 const gameInput = createWormsInput({
   getState: () => ({ keys: _keys, physics: _ws, worms: _worms, activeWormId: _activeWormId,
     myUserId: _myUserId, isMyTurn: _myTurn(), hasShotFired: _shotFired, isAnimating: _animating,
@@ -475,6 +491,7 @@ function _setupGame(data) {
 }
 
 function _resetGameData(data) {
+  actions.reset();
   turnAnimations.reset();
   wormPhysics.reset();
   overlaysRenderer.reset();
@@ -563,6 +580,7 @@ function _startRaf() {
 }
 
 function _stopGame() {
+  actions.reset();
   wormPhysics.reset();
   overlaysRenderer.reset();
   if (_raf) { scope.cancelFrame(_raf); _raf = null; }
@@ -686,71 +704,7 @@ function _syncActiveWormPosition() {
 function _bindGameInput() { return gameInput.bind(_canvas); }
 function _unbindGameInput() { gameInput.reset(); }
 
-function _doFire() {
-  if (!_myTurn() || _shotFired || _animating) return;
-
-  // ── Ninja rope: fire hook or release
-  if (_selectedWeapon === 'ninja_rope') {
-    if (!_rope) {
-      _socket.emit('worms:use_tool', { roomId: _roomId, weapon: 'ninja_rope' });
-      const hookSpd = 530;
-      _rope = {
-        state: 'flying',
-        cx: _ws.cx + Math.cos(_aimAngle) * (WORM_R + 6),
-        cy: _ws.cy + Math.sin(_aimAngle) * (WORM_R + 6),
-        vx: Math.cos(_aimAngle) * hookSpd,
-        vy: Math.sin(_aimAngle) * hookSpd,
-        anchorX: 0, anchorY: 0, len: 0,
-      };
-      _shotFired = true;  // one rope use per turn
-      _movementToolUsed = true;
-      _playSound('THROWRELEASE', 0.4);
-    } else {
-      _rope = null;  // second press = release rope
-    }
-    return;
-  }
-
-  // ── Jetpack: activate thrusters
-  if (_selectedWeapon === 'jetpack') {
-    if (!_jetpackActive) {
-      _socket.emit('worms:use_tool', { roomId: _roomId, weapon: 'jetpack' });
-      _jetpackActive = true;
-      _jetpackFuel   = 1.0;
-      _ws.onGround   = false;
-      _ws.vy         = -40;  // small liftoff nudge
-      _shotFired     = true;
-      _movementToolUsed = true;
-      _playSound('THROWRELEASE', 0.45);
-    }
-    return;
-  }
-
-  // ── Teleport: fire immediately to clicked position
-  if (_selectedWeapon === 'teleport') {
-    if (_teleportTarget) {
-      _shotFired = true;
-      _socket.emit('worms:fire', {
-        roomId: _roomId, angle: 0, power: 1, weapon: 'teleport',
-        targetX: _teleportTarget.x, targetY: _teleportTarget.y,
-      });
-      _teleportTarget = null;
-    }
-    return;
-  }
-
-  // ── Normal weapon fire
-  _shotFired = true;
-  _socket.emit('worms:fire', {
-    roomId: _roomId,
-    angle:  _aimAngle,
-    power:  _power,
-    weapon: _selectedWeapon,
-    targetX: TARGETED_WEAPONS.has(_selectedWeapon) ? _mouseX : undefined,
-    fuseMs: FUSE_WEAPONS.has(_selectedWeapon) ? _grenadefuse * 1000
-           : _selectedWeapon === 'holy_grenade' ? 3000 : undefined,
-  });
-}
+function _doFire() { return actions.fire(); }
 
 function _applyTerrainHoles(newHoles) {
   const holes = newHoles ?? [];
@@ -863,6 +817,7 @@ function _applyNextTurn(turn) {
 }
 
 function _resetTurnState({ currentTurn, activeWormId, turnMs }) {
+  actions.reset();
   _currentTurn  = currentTurn;
   _activeWormId = activeWormId;
   _turnDeadline = Date.now() + (turnMs ?? TURN_MS);
@@ -1214,7 +1169,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); menuView.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); actions.stop(); menuView.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { gameInput.release(); }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });

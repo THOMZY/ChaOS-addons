@@ -141,3 +141,14 @@ Visée dans le rectangle utile avec bandes, bornes 960 × 480, origine physique 
 Seize tests de caractérisation passent sur les fonctions d’origine et extraites ; vingt-deux tests supplémentaires couvrent régressions, cycle de vie, réentrance et erreurs. Cinquante-et-une fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium pilote de vrais gestes pointeur avec capture native, clavier/DOM et perte de focus, charge et téléportation, callbacks retirés et arrêt. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
 
 Lot source isolé sur `5f6004d` pour conserver le verrou des add-ons ; les commits Game Boy plus récents du dépôt principal ne sont ni modifiés ni intégrés implicitement. Suite : **A9-worms-k, tirs et outils** ; puis événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
+
+
+## Découpage du client — A9-worms-k (25/10/2026)
+
+Le noyau passe de 1 222 à 1 177 lignes. `worms-actions.js` (118 lignes) possède la préparation des commandes de tir et d’outil : armes normales/ciblées, mèches réglables et fixe, corde, jetpack et téléportation. État/accesseurs partagés, envoi de commande, son, catalogues ciblés/mèches, rayon du ver et activité de portée sont injectés. Aucune ressource ni effet à la construction ; aucun état de partie copié ou possédé. Commandes et payloads `worms:fire` / `worms:use_tool`, ordre émission/écritures/son, vitesse de corde 530, impulsion jetpack −40 et téléportation à pleine puissance restent inchangés.
+
+La factory expose `fire`, `reset`, `stop` terminal/idempotent et `status`. Une seule action synchrone peut être en cours ; `reset` invalide sa continuation sans vider les objets empruntés au noyau. Il est raccordé aux nouvelles parties, changements de tour et fins de partie. Un envoi réentrant ne double plus l’usage d’un outil ; un ancien retour d’envoi/son ne peut plus modifier le tour ou la partie qui l’a remplacé. Le nettoyage de l’ancienne action ne déverrouille pas son successeur. Ces deux défauts sont reproduits sur la fonction d’origine.
+
+Seize tests de caractérisation passent sur l’ancien et le nouveau code ; dix-huit tests supplémentaires couvrent régressions, cycle de vie, accès réentrants et erreurs. Les écritures partagées restent immédiates ; un échec d’envoi/son se propage et libère le verrou sans inventer un retour arrière sur une commande déjà émise. Cinquante fonctions conservées sont syntaxiquement identiques ; cinq raccords changent. Chromium vérifie l’intégration clavier natif → charge → actions, payloads, outils, réentrance, retrait d’un tour et arrêt. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
+
+Lot source sur la branche locale `codex/a9-worms-actions`, issue du verrou `cfcf286`, sans intégrer les travaux Game Boy parallèles. Suite : **A9-worms-l, événements de partie** ; puis orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
