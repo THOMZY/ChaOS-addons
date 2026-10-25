@@ -254,8 +254,10 @@ export function createGameboyFeature({
           isRomUnloaded = true;
           roomGeneration++;
           broadcast(JSON.stringify({ type: 'unloaded' }));
-          for (const [socket, client] of clients) {
-            client.security?.dispose();
+          // The transport close event only arrives after this response, so forget
+          // every viewer now: /status must never report players of a dead core.
+          for (const [socket, client] of [...clients]) {
+            client.release();
             socket.close(1000, 'rom_unloaded');
           }
           return true;
@@ -348,6 +350,9 @@ export function createGameboyFeature({
       syncClients();
       broadcast(JSON.stringify({ type: 'roster', players: roster() }));
     };
+    // Closing a socket also happens from outside (ROM unload): expose the same
+    // teardown so a dead core never keeps counting its viewers.
+    client.release = release;
     socket.once('close', release);
     socket.on('error', () => {
       release();

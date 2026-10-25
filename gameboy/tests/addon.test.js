@@ -241,6 +241,10 @@ test('shared close unloads the core, disconnects every viewer and forbids automa
   });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, unloaded: true });
+  // The core is gone: its viewers must be forgotten before this response, not
+  // when each transport finishes closing — that close event always lands later,
+  // and /status would keep reporting players of a dead core until then.
+  assert.equal(scene.feature.status().players, 0);
   await Promise.all(closed);
   assert.equal(scene.room.stopped, true);
   assert.equal(scene.feature.status().rom, null);
