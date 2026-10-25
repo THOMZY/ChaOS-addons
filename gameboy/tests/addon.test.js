@@ -184,3 +184,44 @@ test('a core that finishes loading after stop is closed instead of resurrecting 
   assert.equal(scene.feature.status().isStopped, true);
   assert.equal((await request).status, 503);
 });
+
+test('standby removes the player from the roster, power on brings it back', async (context) => {
+  const scene = await fixture(context);
+  const player = await scene.connect({ Cookie: scene.cookie });
+  const spectator = await scene.connect();
+
+  // Record every roster each socket receives, then read the latest one: no
+  // race between "send" and "the server has not answered yet".
+  const seen = new Map();
+  for (const [tag, socket] of [
+    ['player', player.socket],
+    ['spectator', spectator.socket],
+  ]) {
+    seen.set(tag, []);
+    socket.on('message', (value) => {
+      const raw = value.toString();
+      if (!raw.startsWith('{')) return;
+      const message = JSON.parse(raw);
+      if (message.type === 'roster') seen.get(tag).push(message.players);
+    });
+  }
+  const last = (tag) => seen.get(tag).at(-1) ?? [];
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 250));
+
+  player.socket.send(JSON.stringify({ type: 'sleep', on: false }));
+  await settle();
+  assert.equal(last('spectator').length, 1, 'an awake player is listed');
+
+  player.socket.send(JSON.stringify({ type: 'sleep', on: true }));
+  await settle();
+  assert.deepEqual(last('spectator'), [], 'standby must remove the player for the others');
+  assert.deepEqual(last('player'), [], 'the sleeping console keeps an honest count');
+
+  player.socket.send(JSON.stringify({ type: 'sleep', on: false }));
+  await settle();
+  assert.equal(last('spectator').length, 1, 'power on must restore the player');
+
+  player.socket.close();
+  await settle();
+  assert.deepEqual(last('spectator'), [], 'closing the console removes the player');
+});

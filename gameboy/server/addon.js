@@ -85,10 +85,19 @@ export function createGameboyFeature({
   function syncClients() {
     if (room) room.clients = awakeCount();
   }
-  const roster = () =>
-    room
-      ? [...room.players].map(([id, player]) => ({ id, name: player.name, color: player.color }))
-      : [];
+  /* Who counts as a player: a console on standby (power off) is not playing.
+     The room keeps its player entries; we only expose the awake ones. */
+  const roster = () => {
+    if (!room) return [];
+    const awake = new Set(
+      [...clients]
+        .filter(([socket, client]) => socket.readyState === 1 && !client.isSleeping)
+        .map(([, client]) => client.id),
+    );
+    return [...room.players]
+      .filter(([id]) => awake.has(id))
+      .map(([id, player]) => ({ id, name: player.name, color: player.color }));
+  };
   function broadcast(value) {
     for (const [socket, client] of clients)
       if (typeof value === 'string' || !client.isSleeping) send(socket, value);
@@ -379,6 +388,12 @@ export function createGameboyFeature({
         for (const button of Object.keys(CONST.BTN)) active.input(id, button, false);
         if (!message.on) active.needKey = true;
         syncClients();
+        // The counter must drop the player who just put the console on standby:
+        // everyone awake gets the new roster, and the sleeper keeps its own
+        // count right even though the broadcast skips it.
+        const update = JSON.stringify({ type: 'roster', players: roster() });
+        broadcast(update);
+        if (client.isSleeping) send(socket, update);
       }
       if (message.type === 'resync') active.needKey = true;
       if (message.type === 'caps') client.codec = message.opus === true ? 'opus' : 'pcm';

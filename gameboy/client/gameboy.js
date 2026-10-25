@@ -1,4 +1,6 @@
 import { decodeRle, renderIndexedFrame, tintMonochromePalette } from './gameboy-frame-codec.js';
+import { shouldStream } from './stream-state.js';
+import { gainFromVolume } from './volume.js';
 // Game Boy window client (ChaOS-games add-on).
 //
 // The window manifest gives us an empty body (#gameboy-body); this module
@@ -212,7 +214,12 @@ function create(host) {
     volPct = $('gb-volpct');
 
   function applyVolume() {
-    if (master) master.gain.value = volume / 100;
+    if (master) {
+      // Short ramp: a step on gain would click on big moves.
+      const g = gainFromVolume(volume);
+      if (actx && actx.state === 'running') master.gain.setTargetAtTime(g, actx.currentTime, 0.01);
+      else master.gain.value = g;
+    }
     if (volEl) volEl.value = String(volume);
     if (volPct) volPct.textContent = String(volume);
   }
@@ -228,7 +235,7 @@ function create(host) {
         latencyHint: 'interactive',
       });
       master = actx.createGain();
-      master.gain.value = volume / 100;
+      master.gain.value = gainFromVolume(volume);
       master.connect(actx.destination);
     } catch {
       actx = null;
@@ -734,15 +741,19 @@ function create(host) {
   }
 
   /* The desktop "closes" a window by hiding it, so we watch the real
-     visibility (hidden window, minimized, or background tab) to cut the
-     network stream. Reopening starts the console again. */
+     visibility. A background browser tab is NOT a closed window: the audio has
+     to keep playing, so the stream stays open there (see stream-state.js). */
   const isVisible = () => {
-    if (document.hidden || host.closest('.wm-win')?.dataset.minimized === '1') return false;
     const box = host.closest('.wm-win') || host;
     const style = getComputedStyle(box);
-    if (style.display === 'none' || style.visibility === 'hidden') return false;
-    const r = box.getBoundingClientRect();
-    return r.width > 4 && r.height > 4;
+    const rect = box.getBoundingClientRect();
+    return shouldStream({
+      minimized: box.dataset?.minimized === '1',
+      display: style.display,
+      visibility: style.visibility,
+      width: rect.width,
+      height: rect.height,
+    });
   };
   const watchdog = setInterval(() => {
     if (destroyed || !started) return;
@@ -839,8 +850,12 @@ function create(host) {
     }
   });
   listen(document, 'visibilitychange', () => {
-    if (document.hidden) stopStream();
-    else if (started && isVisible() && !destroyed) {
+    // A hidden tab keeps playing: the audio must go on, and Chrome keeps the
+    // timers of an audible tab at full rate. Coming back, we only repair what
+    // the browser may have broken: a suspended context or a dead socket.
+    if (document.hidden) return;
+    if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+    if (started && !destroyed && isVisible() && (!ws || ws.readyState > 1)) {
       stopped = false;
       connect();
     }
