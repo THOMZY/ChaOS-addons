@@ -1,3 +1,5 @@
+import { createWormsCatalog } from './worms-catalog.js';
+import { createWormsRound } from './worms-round.js';
 import { createWormsEvents } from './worms-events.js';
 import { createWormsActions } from './worms-actions.js';
 import { createWormsInput } from './worms-input.js';
@@ -36,90 +38,12 @@ function createController(socket, getMe, pushSystem, scope) {
 //   initWorms(socket, getMe, pushSystem)   — bind socket events (games.js imports this module on demand)
 //   activateWorms(root, onExit)            — show worms UI (lobby → game → results), starts the asset preload
 
-// ── World constants (must mirror server) ─────────────────────────────────────
-const WORLD_W  = 960;
-const WORLD_H  = 480;
-const WATER_Y  = 455;
-const WORM_R   = 10;
-const TURN_MS  = 30_000;
-
-// ── Level definitions (must mirror server LEVELS order) ───────────────────────────
-const LEVELS = [
-  { name:'Treasure',    file:'level2',   emoji:'🏕️', skyA:'#3a6186', skyB:'#89216b', skyC:'#ffd89b', stars:false },
-  { name:'Jungle',      file:'castles',  emoji:'🌿', skyA:'#134e5e', skyB:'#2b6b5b', skyC:'#71b280', stars:false },
-  { name:'Ruins',       file:'level3',   emoji:'🏰', skyA:'#485563', skyB:'#29323c', skyC:'#a8c0ff', stars:false },
-  { name:'Battleship',  file:'level5',   emoji:'⚓', skyA:'#1c3a5e', skyB:'#254b7a', skyC:'#4a90d9', stars:false },
-  { name:'Titanic',     file:'level20',  emoji:'🛤️', skyA:'#0a0a1a', skyB:'#0d1b3e', skyC:'#1a3a6e', stars:true  },
-];
-
-const WEAPON_WORM_ANIM = {
-  bazooka:      { takeOut: { img:'wbazlnk',  frames:10, ms:50 }, aim: { img:'wbaz',     frames:32, ms:60,  frameY:0.5 } },
-  hand_grenade: { takeOut: { img:'wgrnlnk',  frames:10, ms:50 }, aim: { img:'wthrgrn',  frames:32, ms:100, frameY:0.5 } },
-  cluster_bomb: { takeOut: { img:'whgrlnk',  frames:10, ms:50 }, aim: { img:'wthrhgr',  frames:32, ms:100, frameY:0.5 } },
-  shotgun:      { takeOut: { img:'wshglnk',  frames:10, ms:60 }, aim: { img:'wshotp',   frames:32, ms:50,  frameY:0.5 } },
-  minigun:      { takeOut: { img:'wmgnlnk',  frames:10, ms:60 }, aim: { img:'wmini',    frames:32, ms:60,  frameY:0.5 } },
-  mortar:       { takeOut: { img:'wgrnlnk',  frames:10, ms:50 }, aim: { img:'wthrgrn',  frames:32, ms:100, frameY:0.5 } },
-  airstrike:    { takeOut: { img:'wgrnlnk',  frames:10, ms:50 }, aim: { img:'wthrgrn',  frames:32, ms:100, frameY:0.5 } },
-  drill:        { takeOut: { img:'wdrllnk',  frames:13, ms:60 }, aim: null },
-  dynamite:     { takeOut: { img:'wdynlnk',  frames:10, ms:50 }, aim: null },
-  holy_grenade: { takeOut: { img:'whgrlnk',  frames:10, ms:50 }, aim: { img:'wthrhgr',  frames:32, ms:100, frameY:0.5 } },
-  banana_bomb:  { takeOut: { img:'whgrlnk',  frames:10, ms:50 }, aim: { img:'wthrhgr',  frames:32, ms:100, frameY:0.5 } },
-  napalm:       { takeOut: { img:'wgrnlnk',  frames:10, ms:50 }, aim: { img:'wthrgrn',  frames:32, ms:100, frameY:0.5 } },
-  land_mine:    { takeOut: { img:'wdynlnk',  frames:10, ms:50 }, aim: null },
-  ninja_rope:   { takeOut: { img:'wbazlnk',  frames:13, ms:50 }, aim: null },
-  jetpack:      { takeOut: { img:'wjetlnk',  frames:10, ms:50 }, aim: null },
-  bat:          { takeOut: { img:'wbatlnk',  frames:13, ms:50 }, aim: { img:'wbataim', frames:10, ms:100, frameY:0 } },
-  teleport:     { takeOut: { img:'wgrnlnk',  frames:10, ms:50 }, aim: null },
-};
-
-const WEAPONS = {
-  bazooka:      { icon: '🚀', labelKey: 'games.worms.weapon.bazooka',      color: '#ff7700', trailColor: 'rgba(255,140,0,0.7)',   key: '1' },
-  hand_grenade: { icon: '💣', labelKey: 'games.worms.weapon.handGrenade',  color: '#88cc44', trailColor: 'rgba(120,190,50,0.6)',  key: '2' },
-  cluster_bomb: { icon: '🧨', labelKey: 'games.worms.weapon.clusterBomb',  color: '#ff5533', trailColor: 'rgba(255,100,50,0.6)',  key: '3' },
-  shotgun:      { icon: '🔫', labelKey: 'games.worms.weapon.shotgun',      color: '#99bbdd', trailColor: 'rgba(180,210,240,0.5)', key: '4' },
-  minigun:      { icon: '⚡', labelKey: 'games.worms.weapon.minigun',      color: '#dddd22', trailColor: 'rgba(240,240,50,0.5)',  key: '5' },
-  mortar:       { icon: '💥', labelKey: 'games.worms.weapon.mortar',       color: '#cc8822', trailColor: 'rgba(200,140,30,0.6)',  key: '6' },
-  airstrike:    { icon: '✈️', labelKey: 'games.worms.weapon.airstrike',    color: '#66ccff', trailColor: 'rgba(100,200,255,0.6)', key: '7' },
-  drill:        { icon: '🔩', labelKey: 'games.worms.weapon.drill',        color: '#cc8833', trailColor: 'rgba(180,130,50,0.5)',  key: '8' },
-  dynamite:     { icon: '🧱', labelKey: 'games.worms.weapon.dynamite',     color: '#ff2222', trailColor: 'rgba(255,50,0,0.6)',    key: '9' },
-  holy_grenade: { icon: '✝️', labelKey: 'games.worms.weapon.holyGrenade',  color: '#ffffaa', trailColor: 'rgba(255,255,150,0.7)', key: '0' },
-  banana_bomb:  { icon: '🍌', labelKey: 'games.worms.weapon.bananaBomb',   color: '#ffdd00', trailColor: 'rgba(255,220,0,0.6)',   key: 'a' },
-  napalm:       { icon: '🔥', labelKey: 'games.worms.weapon.napalm',       color: '#ff6600', trailColor: 'rgba(255,100,0,0.7)',   key: 'e' },
-  land_mine:    { icon: '💠', labelKey: 'games.worms.weapon.landMine',      color: '#888888', trailColor: 'rgba(150,150,150,0.5)', key: 'r' },
-  ninja_rope:   { icon: '🪝', labelKey: 'games.worms.weapon.ninjaRope',     color: '#aaddaa', trailColor: 'rgba(150,220,150,0.7)', key: 't' },
-  jetpack:      { icon: '🚀', labelKey: 'games.worms.weapon.jetpack',       color: '#44aaff', trailColor: 'rgba(100,200,255,0.5)', key: 'y' },
-  bat:          { icon: '⚾', labelKey: 'games.worms.weapon.bat',           color: '#ffdd88', trailColor: 'rgba(255,220,100,0.6)', key: 'u' },
-  teleport:     { icon: '🌀', labelKey: 'games.worms.weapon.teleport',     color: '#aa44ff', trailColor: 'rgba(170,100,255,0.6)', key: 'i' },
-};
-const FUSE_WEAPONS   = new Set(['hand_grenade', 'cluster_bomb', 'banana_bomb']); // holy_grenade fixed 3 s
-const FUSE_SOUND_WEAPONS = new Set(['hand_grenade', 'cluster_bomb', 'holy_grenade', 'banana_bomb']);
-const TARGETED_WEAPONS   = new Set(['airstrike', 'napalm']);
-
-const WORMS_ASSETS = '/worms-assets';
-
-function _weaponLabel(weapon) {
-  const definition = WEAPONS[weapon];
-  return definition ? `${definition.icon} ${t(definition.labelKey)}` : String(weapon ?? '?');
-}
-const WEAPON_ICONS = {
-  bazooka:      'iconbazooka',
-  hand_grenade: 'icongrenade',
-  cluster_bomb: 'iconhgrenade',
-  shotgun:      'iconshotgun',
-  minigun:      'iconminigun',
-  mortar:       'icongrenade',
-  airstrike:    'iconbazooka',
-  drill:        'drill',
-  dynamite:     'icondynamite',
-  holy_grenade: 'iconhgrenade',
-  banana_bomb:  'iconsheep',
-  napalm:       'iconblowtorch',
-  land_mine:    'iconmine',
-  ninja_rope:   'iconrope',
-  jetpack:      'iconjetpack',
-  bat:          'iconbat',
-  teleport:     'iconteleport',
-};
+const { world: { width: WORLD_W, height: WORLD_H, waterY: WATER_Y, wormRadius: WORM_R, turnMs: TURN_MS },
+  levels: LEVELS, weapons: WEAPONS,
+  fuseWeapons: FUSE_WEAPONS, fuseSoundWeapons: FUSE_SOUND_WEAPONS, targetedWeapons: TARGETED_WEAPONS, assetsBase: WORMS_ASSETS,
+  getWeaponLabel: _weaponLabel, getWeaponDefinition: _weaponDef, getWeaponAnimation: _weaponAnimDef,
+  getWeaponIconName: _weaponIconName, hasUnlimitedAmmo: _unlimitedAmmo, getLevel: _levelDef,
+} = createWormsCatalog({ translate: t });
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let _socket  = null;
@@ -401,6 +325,18 @@ const events = createWormsEvents({
   timers: { setTimeout: scope.timeout, clearTimeout: scope.clearTimeout, setInterval: scope.interval, clearInterval: scope.clearInterval },
 });
 
+const round = createWormsRound({
+  camera: _cam, width: WORLD_W, isActive: () => scope.active,
+  services: { clearMenu: () => menuView.reset(), clearSprites: () => wormRenderer.clear(),
+    markGameMode: () => { if (_root) _root.dataset.gameMode = 'worms-game'; },
+    resetData: _resetGameData, prepareTerrain: data => { _terrainMask = terrainRenderer.prepare(data, _roomId); },
+    mountView: _buildGameLayout, updateHealth: _updateHealthBar, initTurn: _initWsTurn,
+    bindInput: _bindGameInput, step: _physicsStep, render: _renderFrame, tickDamage: _tickDmgLabels,
+    updateHUD: _updateHUD, playSound: _playSound },
+  frames: { request: scope.frame, cancel: scope.cancelFrame },
+  timers: { setTimeout: scope.timeout, clearTimeout: scope.clearTimeout },
+});
+
 // DOM
 let _canvas     = null;
 let _ctx        = null;
@@ -409,32 +345,8 @@ let _turnLabel  = null;
 let _windEl     = null;
 let _healthEl   = null;
 let _weaponBtns = Object.create(null);
-let _raf        = null;
-let _lastMs     = 0;
 
 function _myTurn() { return _currentTurn === _myUserId; }
-
-function _weaponDef(key) {
-  return typeof key === 'string' && Object.hasOwn(WEAPONS, key) ? Reflect.get(WEAPONS, key) : null;
-}
-
-function _weaponAnimDef(key) {
-  return typeof key === 'string' && Object.hasOwn(WEAPON_WORM_ANIM, key) ? Reflect.get(WEAPON_WORM_ANIM, key) : null;
-}
-
-function _weaponIconName(key) {
-  return typeof key === 'string' && Object.hasOwn(WEAPON_ICONS, key) ? Reflect.get(WEAPON_ICONS, key) : null;
-}
-
-// JSON / Socket.IO serializes Infinity as null. Both values represent an
-// unlimited weapon in the authoritative server inventory.
-function _unlimitedAmmo(count) {
-  return count === undefined || count === null || count === Infinity;
-}
-
-function _levelDef(index) {
-  return Number.isInteger(index) && index >= 0 && index < LEVELS.length ? (LEVELS.at(index) ?? LEVELS.at(0)) : LEVELS.at(0);
-}
 
 function _upsertRoom(list, room) {
   const idx = list.findIndex(r => r.id === room.id);
@@ -541,17 +453,7 @@ function _renderWaiting(room) {
 
 // ── Game canvas setup ─────────────────────────────────────────────────────────
 
-function _setupGame(data) {
-  menuView.reset();
-  wormRenderer.clear();
-  if (_root) _root.dataset.gameMode = 'worms-game';
-  _resetGameData(data);
-  _terrainMask = terrainRenderer.prepare(data, _roomId);
-  if (!_buildGameLayout()) return;
-  _updateHealthBar();
-  _centerCameraOnActive(data.worms, data.activeWormId);
-  _finishGameSetup();
-}
+function _setupGame(data) { return round.start(data); }
 
 function _resetGameData(data) {
   events.reset();
@@ -613,42 +515,12 @@ function _quitSpectating() {
   if (_onExit) _onExit();
 }
 
-function _centerCameraOnActive(worms, activeWormId) {
-  const awInit = worms.find(w => w.id === activeWormId);
-  if (!awInit) return;
-  _cam.x = Math.max(0, Math.min(WORLD_W - WORLD_W, awInit.cx - WORLD_W / 2));
-  _cam.y = 0;
-  _cam.tx = _cam.x; _cam.ty = _cam.y;
-}
-
-function _finishGameSetup() {
-  _initWsTurn();
-  if (!_bindGameInput()) return;
-  _startRaf();
-  _updateHUD();
-  scope.timeout(() => _playSound('StartRound', 0.5), 200);
-}
-// ── Main render loop ──────────────────────────────────────────────────────────
-function _startRaf() {
-  if (_raf) scope.cancelFrame(_raf);
-  _lastMs = performance.now();
-  const loop = (now) => {
-    _raf = scope.frame(loop);
-    const dt = Math.min((now - _lastMs) / 1000, 0.05);
-    _lastMs  = now;
-    _physicsStep(dt);
-    _renderFrame(now, dt);
-    _tickDmgLabels(dt);
-  };
-  _raf = scope.frame(loop);
-}
-
 function _stopGame() {
+  round.reset();
   events.reset();
   actions.reset();
   wormPhysics.reset();
   overlaysRenderer.reset();
-  if (_raf) { scope.cancelFrame(_raf); _raf = null; }
   _unbindGameInput();
   gameView.reset();
   _canvas = null; _ctx = null;
@@ -916,7 +788,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); actions.stop(); events.stop(); menuView.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); gameInput.stop(); actions.stop(); events.stop(); round.stop(); menuView.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { gameInput.release(); }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
