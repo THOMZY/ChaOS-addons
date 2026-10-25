@@ -10,6 +10,7 @@ Le Worms du site (parties à plusieurs, mises, tickets) : salles, règles et min
 | `client/worms-media.js` | propriétaire des sprites, sons préchargés et clones audio en lecture ; construction inactive, chargement au premier affichage, arrêt terminal et ressources consultables |
 | `client/worms-terrain.js` | masque de hauteurs serveur, terrain/ciel/eau/nuages, canvas intermédiaire et écouteurs de chargement possédés par manche ; reset réutilisable, stop terminal |
 | `client/worms-sprites.js` | rendu des vers vivants/morts, animations, noms/PV et flèche active ; bitmaps privés, clear réutilisable et stop terminal |
+| `client/worms-effects.js` | rendu des projectiles et comptes à rebours ; explosions, particules et dégâts flottants privés ; reset par manche et stop terminal |
 | `media/` | images (niveaux, armes) et sons, servis sous `/worms-assets/` ; les niveaux sont aussi lus par le serveur |
 
 Le site garde la fenêtre « Worms » (`website/features/worms/`), son entrée légère `website/core/js/games/worms-entry.js` (liste des événements, chargement du contrôleur à l'ouverture ou à l'admission dans une salle) et ses textes (`worms.*` dans les catalogues du site). Le contrôleur importe les modules du site par URL (`/core/js/...`).
@@ -51,4 +52,15 @@ Le cache privé tient compte de l’identité de l’image et de la hauteur des 
 
 Trente-deux tests couvrent ces contrats ; les défauts d’image remplacée non repeinte et de bitmap conservé après vidage sont reproduits sur la fonction d’origine. Les 147 fonctions conservées sont syntaxiquement identiques ; seuls cinq raccords changent. Chromium vérifie des pixels natifs avec des sprites synthétiques asymétriques, leur orientation, le remplacement d’image et la libération/reprise/fin du cache. Les trois propriétaires restent différés, hors premier écran. Tests complets du site : 2 918 verts ; qualité, Chromium frontend et budget froid/chaud vérifiés.
 
-Suite : **A9-worms-d, projectiles et effets** ; puis physique, interface/entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes. Aucun lot Worms complet n’est déclaré terminé.
+Le lot A9-worms-d ci-dessous poursuit les projectiles et effets ; objets/aides de visée, physique, interface/entrées et événements restent à découper.
+
+
+## Découpage du client — A9-worms-d (25/10/2026)
+
+Le noyau passe de 2 683 à 2 492 lignes ; `worms-effects.js` compte 297 lignes. `createWormsEffects({ getState, getImage, getWeaponDefinition, clock, randomUnit, isActive })` ne lit rien à la construction et ne crée ni boucle ni média. Il dessine/avance les projectiles et leurs mèches depuis les trajectoires conservées au noyau. Il possède les explosions, particules et dégâts flottants, alimentés par `addExplosion`, `addDamageLabel` et `spawnParticles`. Dessin et progression gardent leurs points d’appel et leur ordre dans la boucle du contrôleur.
+
+`reset`, raccordé au début et à la fin d’une manche, vide ces trois tableaux privés et invalide toute lecture d’état/image/arme/horloge/hasard interrompue. `stop` est terminal et idempotent ; `status` expose uniquement arrêt et effectifs. Les trajectoires et images empruntées restent intactes après reset/stop. L’ancienne fin de manche conservait les trois tableaux d’effets : ce défaut est reproduit sur la fonction d’origine. Un reset pendant la génération aléatoire ne peut pas injecter des particules dans la manche suivante.
+
+Vingt tests de caractérisation passent avant et après extraction : cadence à 20 points/s, traînée bornée, orientation des missiles, sprites/horloge, dégradés, gravité/fondu, textes et mèches. Onze tests supplémentaires couvrent arrêt, reset, réentrance et propagation des erreurs réelles. Les 130 fonctions conservées sont syntaxiquement identiques ; cinq raccords changent. Le banc Chromium du site vérifie des pixels synthétiques natifs de missile, explosion et particules, puis reset/reprise/arrêt. Le propriétaire reste hors premier écran ; aucun plafond de budget n’augmente.
+
+Suite : **A9-worms-e, rendu des objets et aides de visée** (caisses, objets posés, outils et indicateurs) ; puis physique, interface/entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes.

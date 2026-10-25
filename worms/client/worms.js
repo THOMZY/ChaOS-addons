@@ -1,3 +1,4 @@
+import { createWormsEffects } from './worms-effects.js';
 import { createWormsSprites } from './worms-sprites.js';
 import { createWormsTerrain } from './worms-terrain.js';
 import { createWormsMedia } from './worms-media.js';
@@ -163,9 +164,6 @@ let _shotFired    = false;
 
 // Animation
 let _projectiles  = [];   // [{trajectory:[{cx,cy}], idx, done}]
-let _explosions   = [];   // [{cx,cy,r,startMs,durationMs}]
-let _dmgLabels    = [];   // [{cx,cy,text,alpha,vy}]
-let _particles    = [];   // [{cx,cy,vx,vy,alpha,r,color}]
 let _wormBumps    = new Map(); // wormId → {vx,vy,dx,dy} — visual hit-reaction
 let _shakeUntil   = 0;
 let _animating    = false;
@@ -239,6 +237,15 @@ const wormRenderer = createWormsSprites({
   getImage: _assetImage, isActive: () => scope.active, wormRadius: WORM_R,
 });
 const { draw: _drawWorms } = wormRenderer;
+const effectsRenderer = createWormsEffects({
+  getState: () => ({ projectiles: _projectiles, selectedWeapon: _selectedWeapon }),
+  getImage: _assetImage, getWeaponDefinition: _weaponDef, randomUnit,
+  isActive: () => scope.active,
+});
+const { drawProjectiles: _drawProjectiles, drawExplosions: _drawExplosions,
+  drawParticles: _drawParticles, drawDamageLabels: _drawDamageLabels,
+  drawFuseCountdowns: _drawFuseCountdowns, tickDamageLabels: _tickDmgLabels,
+  spawnParticles: _spawnParticles } = effectsRenderer;
 
 // DOM
 let _container  = null;
@@ -310,19 +317,6 @@ function _noteRoomOpen(list, room) {
 function _noteRoomClosed(list, roomId) {
   _removeRoomById(list, roomId);
   if (_state === 'lobby') _renderLobby();
-}
-
-function _projectileSpriteKey(weapon) {
-  switch (weapon) {
-    case 'bazooka': return 'missile';
-    case 'hand_grenade':
-    case 'cluster_bomb':
-    case 'mortar': return 'grenade';
-    case 'holy_grenade':
-    case 'banana_bomb': return 'hgrenade';
-    case 'dynamite': return 'dynamite';
-    default: return null;
-  }
 }
 
 // ── Init (called once from games.js) ─────────────────────────────────────────
@@ -583,10 +577,8 @@ function _resetGameData(data) {
   _animating    = false;
   _pendingNextTurn = null;
   _projectiles  = [];
-  _explosions   = [];
-  _dmgLabels    = [];
+  effectsRenderer.reset();
   _wormBumps.clear();
-  _particles    = [];
   _shakeUntil   = 0;
   _retreating   = false;
   _retreatEnd   = 0;
@@ -834,6 +826,7 @@ function _stopGame() {
   if (_raf) { scope.cancelFrame(_raf); _raf = null; }
   _unbindGameInput();
   wormRenderer.clear();
+  effectsRenderer.reset();
   _wormBumps.clear();
   _dyingWorms.clear();
   _weaponAnim = null;
@@ -953,165 +946,6 @@ function _drawAirstrikeTargeting(ctx) {
     ctx.stroke();
   }
   ctx.setLineDash([]);
-  ctx.restore();
-}
-
-function _drawProjectiles(ctx, dt) {
-  const PROJ_PTS_PER_SEC = 20;
-  for (const proj of _projectiles) {
-    if (proj.done) continue;
-    _advanceProjectileFrame(proj, dt, PROJ_PTS_PER_SEC);
-    _drawProjectileTrail(ctx, proj);
-    _drawProjectileHead(ctx, proj);
-  }
-}
-
-function _advanceProjectileFrame(proj, dt, ptsPerSec) {
-  proj.fidx = (proj.fidx ?? 0) + dt * ptsPerSec;
-  proj.idx  = Math.min(proj.trajectory.length - 1, Math.floor(proj.fidx));
-  if (proj.idx >= proj.trajectory.length - 1) proj.done = true;
-}
-
-function _drawProjectileTrail(ctx, proj) {
-  const pw = proj.weapon ?? _selectedWeapon;
-  const wdef = _weaponDef(pw) ?? WEAPONS.bazooka;
-  ctx.lineWidth   = 4;
-  ctx.strokeStyle = wdef.trailColor;
-  ctx.beginPath();
-  let drawn = 0;
-  for (let k = proj.idx; k >= 0 && drawn < 14; k -= 2, drawn++) {
-    const pt = proj.trajectory.at(k);
-    if (!pt) continue;
-    if (drawn === 0) ctx.moveTo(pt.cx, pt.cy); else ctx.lineTo(pt.cx, pt.cy);
-  }
-  ctx.stroke();
-}
-
-function _drawProjectileHead(ctx, proj) {
-  const head = proj.trajectory.at(proj.idx);
-  const prev = proj.idx > 0 ? (proj.trajectory.at(proj.idx - 1) ?? head) : head;
-  if (!head || !prev) return;
-  const pw = proj.weapon ?? _selectedWeapon;
-  const spriteKey = _projectileSpriteKey(pw);
-  const img = _assetImage(spriteKey);
-  if (img?.complete && img.naturalWidth > 0) _drawProjectileSprite(ctx, img, spriteKey, head, prev);
-  else _drawProjectileFallback(ctx, head, pw);
-}
-
-function _drawProjectileSprite(ctx, img, spriteKey, head, prev) {
-  const angle = Math.atan2(head.cy - prev.cy, head.cx - prev.cx);
-  const fCount = spriteKey === 'dynamite' ? 129 : 32;
-  const frameH = Math.floor(img.naturalHeight / fCount);
-  const frame = spriteKey === 'missile'
-    ? Math.round(((angle + Math.PI * 2) % (Math.PI * 2)) / (Math.PI * 2) * 32) % 32
-    : Math.floor(Date.now() / 50) % fCount;
-  const scale = 16 / Math.max(img.naturalWidth, frameH);
-  const pW = img.naturalWidth * scale, pH = frameH * scale;
-  ctx.save();
-  ctx.translate(head.cx, head.cy);
-  ctx.drawImage(img, 0, frame * frameH, img.naturalWidth, frameH, -pW/2, -pH/2, pW, pH);
-  ctx.restore();
-}
-
-function _drawProjectileFallback(ctx, head, weapon) {
-  const wdef = _weaponDef(weapon) ?? WEAPONS.bazooka;
-  ctx.beginPath();
-  ctx.arc(head.cx, head.cy, 10, 0, Math.PI * 2);
-  ctx.fillStyle = wdef.color;
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(head.cx, head.cy, 10, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-}
-
-function _drawExplosions(ctx, now) {
-  _explosions = _explosions.filter(ex => _drawExplosion(ctx, ex, now));
-}
-
-function _drawExplosion(ctx, ex, now) {
-  const t = (now - ex.startMs) / ex.durationMs;
-  if (t >= 1) return false;
-  const maxR  = ex.r;
-  const curR  = maxR * Math.min(1, t * 3);
-  const alpha = t < 0.4 ? 1 : 1 - (t - 0.4) / 0.6;
-  const ringR = maxR * (0.8 + t * 0.8);
-  ctx.beginPath();
-  ctx.arc(ex.cx, ex.cy, ringR, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(180,100,30,${alpha * 0.3})`;
-  ctx.lineWidth   = 5 * (1 - t);
-  ctx.stroke();
-  const fg = ctx.createRadialGradient(ex.cx, ex.cy, 0, ex.cx, ex.cy, curR);
-  fg.addColorStop(0,   `rgba(255,255,200,${alpha})`);
-  fg.addColorStop(0.25,`rgba(255,200,50,${alpha * 0.95})`);
-  fg.addColorStop(0.55,`rgba(255,100,10,${alpha * 0.7})`);
-  fg.addColorStop(0.8, `rgba(150,40,0,${alpha * 0.4})`);
-  fg.addColorStop(1,   `rgba(80,20,0,0)`);
-  ctx.beginPath();
-  ctx.arc(ex.cx, ex.cy, curR, 0, Math.PI * 2);
-  ctx.fillStyle = fg;
-  ctx.fill();
-  return true;
-}
-
-function _drawParticles(ctx, dt) {
-  _particles = _particles.filter(p => _drawParticle(ctx, p, dt));
-}
-
-function _drawParticle(ctx, p, dt) {
-  p.cx    += p.vx * dt;
-  p.cy    += p.vy * dt;
-  p.vy    += 220 * dt;
-  p.alpha -= 1.8 * dt;
-  if (p.alpha <= 0) return false;
-  ctx.beginPath();
-  ctx.arc(p.cx, p.cy, p.r, 0, Math.PI * 2);
-  ctx.fillStyle = p.color.replace('1)', `${p.alpha.toFixed(2)})`);
-  ctx.fill();
-  return true;
-}
-
-function _drawDamageLabels(ctx) {
-  for (const lb of _dmgLabels) {
-    if (lb.alpha <= 0) continue;
-    ctx.globalAlpha = lb.alpha;
-    ctx.font        = 'bold 15px monospace';
-    ctx.fillStyle   = lb.killed ? '#ff4400' : '#ffee00';
-    ctx.textAlign   = 'center';
-    ctx.strokeStyle = 'rgba(0,0,0,0.8)';
-    ctx.lineWidth   = 3;
-    ctx.strokeText(lb.text, lb.cx, lb.cy);
-    ctx.fillText(lb.text, lb.cx, lb.cy);
-  }
-  ctx.globalAlpha = 1;
-  ctx.textAlign   = 'left';
-}
-
-function _drawFuseCountdowns(ctx, now) {
-  for (const proj of _projectiles) {
-    if (proj.done || proj.fuseMs == null) continue;
-    const timeLeft = _projectileFuseSeconds(proj, now);
-    if (timeLeft <= 0) continue;
-    const head = proj.trajectory.at(proj.idx) ?? proj.trajectory.at(-1);
-    if (head) _drawFuseCountdown(ctx, head, timeLeft);
-  }
-}
-
-function _projectileFuseSeconds(proj, now) {
-  const elapsed = (now - (proj.startMs ?? now)) / 1000;
-  return Math.ceil(Math.max(0, proj.fuseMs / 1000 - elapsed));
-}
-
-function _drawFuseCountdown(ctx, head, timeLeft) {
-  ctx.save();
-  ctx.font        = `bold ${10 + timeLeft * 3}px monospace`;
-  ctx.textAlign   = 'center';
-  ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-  ctx.lineWidth   = 3;
-  ctx.fillStyle   = timeLeft === 1 ? '#ff4400' : timeLeft === 2 ? '#ffcc00' : '#ffffff';
-  ctx.strokeText(String(timeLeft), head.cx, head.cy - 14);
-  ctx.fillText(String(timeLeft), head.cx, head.cy - 14);
   ctx.restore();
 }
 
@@ -1320,14 +1154,6 @@ function _drawAimCrosshair(ctx, now) {
     ctx.fillStyle = _weaponDef(_selectedWeapon)?.color ?? '#ff7700';
     ctx.fill();
   }
-}
-
-function _tickDmgLabels(dt) {
-  for (const lb of _dmgLabels) {
-    lb.cy  -= 30 * dt;
-    lb.alpha -= 0.6 * dt;
-  }
-  _dmgLabels = _dmgLabels.filter(lb => lb.alpha > 0);
 }
 
 // ── HUD updates ────────────────────────────────────────────────────────────────
@@ -2063,7 +1889,7 @@ function _playHoleExplosions(newHoles, particleCount, shakeMs) {
   const holes = newHoles ?? [];
   if (holes.length === 0) return false;
   for (const h of holes) {
-    _explosions.push({ cx: h.cx, cy: h.cy, r: Math.max(30, h.r), startMs: performance.now(), durationMs: 520 });
+    effectsRenderer.addExplosion({ cx: h.cx, cy: h.cy, r: Math.max(30, h.r), startMs: performance.now(), durationMs: 520 });
     _spawnParticles(h.cx, h.cy, particleCount);
   }
   _shakeUntil = performance.now() + shakeMs;
@@ -2117,7 +1943,7 @@ function _applyWormStates(worms, options = {}) {
 function _addDamageLabels(wormDamages) {
   for (const d of wormDamages ?? []) {
     const w = _worms.find(w => w.id === d.wormId);
-    if (w) _dmgLabels.push({ cx: w.cx, cy: w.cy - 15, text: `-${d.damage}`, alpha: 1, killed: d.killed });
+    if (w) effectsRenderer.addDamageLabel({ cx: w.cx, cy: w.cy - 15, text: `-${d.damage}`, alpha: 1, killed: d.killed });
   }
 }
 
@@ -2639,23 +2465,6 @@ function _drawCrate(ctx, cx, cy, type, weapon, falling, now) {
   ctx.restore();
 }
 
-// Spawn debris particles at an explosion origin
-function _spawnParticles(cx, cy, n) {
-  for (let i = 0; i < n; i++) {
-    const ang = randomUnit() * Math.PI * 2;
-    const spd = 60 + randomUnit() * 200;
-    const col = randomUnit() < 0.5 ? 'rgba(255,150,30,1)' : 'rgba(200,80,10,1)';
-    _particles.push({
-      cx, cy,
-      vx: Math.cos(ang) * spd,
-      vy: Math.sin(ang) * spd - 60,
-      alpha: 0.9 + randomUnit() * 0.1,
-      r:   2 + randomUnit() * 3,
-      color: col,
-    });
-  }
-}
-
 function _el(tag, attrs = {}, text = null) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -2675,7 +2484,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
