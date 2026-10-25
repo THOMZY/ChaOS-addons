@@ -117,3 +117,14 @@ Les anciens callbacks clic/erreur deviennent inertes, y compris après confirmat
 Dix tests de caractérisation passent avant/après extraction ; dix-neuf tests supplémentaires couvrent régressions, cycles, accès réentrants et erreurs. Seize builders sont déplacés ; 59 fonctions conservées sont syntaxiquement identiques, quatre raccords changent. Chromium vérifie DOM, input, canvas et images natifs, actions, contrôle spectateur, callbacks retirés et confirmation pilotée. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
 
 Suite : **A9-worms-i, lobby, attente et résultats** ; puis entrées, tirs/événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
+
+
+## Découpage du client — A9-worms-i (25/10/2026)
+
+Le noyau passe de 1 579 à 1 368 lignes. `worms-menu-view.js` (607 lignes) possède les écrans lobby, attente et résultats : création/jonction/spectateur, sélection de carte selon le rôle, lancement et sortie, gagnant/égalité/gain et relance. État, catalogue, créateur de nœuds, traduction, rendu sécurisé des noms/HTML et actions sont injectés. Les commandes réseau, la vérification du solde, le thème et les transitions restent au contrôleur.
+
+La factory expose `mount`, `reset`, `stop` idempotent/terminal et `status` ; elle ne monte aucun écran à la construction. Chaque montage possède ses nœuds et écouteurs. Remplacement, activation, début de partie, sortie et arrêt invalident les callbacks capturés. Le nettoyage retire seulement les éléments possédés ; une construction interrompue libère ses allocations sans détruire le montage qui l’a remplacée. Les erreurs de nettoyage sont journalisées et les autres libérations continuent. `markRematchWaiting` met à jour le bouton de résultats courant ; aucune recherche globale dans le document.
+
+Les anciens contrôles de salle actifs après reconstruction et la double relance par callback capturé sont reproduits sur le code d’origine. Dix tests de caractérisation passent sur les fonctions d’origine et extraites ; dix-huit tests supplémentaires couvrent régressions, cycle de vie, construction réentrante et erreurs. Une relance refusée ou invalidée pendant sa vérification/traduction n’envoie rien. Chromium vérifie DOM natif, noms sûrs, commandes et règles créateur/invité, changements de carte, résultats et contrôles retirés.
+
+Suite : **A9-worms-j, entrées de jeu** ; puis tirs/événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.

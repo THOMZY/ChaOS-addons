@@ -1,3 +1,4 @@
+import { createWormsMenuView } from './worms-menu-view.js';
 import { createWormsGameView } from './worms-game-view.js';
 import { createWormsHud } from './worms-hud.js';
 import { createWormsTurnAnimations } from './worms-turn-animations.js';
@@ -374,6 +375,7 @@ function initWorms(socket, getMe, pushSystem) {
 
 // ── Activate (called from games.js when user clicks Worms button) ────────────
 function activateWorms(root, onExit, opts = {}) {
+  menuView.reset();
   _root   = root;
   _onExit = onExit;
   _ensureAssets();   // ~96 sprites/sounds (~3.7 MB) load now, never at site load
@@ -394,6 +396,7 @@ function activateWorms(root, onExit, opts = {}) {
 
 // ── Exit ──────────────────────────────────────────────────────────────────────
 function _exit() {
+  menuView.reset();
   _stopGame();
   _state  = 'idle';
   _roomId = null;
@@ -401,204 +404,46 @@ function _exit() {
 }
 
 // ── Lobby ─────────────────────────────────────────────────────────────────────
-function _renderLobby() {
-  if (!_root) return;
-  _root.dataset.gameMode = 'worms-menu';
-  _root.style.cssText = 'padding:10px;overflow:auto;background:#0f1014;color:#fff;';
-  _root.replaceChildren();
-
-  const wrap = _el('div', { style: { fontFamily: 'monospace', maxWidth: '600px', margin: '0 auto' } });
-
-  // Header
-  wrap.appendChild(_el('h3', { style: { color: '#66dd33', marginBottom: '8px', textAlign: 'center' } }, `🪱 Worms — ${t('games.type.freeForAll')}`));
-
-  // Bet + create row
-  const createRow = _el('div', { style: { display: 'flex', gap: '6px', marginBottom: '8px' } });
-  const betInput  = _el('input', { type: 'number', min: '0', placeholder: t('games.worms.betPlaceholder'), 'aria-label': t('games.worms.betLabel'), style: {
-    flex: '1', padding: '5px 8px', background: '#1e2028', border: '1px solid #444',
-    color: '#fff', borderRadius: '4px', fontSize: '13px',
-  }});
-  const maxSel = _el('select', { 'aria-label': t('games.worms.maxPlayers'), style: {
-    padding: '5px', background: '#1e2028', border: '1px solid #444',
-    color: '#fff', borderRadius: '4px', fontSize: '13px',
-  }});
-  [2,3,4,5,6,7,8].forEach(n => {
-    const opt = document.createElement('option');
-    opt.value = n; opt.textContent = t('games.worms.playerCount', { count: n });
-    if (n === 4) opt.selected = true;
-    maxSel.appendChild(opt);
-  });
-  const createBtn = _el('button', { class: 'btn games-create-btn', style: {
-    background: 'linear-gradient(135deg,#3d8a2c,#7a5230)',
-    color: '#fff', padding: '5px 14px', borderRadius: '4px',
-    border: 'none', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap',
-  }}, t('games.worms.create'));
-  createBtn.addEventListener('click', () => {
-    const bet = Math.max(0, parseInt(betInput.value, 10) || 0);
-    const me  = _getMe?.();
-    if (bet > 0 && bet > (me?.points ?? 0)) { _pushSys?.(t('games.worms.insufficientBalance')); return; }
-    _socket.emit('worms:create', { bet, maxPlayers: parseInt(maxSel.value, 10) });
-  });
-  createRow.append(betInput, maxSel, createBtn);
-  wrap.appendChild(createRow);
-
-  // Open rooms
-  const roomsTitle = _el('div', {
-    style: { fontSize: '12px', color: '#999', marginBottom: '4px', marginTop: '8px' },
-  }, t('games.worms.openRooms', { count: _openRooms.length }));
-  wrap.appendChild(roomsTitle);
-
-  if (_openRooms.length === 0) {
-    wrap.appendChild(_el('div', { style: { fontSize: '12px', color: '#555', marginBottom: '6px' }}, t('games.worms.noRooms')));
-  } else {
-    for (const r of _openRooms) {
-      wrap.appendChild(_roomRow(r));
-    }
-  }
-
-  // Live rooms
-  if (_liveRooms.length > 0) {
-    wrap.appendChild(_el('div', {
-      style: { fontSize: '12px', color: '#999', marginTop: '8px', marginBottom: '4px' },
-    }, t('games.worms.liveRooms', { count: _liveRooms.length })));
-    for (const r of _liveRooms) {
-      const row = _el('div', { style: {
-        background: '#1a2012', border: '1px solid #2d4020', borderRadius: '4px',
-        padding: '6px 8px', marginBottom: '4px', fontSize: '12px', color: '#aaa',
-      }});
-      const names = r.players.map(p => _colorSpan(p.pseudo, p.color)).join(', ');
-      setSafeHtml(row, `<span style="color:#66dd33">▶ ${t('games.worms.live')}</span> ${names} — ${t('games.worms.betShort', { bet: r.bet })}`);
-      // Spectating starts here since Worms has its own window (roadmap J5c).
-      const watch = _el('button', { type: 'button', class: 'btn small', 'data-worms-watch': r.id, style: { marginLeft: '8px' } }, `👁 ${t('games.lobby.watch')}`);
-      watch.addEventListener('click', () => activateWorms(_root, _onExit, { spectate: true, roomId: r.id }));
-      row.appendChild(watch);
-      wrap.appendChild(row);
-    }
-  }
-
-  _root.appendChild(wrap);
-
-  // Back button
-  const backBtn = _el('button', { style: {
-    marginTop: '10px', background: '#333', color: '#ccc',
-    border: 'none', padding: '5px 14px', borderRadius: '4px',
-    cursor: 'pointer', fontSize: '12px', display: 'block', marginLeft: 'auto', marginRight: 'auto',
-  }}, t('games.worms.back'));
-  backBtn.addEventListener('click', _exit);
-  _root.appendChild(backBtn);
-}
-
-function _roomRow(r) {
-  const row = _el('div', { style: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    background: '#161a1e', border: '1px solid #333', borderRadius: '4px',
-    padding: '5px 8px', marginBottom: '4px', fontSize: '13px',
-  }});
-  const names = r.players.map(p => _colorSpan(p.pseudo, p.color)).join(', ');
-  const left = _el('span', {});
-  setSafeHtml(left, `${names} — <span style="color:#aaa">${r.players.length}/${r.maxPlayers}</span> — <span style="color:#f8c200">${r.bet} pts</span>`);
-  const joinBtn = _el('button', { style: {
-    background: '#1d4a28', color: '#66dd33', border: '1px solid #2d6a38',
-    padding: '3px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-  }}, t('games.worms.join'));
-  joinBtn.setAttribute('data-game-focus', `worms:join:${r.id}`);
-  joinBtn.setAttribute('aria-label', t('games.worms.joinRoom', { players: r.players.map(p=>p.pseudo).join(', ') }));
-  joinBtn.addEventListener('click', () => {
-    const me = _getMe?.();
-    if (r.bet > 0 && r.bet > (me?.points ?? 0)) { _pushSys?.(t('games.worms.insufficientBalance')); return; }
-    _socket.emit('worms:join', { roomId: r.id });
-  });
-  row.append(left, joinBtn);
-  return row;
-}
-
-// ── Waiting room ──────────────────────────────────────────────────────────────
-const MAP_NAMES = LEVELS.map(l => `${l.emoji} ${l.name}`);
 let _selectedTheme = 0;
-
+function _canAffordBet(bet) {
+  if (bet > 0 && bet > (_getMe?.()?.points ?? 0)) {
+    _pushSys?.(t('games.worms.insufficientBalance'));
+    return false;
+  }
+  return true;
+}
+const menuView = createWormsMenuView({
+  getState: () => ({ openRooms: _openRooms, liveRooms: _liveRooms, myUserId: _myUserId, selectedTheme: _selectedTheme }),
+  createElement: _el, translate: t, setSafeHtml, colorSpan: _colorSpan, levels: LEVELS,
+  isActive: () => scope.active,
+  actions: {
+    create: (bet, maxPlayers) => { if (_canAffordBet(bet)) _socket.emit('worms:create', { bet, maxPlayers }); },
+    join: room => { if (_canAffordBet(room.bet)) _socket.emit('worms:join', { roomId: room.id }); },
+    watch: roomId => activateWorms(_root, _onExit, { spectate: true, roomId }),
+    exit: _exit,
+    selectTheme: (index, room) => { _selectedTheme = index; _renderWaiting(room); },
+    launch: () => _socket.emit('worms:launch', { roomId: _roomId, theme: _selectedTheme }),
+    leaveWaiting: () => {
+      _socket.emit('worms:forfeit', { roomId: _roomId });
+      _state = 'lobby'; _roomId = null;
+      _socket.emit('worms:rooms_request'); _renderLobby();
+    },
+    canRematch: () => !!_roomId && _canAffordBet(_lastBet),
+    rematch: () => _socket.emit('worms:rematch', { roomId: _roomId }),
+    leaveResults: () => { if (_roomId) _socket.emit('worms:post_exit', { roomId: _roomId }); else _exit(); },
+  },
+});
+function _renderLobby() { if (_root) menuView.mount(_root, 'lobby'); }
 function _renderWaiting(room) {
   if (!_root) return;
-  _root.dataset.gameMode = 'worms-menu';
   _lastBet = room?.bet ?? _lastBet;
-  _root.replaceChildren();
-  _root.style.cssText = 'padding:10px;overflow:auto;background:#0f1014;color:#fff;';
-
-  const wrap = _el('div', { style: { fontFamily: 'monospace', maxWidth: '500px', margin: '0 auto', textAlign: 'center' } });
-  wrap.appendChild(_el('h3', { style: { color: '#66dd33', marginBottom: '10px' }}, t('games.worms.waitingRoom')));
-
-  const betInfo = _el('div', { style: { color: '#f8c200', marginBottom: '8px', fontSize: '13px' }},
-    t('games.worms.roomSummary', { bet: room.bet, players: room.players.length, maxPlayers: room.maxPlayers }));
-  wrap.appendChild(betInfo);
-
-  const list = _el('div', { style: { marginBottom: '12px' }});
-  for (const p of room.players) {
-    const row = _el('div', { style: { padding: '3px 0', fontSize: '13px' }});
-    setSafeHtml(row, _colorSpan(p.pseudo, p.color));
-    list.appendChild(row);
-  }
-  wrap.appendChild(list);
-
-  const waiting = _el('div', { style: { color: '#888', fontSize: '12px', marginBottom: '12px' }},
-    t('games.worms.waitingForPlayers'));
-  wrap.appendChild(waiting);
-
-  const btnRow = _el('div', { style: { display: 'flex', gap: '8px', justifyContent: 'center' }});
-  const isCreator = room.players.length > 0 && room.players[0].userId === _myUserId;
-
-  // Map selector — only the creator can change it
-  const mapSection = _el('div', { style: { marginBottom: '12px' }});
-  mapSection.appendChild(_el('div', { style: { fontSize: '11px', color: '#888', marginBottom: '5px' }}, t('games.worms.map')));
-  const mapRow = _el('div', { style: { display: 'flex', gap: '5px', justifyContent: 'center', flexWrap: 'wrap' }});
-  MAP_NAMES.forEach((name, i) => {
-    const btn = _el('button', { style: {
-      background: _selectedTheme === i ? _levelDef(i).skyB : '#1a1a1a',
-      color: _selectedTheme === i ? '#fff' : '#888',
-      border: `1px solid ${_selectedTheme === i ? '#aaa' : '#333'}`,
-      padding: '4px 8px', borderRadius: '4px', cursor: isCreator ? 'pointer' : 'default',
-      fontSize: '11px', opacity: isCreator ? '1' : '0.6',
-    }}, name);
-    if (isCreator) {
-      btn.addEventListener('click', () => {
-        _selectedTheme = i;
-        _renderWaiting(room);  // re-render to update selection
-      });
-    }
-    mapRow.appendChild(btn);
-  });
-  mapSection.appendChild(mapRow);
-  wrap.appendChild(mapSection);
-
-  if (isCreator) {
-    const launchBtn = _el('button', { style: {
-      background: room.players.length < 2 ? '#2a3a2a' : 'linear-gradient(135deg,#3d8a2c,#7a5230)',
-      color: '#fff', border: 'none', padding: '7px 18px', borderRadius: '4px',
-      cursor: room.players.length < 2 ? 'not-allowed' : 'pointer', fontSize: '13px',
-    }}, t('games.worms.launch'));
-    if (room.players.length >= 2) {
-      launchBtn.addEventListener('click', () => _socket.emit('worms:launch', { roomId: _roomId, theme: _selectedTheme }));
-    }
-    btnRow.appendChild(launchBtn);
-  }
-
-  const leaveBtn = _el('button', { style: {
-    background: '#3a1414', color: '#ff7777', border: '1px solid #5a2020',
-    padding: '7px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px',
-  }}, t('games.worms.leave'));
-  leaveBtn.addEventListener('click', () => {
-    _socket.emit('worms:forfeit', { roomId: _roomId });
-    _state = 'lobby';
-    _roomId = null;
-    _socket.emit('worms:rooms_request');
-    _renderLobby();
-  });
-  btnRow.appendChild(leaveBtn);
-  wrap.appendChild(btnRow);
-  _root.appendChild(wrap);
+  menuView.mount(_root, 'waiting', room);
 }
 
 // ── Game canvas setup ─────────────────────────────────────────────────────────
 
 function _setupGame(data) {
+  menuView.reset();
   wormRenderer.clear();
   if (_root) _root.dataset.gameMode = 'worms-game';
   _resetGameData(data);
@@ -1400,12 +1245,7 @@ function _bindSocketEvents() {
 
   _socket.on('worms:rematch_waiting', ({ roomId }) => {
     if (_roomId !== roomId) return;
-    const btn = document.getElementById('worms-rematch-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.style.opacity = '0.65';
-      btn.textContent = t('games.worms.waiting');
-    }
+    menuView.markRematchWaiting();
   });
 
   _socket.on('worms:rematch_lobby', ({ roomId, room }) => {
@@ -1497,58 +1337,7 @@ function _bindSocketEvents() {
 }
 
 // ── Results screen ────────────────────────────────────────────────────────────
-function _renderResults(data) {
-  if (!_root) return;
-  _root.dataset.gameMode = 'worms-menu';
-  _root.replaceChildren();
-  _root.style.cssText = 'padding:14px;overflow:auto;background:#0f1014;color:#fff;text-align:center;';
-
-  const wrap = _el('div', { style: { fontFamily: 'monospace', maxWidth: '500px', margin: '0 auto' }});
-
-  if (data.draw || !data.winner) {
-    wrap.appendChild(_el('h2', { style: { color: '#ffcc00' }}, t('games.worms.draw')));
-    wrap.appendChild(_el('p', { style: { color: '#aaa' }}, t('games.worms.everyoneDied')));
-  } else {
-    const w = data.winner;
-    const h2 = _el('h2', { style: { color: w.color ?? '#66dd33' }});
-    h2.textContent = t('games.worms.winner', { player: w.pseudo });
-    wrap.appendChild(h2);
-    if (data.payout > 0) {
-      wrap.appendChild(_el('p', { style: { color: '#f8c200', fontSize: '15px' }},
-        `+${data.payout} pts`));
-    }
-  }
-
-  const btnRow = _el('div', { style: { marginTop: '16px', display: 'flex', gap: '10px', justifyContent: 'center' }});
-
-  const replayBtn = _el('button', { id: 'worms-rematch-btn', style: {
-    background: 'linear-gradient(135deg,#3d8a2c,#7a5230)',
-    color: '#fff', border: 'none', padding: '8px 18px',
-    borderRadius: '4px', cursor: 'pointer', fontSize: '14px',
-  }}, t('games.worms.playAgain'));
-  replayBtn.addEventListener('click', () => {
-    if (!_roomId) return;
-    const me = _getMe?.();
-    if (_lastBet > 0 && _lastBet > (me?.points ?? 0)) { _pushSys?.(t('games.worms.insufficientBalance')); return; }
-    replayBtn.disabled = true;
-    replayBtn.style.opacity = '0.65';
-    replayBtn.textContent = t('games.worms.rematchSent');
-    _socket.emit('worms:rematch', { roomId: _roomId });
-  });
-
-  const quitBtn = _el('button', { style: {
-    background: '#2a1818', color: '#ff7777', border: '1px solid #5a2828',
-    padding: '8px 18px', borderRadius: '4px', cursor: 'pointer', fontSize: '14px',
-  }}, t('games.worms.leave'));
-  quitBtn.addEventListener('click', () => {
-    if (_roomId) _socket.emit('worms:post_exit', { roomId: _roomId });
-    else _exit();
-  });
-
-  btnRow.append(replayBtn, quitBtn);
-  wrap.appendChild(btnRow);
-  _root.appendChild(wrap);
-}
+function _renderResults(data) { if (_root) menuView.mount(_root, 'results', data); }
 
 // ── Utility ──────────────────────────────────────────────────────────────────
 
@@ -1571,7 +1360,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); menuView.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
