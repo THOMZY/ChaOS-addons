@@ -58,6 +58,8 @@ export function createGameboyFeature({
     upgradeHandler = null,
     stopping = null;
   let operation = Promise.resolve();
+  let isRomUnloaded = false,
+    roomGeneration = 0;
   const unavailable = () => Object.assign(new Error('gameboy_stopping'), { status: 503 });
   function assertAccepting() {
     if (isStopped) throw unavailable();
@@ -114,8 +116,9 @@ export function createGameboyFeature({
         }
       : null;
   }
-  async function ensureRoom() {
+  async function ensureRoom(canStart = false) {
     assertAccepting();
+    if (isRomUnloaded && !canStart) throw Object.assign(new Error('rom-unloaded'), { status: 409 });
     if (room) return room;
     if (starting) return starting;
     starting = (async () => {
@@ -148,6 +151,8 @@ export function createGameboyFeature({
         throw unavailable();
       }
       room = created;
+      isRomUnloaded = false;
+      roomGeneration++;
       syncClients();
       room.start();
       return room;
@@ -218,14 +223,44 @@ export function createGameboyFeature({
           const file = request.body?.file,
             path = library.path(file);
           if (!path) throw Object.assign(new Error('rom_not_found'), { status: 404 });
-          const active = await ensureRoom(),
+          const active = await ensureRoom(true),
             info = await active.switchRom(path);
           assertAccepting();
-          const details = { ...info, file };
+          roomGeneration++;
+          const details = { ...info, file, generation: roomGeneration };
           broadcast(JSON.stringify({ type: 'rom', ...details }));
           return details;
         });
         reply(response, 200, { ok: true, ...result });
+      } catch (error) {
+        next(error);
+      }
+    });
+    api.post('/unload', express.json({ limit: '1kb' }), async (request, response, next) => {
+      try {
+        const generation = request.body?.generation;
+        if (generation !== undefined && !Number.isSafeInteger(generation))
+          return reply(response, 400, { error: 'invalid_room_generation' });
+        const unloaded = await serialize(async () => {
+          if (generation !== undefined && generation !== roomGeneration) return false;
+          await starting;
+          const active = room;
+          if (!active) {
+            isRomUnloaded = true;
+            return false;
+          }
+          await active.stop();
+          room = null;
+          isRomUnloaded = true;
+          roomGeneration++;
+          broadcast(JSON.stringify({ type: 'unloaded' }));
+          for (const [socket, client] of clients) {
+            client.security?.dispose();
+            socket.close(1000, 'rom_unloaded');
+          }
+          return true;
+        });
+        reply(response, 200, { ok: true, unloaded });
       } catch (error) {
         next(error);
       }
@@ -261,9 +296,11 @@ export function createGameboyFeature({
     server = httpServer;
     webSockets = new WebSocketServer({ noServer: true, maxPayload: 4096 });
     upgradeHandler = (request, socket, head) => {
-      let path;
+      let path, canStart;
       try {
-        path = new URL(request.url, 'http://localhost').pathname;
+        const url = new URL(request.url, 'http://localhost');
+        path = url.pathname;
+        canStart = url.searchParams.get('start') === '1';
       } catch {
         return;
       }
@@ -284,7 +321,7 @@ export function createGameboyFeature({
         return;
       }
       webSockets.handleUpgrade(request, socket, head, (connection) => {
-        void connect(connection, access).catch((error) => {
+        void connect(connection, access, canStart).catch((error) => {
           logger.warn('[gameboy] connection failed:', error.message);
           connection.terminate();
         });
@@ -292,7 +329,7 @@ export function createGameboyFeature({
     };
     server.on('upgrade', upgradeHandler);
   }
-  async function connect(socket, access) {
+  async function connect(socket, access, canStart = false) {
     const id = nextId++,
       color = COLORS[(id - 1) % COLORS.length];
     const client = {
@@ -322,7 +359,7 @@ export function createGameboyFeature({
     });
     let active;
     try {
-      active = await ensureRoom();
+      active = await serialize(() => ensureRoom(canStart && Boolean(access.account)));
     } catch (error) {
       send(socket, JSON.stringify({ type: 'error', reason: error.message }));
       release();
@@ -343,6 +380,7 @@ export function createGameboyFeature({
       JSON.stringify({
         type: 'hello',
         proto: 4,
+        generation: roomGeneration,
         id,
         color,
         players: roster(),

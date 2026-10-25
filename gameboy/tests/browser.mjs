@@ -34,6 +34,7 @@ app.get('/', (_request, response) =>
 const set=setInterval,clear=clearInterval;window.setInterval=(...args)=>{const id=set(...args);probe.intervals.add(id);return id};window.clearInterval=id=>{probe.intervals.delete(id);clear(id)};
 for(const name of ['MutationObserver','ResizeObserver']){const Native=window[name];window[name]=class extends Native{constructor(...args){super(...args);probe.observers.add(this)}disconnect(){probe.observers.delete(this);super.disconnect()}}}
 const Context=AudioContext;window.AudioContext=class extends Context{constructor(...args){super(...args);probe.contexts.push(this)}};
+document.querySelector('.wm-win').addEventListener('wm:close',()=>window.owner?.destroy());
 if(location.search.includes('pcm'))window.AudioDecoder=undefined;</script>
 <script type="module">import {mountWindow} from '/games/gameboy/client/gameboy.js';window.mount=mountWindow;window.owner=mountWindow();window.ready=true;</script>`),
 );
@@ -317,6 +318,10 @@ try {
     () => first.evaluate('probe.contexts.every(context=>context.state === "closed")'),
     'minimized audio cleanup',
   );
+  await clients[1].evaluate('document.querySelector(".wm-win").dataset.minimized="1"');
+  await until(() => feature.status().players === 0, 'every console minimized');
+  assert.notEqual(feature.status().rom, null, 'minimizing all windows keeps the ROM loaded');
+  await clients[1].evaluate('document.querySelector(".wm-win").dataset.minimized="0"');
   await first.evaluate('document.querySelector(".wm-win").dataset.minimized="0"');
   await until(() => feature.status().players === 2, 'minimized console resumes');
   console.info(
@@ -325,7 +330,19 @@ try {
   await first.evaluate(
     'window.previousOwner=owner; document.querySelector(".wm-win").dispatchEvent(new Event("wm:close")); document.querySelector(".wm-win").dataset.minimized="1"',
   );
-  await until(() => feature.status().players === 1, 'closed console disconnect');
+  await until(
+    () => feature.status().players === 0 && feature.status().rom === null,
+    'shared close unloads the server ROM',
+  );
+  await until(
+    () =>
+      clients[1].evaluate(
+        '!document.getElementById("gb-start").hidden && !owner.status().hasSocket',
+      ),
+    'shared close stops the other console',
+  );
+  await delay(1800);
+  assert.equal(feature.status().rom, null, 'reconnect timers cannot reload a closed ROM');
   assert.deepEqual(
     await first.evaluate(
       '({intervals:probe.intervals.size,observers:probe.observers.size,contexts:probe.contexts.filter(context=>context.state!=="closed").length})',
@@ -342,10 +359,12 @@ try {
   );
   assert.equal(await first.evaluate('owner.status().hasSocket'), false);
   await first.evaluate('document.getElementById("gb-startbtn").click()');
+  await until(() => feature.status().players === 1, 'explicit restart boots a fresh console');
+  await clients[1].evaluate('document.getElementById("gb-startbtn").click()');
   await until(() => feature.status().players === 2, 'console remount');
   assert.equal(await first.evaluate('previousOwner.status().hasSocket'), false);
   console.info(
-    'PASS close/remount releases every interval, observer, audio context and old WebSocket',
+    'PASS shared close unloads the server ROM and stops every stream; explicit restart boots a fresh core',
   );
   const uploaded = await fetch(origin + '/gameboy-api/roms?name=advance.gba', {
     method: 'POST',

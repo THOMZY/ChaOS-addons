@@ -190,6 +190,7 @@ function create(host) {
   let powerOn = true;
   let overlayVisible = true;
   let destroyed = false; // A closed owner must never reconnect.
+  let roomGeneration = null;
   let closing = false; // Intentional closes must not schedule reconnection.
   let stopped = true; // An intentional disconnect waits for an explicit restore.
   let lastFrameAt = 0;
@@ -356,7 +357,7 @@ function create(host) {
   }
 
   /* ---------------- network ---------------- */
-  function connect() {
+  function connect(canStart = false) {
     if (destroyed || !started || !isVisible()) return;
     // a single live socket: otherwise the room keeps a ghost player
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
@@ -368,7 +369,7 @@ function create(host) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
-    ws = new WebSocket(`${proto}://${location.host}${WS_PATH}`);
+    ws = new WebSocket(`${proto}://${location.host}${WS_PATH}${canStart ? '?start=1' : ''}`);
     const connection = ws;
     lastFrameNumber = null;
     ws.binaryType = 'arraybuffer';
@@ -400,6 +401,7 @@ function create(host) {
           return;
         }
         if (m.type === 'hello') {
+          roomGeneration = m.generation;
           canControl = m.canControl === true;
           resizeScreen(m.width, m.height);
           try {
@@ -440,11 +442,20 @@ function create(host) {
           lastFrameAt = performance.now();
           return;
         }
+        if (m.type === 'unloaded' || (m.type === 'error' && m.reason === 'rom-unloaded')) {
+          started = false;
+          stopStream();
+          ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+          if (startEl) startEl.hidden = false;
+          hideOverlay();
+          return;
+        }
         if (m.type === 'roster') {
           $('gb-count').textContent = m.players.length;
           return;
         }
         if (m.type === 'rom') {
+          roomGeneration = m.generation ?? roomGeneration;
           resizeScreen(m.width, m.height);
           nextTime = 0;
           opusTs = 0;
@@ -573,7 +584,7 @@ function create(host) {
     powerOn = true;
     applyPower();
     showOverlay('CONNEXION…');
-    connect();
+    connect(true);
   }
 
   if (startBtn) listen(startBtn, 'click', begin);
@@ -790,7 +801,27 @@ function create(host) {
   // Close is terminal for this local owner; minimize only suspends its stream.
   const winEl = host.closest('.wm-win');
   if (winEl) {
-    listen(winEl, 'wm:close', destroy);
+    // Capture runs before the registry's unmount hook aborts this owner's listeners.
+    listen(
+      winEl,
+      'wm:close',
+      () => {
+        const body = Number.isSafeInteger(roomGeneration) ? { generation: roomGeneration } : {};
+        void fetch('/gameboy-api/unload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          keepalive: true,
+        })
+          .then((response) => {
+            if (!response.ok && response.status !== 401 && response.status !== 403)
+              throw new Error(`gameboy_unload_failed: ${response.status}`);
+          })
+          .catch((error) => console.warn('[gameboy] shared ROM unload failed:', error));
+        destroy();
+      },
+      { capture: true },
+    );
     observe(
       MutationObserver,
       winEl,

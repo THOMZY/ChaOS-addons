@@ -79,13 +79,14 @@ async function fixture(context, options = {}) {
   });
   const token = createSession(account.id);
   const cookie = `${SESSION_COOKIE}=${token}`;
-  async function connect(headers = {}) {
-    const socket = new WebSocket(origin.replace('http', 'ws') + '/gameboy-ws', { headers });
+  async function connect(headers = {}, query = '') {
+    const socket = new WebSocket(origin.replace('http', 'ws') + '/gameboy-ws' + query, { headers });
     sockets.push(socket);
     const hello = new Promise((resolve, reject) => {
       socket.on('message', (value) => {
         const message = JSON.parse(value.toString());
         if (message.type === 'hello') resolve(message);
+        if (message.type === 'error') reject(new Error(message.reason));
       });
       socket.once('error', reject);
     });
@@ -224,4 +225,106 @@ test('standby removes the player from the roster, power on brings it back', asyn
   player.socket.close();
   await settle();
   assert.deepEqual(last('spectator'), [], 'closing the console removes the player');
+});
+
+test('shared close unloads the core, disconnects every viewer and forbids automatic resurrection', async (context) => {
+  const scene = await fixture(context);
+  const player = await scene.connect({ Cookie: scene.cookie });
+  const guest = await scene.connect();
+  const closed = [player, guest].map(
+    ({ socket }) => new Promise((resolve) => socket.once('close', resolve)),
+  );
+  const response = await fetch(scene.origin + '/gameboy-api/unload', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ generation: player.hello.generation }),
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, unloaded: true });
+  await Promise.all(closed);
+  assert.equal(scene.room.stopped, true);
+  assert.equal(scene.feature.status().rom, null);
+  assert.equal(scene.feature.status().players, 0);
+  await assert.rejects(scene.connect({ Cookie: scene.cookie }), /rom-unloaded/);
+  await assert.rejects(scene.connect({}, '?start=1'), /rom-unloaded/);
+  assert.equal(scene.feature.status().rom, null);
+  const restarted = await scene.connect({ Cookie: scene.cookie }, '?start=1');
+  assert.ok(restarted.hello.generation > player.hello.generation);
+  const stale = await fetch(scene.origin + '/gameboy-api/unload', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ generation: player.hello.generation }),
+  });
+  assert.deepEqual(await stale.json(), { ok: true, unloaded: false });
+  assert.notEqual(
+    scene.feature.status().rom,
+    null,
+    'a delayed close from an older core cannot unload its replacement',
+  );
+});
+
+test('ROM unload requires a live same-origin account', async (context) => {
+  const scene = await fixture(context);
+  await scene.connect({ Cookie: scene.cookie });
+  const url = scene.origin + '/gameboy-api/unload';
+  assert.equal((await fetch(url, { method: 'POST' })).status, 401);
+  assert.equal(
+    (
+      await fetch(url, {
+        method: 'POST',
+        headers: { Cookie: scene.cookie, Origin: 'https://other.example' },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(scene.room.stopped, false);
+});
+
+test('a delayed close cannot unload a cartridge explicitly loaded after it', async (context) => {
+  const scene = await fixture(context);
+  const player = await scene.connect({ Cookie: scene.cookie });
+  const loaded = await fetch(scene.origin + '/gameboy-api/load', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: 'fixture.gb' }),
+  });
+  assert.equal(loaded.status, 200);
+  const stale = await fetch(scene.origin + '/gameboy-api/unload', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ generation: player.hello.generation }),
+  });
+  assert.deepEqual(await stale.json(), { ok: true, unloaded: false });
+  assert.equal(scene.room.stopped, false);
+});
+
+test('closing during a pending native boot waits for it and unloads the returned core', async (context) => {
+  let releaseCore, reportBoot;
+  const pendingCore = new Promise((resolve) => {
+    releaseCore = resolve;
+  });
+  const bootEntered = new Promise((resolve) => {
+    reportBoot = resolve;
+  });
+  const scene = await fixture(context, {
+    createRoom: () => {
+      reportBoot();
+      return pendingCore;
+    },
+  });
+  const loading = fetch(scene.origin + '/gameboy-api/load', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: 'fixture.gb' }),
+  });
+  await bootEntered;
+  const closing = fetch(scene.origin + '/gameboy-api/unload', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie },
+  });
+  releaseCore(scene.room);
+  assert.equal((await loading).status, 200);
+  assert.equal((await closing).status, 200);
+  assert.equal(scene.room.stopped, true);
+  assert.equal(scene.feature.status().rom, null);
 });
