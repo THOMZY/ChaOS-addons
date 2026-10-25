@@ -1,3 +1,4 @@
+import { createWormsGameView } from './worms-game-view.js';
 import { createWormsHud } from './worms-hud.js';
 import { createWormsTurnAnimations } from './worms-turn-animations.js';
 import { createWormsPhysics } from './worms-physics.js';
@@ -150,6 +151,7 @@ let _wsSynced    = false;
 // Input
 const _keys  = new Set();
 const arenaInput = createGameInput(scope, () => _root, () => { _keys.clear(); _chargeStart = null; });
+let attachedArena = null;
 let _keyAbort     = null;
 let _chargeStart  = null;
 let _power        = 0;
@@ -181,7 +183,6 @@ let _fuseInterval = null;
 let _grenadefuse  = 3;     // grenade fuse in seconds (1–5), selectable with number keys
 let _muted        = false; // global sound mute
 let _fuseEl       = null;  // DOM span: fuse timer indicator
-let _muteBtn      = null;  // DOM button: mute toggle
 
 // Ninja rope state
 let _rope = null; // null | { state:'flying'|'attached', cx, cy, vx, vy, anchorX, anchorY, len }
@@ -286,8 +287,21 @@ const { updateHUD: _updateHUD, updateTimerDisplay: _updateTimerDisplay,
   updateFuseDisplay: _updateFuseDisplay, showTurnAnnouncement: _showTurnAnnouncement,
   drawTurnAnnouncement: _drawTurnAnnouncement } = hud;
 
+const gameView = createWormsGameView({
+  getState: () => ({ selectedWeapon: _selectedWeapon, isSpectateMode: _spectateMode,
+    get isMuted() { return _muted; }, set isMuted(value) { _muted = value; } }),
+  createElement: _el, weapons: WEAPONS, getWeaponLabel: _weaponLabel,
+  getWeaponIconName: _weaponIconName, translate: t, isActive: () => scope.active,
+  attachInput: (canvas, ...args) => { attachedArena = canvas; arenaInput.attach(canvas, ...args); },
+  detachInput: canvas => { if (attachedArena === canvas) { _unbindGameInput(); attachedArena = null; arenaInput.attach(null); } },
+  mountTerrain: () => terrainRenderer.mount(), onSelectWeapon: _selectWeapon,
+  onQuitSpectating: _quitSpectating,
+  onEndTurn: () => { if (_myTurn()) _socket.emit('worms:end_turn', { roomId: _roomId }); },
+  onForfeit: () => _socket.emit('worms:forfeit', { roomId: _roomId }),
+  width: WORLD_W, height: WORLD_H, assetsBase: WORMS_ASSETS,
+});
+
 // DOM
-let _container  = null;
 let _canvas     = null;
 let _ctx        = null;
 let _timerEl    = null;
@@ -589,7 +603,7 @@ function _setupGame(data) {
   if (_root) _root.dataset.gameMode = 'worms-game';
   _resetGameData(data);
   _terrainMask = terrainRenderer.prepare(data, _roomId);
-  _buildGameLayout();
+  if (!_buildGameLayout()) return;
   _updateHealthBar();
   _centerCameraOnActive(data.worms, data.activeWormId);
   _finishGameSetup();
@@ -633,144 +647,17 @@ function _resetGameData(data) {
 }
 
 function _buildGameLayout() {
-  _root.replaceChildren();
-  _root.style.cssText = 'padding:0;overflow:hidden;background:#0a0a0f;position:relative;display:flex;flex-direction:column;';
-  _root.appendChild(_buildTopBar());
-  _root.appendChild(_buildCanvasArea());
-  _root.appendChild(_buildBottomControls());
-  _healthEl = _buildHealthList();
-  _root.appendChild(_healthEl);
-}
-
-function _buildTopBar() {
-  const topBar = _el('div', { class: 'worms-topbar', style: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    background: '#111', padding: '4px 10px', height: '28px', flexShrink: '0',
-    fontFamily: 'monospace', fontSize: '13px', color: '#fff', boxSizing: 'border-box',
-  }});
-  _turnLabel = _el('span', { style: { color: '#66dd33' }}, '');
-  _turnLabel.setAttribute('data-game-status', '');
-  _timerEl   = _el('span', { style: { color: '#ffcc00', fontWeight: 'bold' }}, '');
-  _windEl    = _el('span', { style: { color: '#aaddff', fontSize: '12px' }}, '');
-  _muteBtn = _buildMuteButton();
-  topBar.append(_turnLabel, _windEl, _timerEl, _muteBtn);
-  return topBar;
-}
-
-function _buildMuteButton() {
-  const btn = _el('button', { style: {
-    background: 'none', border: '1px solid #333', color: '#aaa',
-    padding: '2px 5px', borderRadius: '3px', cursor: 'pointer',
-    fontSize: '13px', lineHeight: '1', marginLeft: '4px', flexShrink: '0',
-  }}, '🔊');
-  btn.title = t('games.worms.soundToggle');
-  btn.setAttribute('aria-label', t('games.worms.sound')); btn.setAttribute('aria-pressed', String(!_muted));
-  btn.addEventListener('click', () => {
-    _muted = !_muted;
-    btn.textContent = _muted ? '🔇' : '🔊';
-    btn.setAttribute('aria-pressed', String(!_muted));
-  });
-  return btn;
-}
-
-function _buildCanvasArea() {
-  _container = _el('div', { class: 'worms-stage', style: {
-    flex: '1', overflow: 'hidden', position: 'relative', lineHeight: '0',
-  }});
-  _canvas = document.createElement('canvas');
-  _canvas.width  = WORLD_W;
-  arenaInput.attach(_canvas, 'Worms', t('games.worms.controls'));
-  _canvas.height = WORLD_H;
-  _canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;cursor:crosshair;touch-action:none;display:block;';
-  _container.appendChild(_canvas);
-  _ctx = _canvas.getContext('2d');
-
-  terrainRenderer.mount();
-  return _container;
-}
-
-function _buildBottomControls() {
-  const bottomBar = _el('div', { class: 'worms-toolbar', style: {
-    display: 'flex', alignItems: 'center', gap: '6px',
-    background: '#111', padding: '4px 8px', flexShrink: '0',
-    fontFamily: 'monospace', fontSize: '12px', boxSizing: 'border-box',
-  }});
-  _buildWeaponButtons(bottomBar);
-  bottomBar.appendChild(_el('div', { style: { flex: '1' }}));
-  if (_spectateMode) _buildSpectateControls(bottomBar);
-  else _buildPlayerControls(bottomBar);
-  bottomBar.appendChild(_buildFuseIndicator());
-  return bottomBar;
-}
-
-function _buildWeaponButtons(bottomBar) {
-  _weaponBtns = Object.create(null);
-  for (const [key, def] of Object.entries(WEAPONS)) {
-    const btn = _buildWeaponButton(key, def);
-    Reflect.set(_weaponBtns, key, btn);
-    bottomBar.appendChild(btn);
-  }
-}
-
-function _buildWeaponButton(key, def) {
-  const isActive = key === _selectedWeapon;
-  const btn = _el('button', { class: 'worms-weapon-btn', style: {
-    background: isActive ? '#2a4a1a' : '#1a1a1a',
-    color: isActive ? '#66dd33' : '#888',
-    border: `1px solid ${isActive ? '#66dd33' : '#333'}`,
-    padding: '2px 3px', borderRadius: '4px', cursor: 'pointer',
-    transition: 'background 0.15s', display: 'flex', flexDirection: 'column',
-    alignItems: 'center', gap: '1px', minWidth: '32px', lineHeight: '1',
-    boxSizing: 'border-box',
-  }});
-  const label = _weaponLabel(key);
-  btn.title = label;
-  btn.setAttribute('aria-label', label);
-  btn.setAttribute('aria-pressed', String(isActive));
-  const lbl = _buildWeaponKeyLabel(def.key);
-  btn.appendChild(_buildWeaponIcon(key, def, btn, lbl));
-  btn.appendChild(lbl);
-  btn.appendChild(_buildAmmoLabel(key));
-  btn.addEventListener('click', () => _selectWeapon(key));
-  return btn;
-}
-
-function _buildWeaponIcon(key, def, btn, lbl) {
-  const iconImg = document.createElement('img');
-  const iconName = _weaponIconName(key);
-  iconImg.src = `${WORMS_ASSETS}/images/weaponicons/${iconName ?? 'iconbazooka'}.png`;
-  iconImg.style.cssText = 'width:22px;height:22px;image-rendering:pixelated;display:block;';
-  iconImg.onerror = () => {
-    iconImg.style.display = 'none';
-    const em = document.createElement('span');
-    em.style.cssText = 'font-size:15px;line-height:22px;display:block;width:22px;text-align:center;';
-    em.textContent = def.icon;
-    btn.insertBefore(em, lbl);
-  };
-  return iconImg;
-}
-
-function _buildWeaponKeyLabel(key) {
-  const lbl = document.createElement('span');
-  lbl.style.cssText = 'font-size:8px;font-family:monospace;opacity:0.7;';
-  lbl.textContent = key;
-  return lbl;
-}
-
-function _buildAmmoLabel(key) {
-  const ammoEl = document.createElement('span');
-  ammoEl.dataset.ammo = key;
-  ammoEl.style.cssText = 'font-size:7px;font-family:monospace;color:#ffcc44;min-height:8px;';
-  return ammoEl;
-}
-
-function _buildSpectateControls(bottomBar) {
-  const quitBtn = _el('button', { style: {
-    background: '#2a1818', color: '#ff8888', border: '1px solid #5a2828',
-    padding: '3px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-  }}, t('games.worms.leaveSpectator'));
-  quitBtn.addEventListener('click', _quitSpectating);
-  bottomBar.appendChild(quitBtn);
+  const view = gameView.mount(_root);
+  if (!view) return false;
+  _canvas = view.canvas;
+  _ctx = view.context;
+  _turnLabel = view.turnLabel;
+  _timerEl = view.timer;
+  _windEl = view.wind;
+  _healthEl = view.health;
+  _weaponBtns = view.weaponButtons;
+  _fuseEl = view.fuse;
+  return true;
 }
 
 function _quitSpectating() {
@@ -778,52 +665,6 @@ function _quitSpectating() {
   _spectateMode = false; _state = 'idle'; _roomId = null;
   _stopGame();
   if (_onExit) _onExit();
-}
-
-function _buildPlayerControls(bottomBar) {
-  bottomBar.appendChild(_buildEndTurnButton());
-  bottomBar.appendChild(_buildForfeitButton());
-}
-
-function _buildEndTurnButton() {
-  const endTurnBtn = _el('button', { style: {
-    background: '#2a1818', color: '#ff8888', border: '1px solid #5a2828',
-    padding: '3px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-  }}, t('games.worms.endTurn'));
-  endTurnBtn.addEventListener('click', () => {
-    if (_myTurn()) _socket.emit('worms:end_turn', { roomId: _roomId });
-  });
-  return endTurnBtn;
-}
-
-function _buildForfeitButton() {
-  const forfeitBtn = _el('button', { style: {
-    background: '#1a1a1a', color: '#888', border: '1px solid #333',
-    padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px',
-  }}, '✗');
-  forfeitBtn.title = t('games.forfeit');
-  forfeitBtn.addEventListener('click', () => {
-    if (confirm(t('games.confirmForfeit'))) _socket.emit('worms:forfeit', { roomId: _roomId });
-  });
-  return forfeitBtn;
-}
-
-function _buildFuseIndicator() {
-  _fuseEl = _el('span', { style: {
-    color: '#ffcc44', fontFamily: 'monospace', fontSize: '11px',
-    padding: '2px 6px', borderRadius: '3px', background: 'rgba(255,200,50,0.1)',
-    border: '1px solid rgba(255,200,50,0.3)', marginLeft: '4px', display: 'none',
-  }}, '');
-  _fuseEl.title = t('games.worms.grenadeTimerHelp');
-  return _fuseEl;
-}
-
-function _buildHealthList() {
-  return _el('div', { class: 'worms-healthbar', style: {
-    display: 'flex', flexWrap: 'wrap', gap: '4px',
-    background: '#0d0d0d', padding: '3px 8px', flexShrink: '0',
-    fontFamily: 'monospace', fontSize: '11px',
-  }});
 }
 
 function _centerCameraOnActive(worms, activeWormId) {
@@ -861,6 +702,10 @@ function _stopGame() {
   overlaysRenderer.reset();
   if (_raf) { scope.cancelFrame(_raf); _raf = null; }
   _unbindGameInput();
+  gameView.reset();
+  _canvas = null; _ctx = null;
+  _turnLabel = null; _timerEl = null; _windEl = null; _healthEl = null;
+  _weaponBtns = Object.create(null);
   wormRenderer.clear();
   effectsRenderer.reset();
   _wormBumps.clear();
@@ -880,7 +725,6 @@ function _stopGame() {
   _teleportTarget = null;
   _ammo          = {};
   _fuseEl  = null;
-  _muteBtn = null;
   if (_root && _root.dataset.gameMode === 'worms-game') _root.dataset.gameMode = 'worms-menu';
 }
 
@@ -1727,7 +1571,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); gameView.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });

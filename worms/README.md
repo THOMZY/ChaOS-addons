@@ -15,6 +15,7 @@ Le Worms du site (parties à plusieurs, mises, tickets) : salles, règles et min
 | `client/worms-physics.js` | calcul des mouvements locaux, outils et collisions ; état partagé emprunté, accesseurs scalaires conservés, reset des pas en cours et stop terminal |
 | `client/worms-hud.js` | affichage du tour, santé, armes/munitions, vent, mèches et compte à rebours ; annonce canvas privée, DOM emprunté |
 | `client/worms-turn-animations.js` | animation de sortie/visée, cadence des pas et bips de fin de tour ; délais privés annulables, reset/stop |
+| `client/worms-game-view.js` | construction de la partie, contrôles joueur/spectateur et icônes ; DOM, écouteurs et bitmap possédés par montage |
 | `media/` | images (niveaux, armes) et sons, servis sous `/worms-assets/` ; les niveaux sont aussi lus par le serveur |
 
 Le site garde la fenêtre « Worms » (`website/features/worms/`), son entrée légère `website/core/js/games/worms-entry.js` (liste des événements, chargement du contrôleur à l'ouverture ou à l'admission dans une salle) et ses textes (`worms.*` dans les catalogues du site). Le contrôleur importe les modules du site par URL (`/core/js/...`).
@@ -102,4 +103,17 @@ Le noyau passe de 1 904 à 1 735 lignes. `worms-hud.js` (290 lignes) reçoit lec
 
 Les deux factories exposent `reset`, `stop` idempotent et `status`. Rien ne démarre à l’import/construction. Erreurs réelles propagées ; une allocation de délai invalidée est libérée après retour de son créateur. Vingt-deux tests de caractérisation passent avant/après extraction ; vingt-six tests supplémentaires couvrent régressions, cycle de vie, accès réentrants et erreurs. Les 74 fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium vérifie de vrais nœuds, noms textuels, munitions/ARIA, pixels du fondu et délais natifs, A → B → A et libération. Les modules restent hors premier écran et aucun plafond frontend n’augmente.
 
-Suite : **A9-worms-h, construction de l’interface de partie et contrôles** ; puis lobby/résultats, entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes.
+Le lot A9-worms-h ci-dessous poursuit l’interface de partie et ses contrôles ; lobby/résultats, entrées et événements restent à découper.
+
+
+## Découpage du client — A9-worms-h (25/10/2026)
+
+Le noyau passe de 1 735 à 1 579 lignes ; `worms-game-view.js` compte 498 lignes. `createWormsGameView` reçoit état/catalogue, créateur de nœuds, libellés/icônes/traduction, attachement/détachement de l’arène, montage du terrain, actions et confirmation, dimensions et racine des médias. Construction inactive ; `mount(root)` conserve ordre/styles des quatre régions, canvas 960 × 480, étiquetage de l’arène, armes/raccourcis/badges, son, fin de tour/abandon ou sortie spectateur. Les commandes de jeu et l’état restent au contrôleur ; le son muet est partagé par accesseur.
+
+Chaque montage possède ses nœuds, écouteurs, images d’icônes et bitmap. `reset` retire uniquement ses éléments du root emprunté, détache l’entrée de son canvas, annule les anciennes entrées du contrôleur, retire les sources et met les dimensions du bitmap à zéro. `stop` est terminal/idempotent ; `status` expose montage, écouteurs et images ; `getView` rend les bindings au noyau/HUD. Un montage interrompu libère ses allocations ; nettoyer un ancien montage ne détruit pas le suivant. Les bindings devenus inutiles sont retirés du noyau, et ses autres références sont vidées à la fin de partie.
+
+Les anciens callbacks clic/erreur deviennent inertes, y compris après confirmation d’abandon si la vue a changé. Une erreur d’icône produit un seul emoji de secours. L’icône sonore reflète l’état muet déjà actif à la réouverture. Ces anciens contrôles actifs, fallback dupliqué et mauvaise icône persistée sont reproduits sur le code d’origine. Les échecs de libération sont journalisés sans empêcher les autres nettoyages ; erreurs de construction propagées après nettoyage.
+
+Dix tests de caractérisation passent avant/après extraction ; dix-neuf tests supplémentaires couvrent régressions, cycles, accès réentrants et erreurs. Seize builders sont déplacés ; 59 fonctions conservées sont syntaxiquement identiques, quatre raccords changent. Chromium vérifie DOM, input, canvas et images natifs, actions, contrôle spectateur, callbacks retirés et confirmation pilotée. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
+
+Suite : **A9-worms-i, lobby, attente et résultats** ; puis entrées, tirs/événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
