@@ -1,5 +1,6 @@
 import { Mgba, PcmS16StereoResampler } from 'node-mgba';
 import { Encoder as OpusEncoder } from '@evan/opus';
+import { loadRtcState, projectRtc, readRtc, rtcSidecarPath, saveRtcState, writeRtc } from './rtc.js';
 
 export const FPS = 59.7275;
 export const FRAME_MS = 1000 / FPS;
@@ -71,6 +72,10 @@ export class GbRoom {
     this.loop = null;
     this.configureFrame(W, H);
     this.palette = [15, 56, 15, 48, 98, 48, 139, 172, 15, 155, 188, 15];
+    this.rtcFile = rtcSidecarPath(path);
+    this.rtcClock = false;
+    this.rtcBusy = false;
+    this.rtcSavedAt = 0;
   }
   configureFrame(width, height) {
     this.width = width;
@@ -95,9 +100,38 @@ export class GbRoom {
     this.audioQueue = [];
     this.hookAudio(core);
     this.audioReady = true;
+    this.rtcFile = rtcSidecarPath(path);
+    // A cartridge with a battery clock (Pokemon Gold/Silver, Harvest Moon...).
+    this.rtcClock = core.romInfo?.hasRtc === true;
   }
   async init() {
     this.configureCore(await this.loadCore(this.romPath), this.romPath);
+    await this.restoreClock();
+  }
+  /** Give the cartridge its elapsed time back, exactly like its battery did. */
+  async restoreClock() {
+    if (!this.rtcClock || !this.emu) return;
+    try {
+      const seconds = projectRtc(await loadRtcState(this.rtcFile), Date.now());
+      await writeRtc(this.emu.memory, seconds);
+      this.rtcSavedAt = Date.now();
+    } catch (error) {
+      this.logger.warn('[gameboy] clock restore failed:', error.message);
+    }
+  }
+  /** Store the elapsed cartridge time: the .sav itself cannot hold it. */
+  async saveClock() {
+    if (!this.rtcClock || !this.emu || this.rtcBusy) return;
+    this.rtcBusy = true;
+    try {
+      const seconds = await readRtc(this.emu.memory);
+      await saveRtcState(this.rtcFile, { seconds, at: Date.now() });
+      this.rtcSavedAt = Date.now();
+    } catch (error) {
+      this.logger.warn('[gameboy] clock save failed:', error.message);
+    } finally {
+      this.rtcBusy = false;
+    }
   }
   hookAudio(core) {
     core.diagnostics.onAudioChunk((chunk) => {
@@ -248,6 +282,7 @@ export class GbRoom {
   }
   switchRom(path) {
     return this.serialize(async () => {
+      await this.saveClock();
       if (this.emu.batterySavePath)
         await this.emu.states.saveBatteryToFile(this.emu.batterySavePath);
       const next = await this.loadCore(path);
@@ -258,6 +293,7 @@ export class GbRoom {
       const previous = this.emu;
       this.audioReady = false;
       this.configureCore(next, path);
+      await this.restoreClock();
       this.held.clear();
       for (const player of this.players.values()) player.held.clear();
       await previous.close();
@@ -297,6 +333,13 @@ export class GbRoom {
       }
       await this.step();
       this.tick++;
+      // Every 30 s of wall time: the clock must survive a hard stop too. The
+      // read goes through the room queue so it never lands in the middle of a
+      // frame (the MBC register select is shared with the game's SRAM access).
+      if (this.rtcClock && !this.rtcBusy && Date.now() - this.rtcSavedAt > 30000) {
+        this.rtcSavedAt = Date.now();
+        void this.serialize(() => this.saveClock()).catch(() => {});
+      }
       if (this.now() - this.origin - this.tick * FRAME_MS > 3 * FRAME_MS)
         this.origin = this.now() - this.tick * FRAME_MS;
       const delay = Math.max(1, this.origin + this.tick * FRAME_MS - this.now());
@@ -311,6 +354,7 @@ export class GbRoom {
     this.stopping = (async () => {
       await this.loop;
       await this.operation;
+      await this.saveClock();
       await this.emu?.close();
       this.emu = null;
       this.opus.drop?.();

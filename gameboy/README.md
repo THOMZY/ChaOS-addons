@@ -22,7 +22,26 @@ Tout reste dans `games/gameboy/data/`, exclu de Git et monté **en lecture/écri
 - cartouches `.gb`, `.gbc`, `.gba` ;
 - `roms.index.json`, reconstruit à partir des fichiers valides, avec CRC32 et en-tête ;
 - fichiers `.sav` de mémoire de cartouche, chargés par mGBA et écrits lors du changement de ROM et de l’arrêt propre ;
-- jaquettes réencodées dans `media/<crc>/` et métadonnées `meta.json`.
+- jaquettes réencodées dans `media/<crc>/` et métadonnées `meta.json` ;
+- `<rom>.rtc.json`, l’horloge de la cartouche (voir ci-dessous).
+
+### Horloge de cartouche (RTC)
+
+Les jeux à pile et horloge (Pokémon Or/Argent/Cristal, Harvest Moon…) lisent une
+horloge MBC3 qui, sur la vraie cartouche, continue de tourner même console
+éteinte. Le `.sav` ne la contient pas : le cœur repart de zéro à chaque
+chargement. On la conserve donc à côté, dans `<rom>.rtc.json` :
+
+- au démarrage de la salle, le temps écoulé enregistré est projeté du temps
+  passé hors ligne, puis écrit dans les registres MBC3 (`0x08`→`0x0C`) — le jeu
+  retrouve une cartouche qui a continué de compter ;
+- l’horloge est ensuite relue et enregistrée toutes les 30 s, au changement de
+  ROM et à l’arrêt propre, ce qui couvre aussi un arrêt brutal ;
+- si le fichier est absent (première mise en service), l’horloge part de zéro,
+  comme une pile neuve : le jeu propose de régler l’heure une fois.
+
+Seules les cartouches que le cœur annonce avec `hasRtc` sont concernées ;
+pour les autres, `room.rtcClock` reste faux et rien n’est écrit.
 
 La fermeture locale ne réinitialise pas la console partagée. Quand personne ne regarde, sa boucle attend sans avancer la simulation. L’arrêt définitif ferme le cœur natif et ses codecs. Les sauvegardes sont celles du jeu partagé, pas une sauvegarde par compte ; l’état CPU complet et un arrêt brutal ne sont pas couverts par cette persistance.
 

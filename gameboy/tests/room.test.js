@@ -1,6 +1,37 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { GbRoom } from '../server/room.mjs';
+import { MBC, RTC_REG } from '../server/rtc.js';
+
+/** Minimal MBC3 chip: RAM/RTC enable, register select, latch, data port. */
+function mbc3() {
+  const live = { second: 0, minute: 0, hour: 0, dayLow: 0, dayHigh: 0 };
+  const latched = { ...live };
+  const keys = ['second', 'minute', 'hour', 'dayLow', 'dayHigh'];
+  let enabled = false;
+  let select = 0;
+  return {
+    live,
+    async write8(address, value) {
+      if (address === MBC.ENABLE) enabled = value === 0x0a;
+      else if (address === MBC.SELECT) select = value;
+      else if (address === MBC.LATCH && value === 0x01) Object.assign(latched, live);
+      else if (address === MBC.DATA && enabled && select >= RTC_REG.second && select <= RTC_REG.dayHigh) {
+        const key = keys[select - RTC_REG.second];
+        latched[key] = value;
+        live[key] = value;
+      }
+    },
+    async read8(address) {
+      if (address !== MBC.DATA || !enabled) return 0;
+      if (select < RTC_REG.second || select > RTC_REG.dayHigh) return 0;
+      return latched[keys[select - RTC_REG.second]];
+    },
+  };
+}
 
 function core(model = 'DMG') {
   let capture;
@@ -107,4 +138,33 @@ test('shared input merges players, cancels opposites and ignores malformed butto
   room.removePlayer(1);
   assert.deepEqual([...room.mergedInput()].sort(), ['a', 'down']);
   await room.stop();
+});
+
+test('a battery clock is restored at boot and stored before the core closes', async (context) => {
+  const dir = await mkdtemp(join(tmpdir(), 'gb-clock-'));
+  context.after(() => rm(dir, { recursive: true, force: true }));
+  const romPath = join(dir, 'pokemon.gbc');
+  const sidecar = join(dir, 'pokemon.rtc.json');
+  // The room stopped one hour ago with 1000 s on the cartridge clock.
+  await writeFile(sidecar, JSON.stringify({ seconds: 1000, at: Date.now() - 3600_000 }));
+
+  const chip = mbc3();
+  const emulator = { ...core(), romInfo: { title: 'Pokemon', model: 'DMG', hasRtc: true }, memory: chip };
+  const room = await GbRoom.create(romPath, options(async () => emulator));
+
+  // Boot: the clock was projected forward by the hour spent offline.
+  const expected = 1000 + 3600;
+  const restored =
+    chip.live.dayLow * 86400 + chip.live.hour * 3600 + chip.live.minute * 60 + chip.live.second;
+  assert.ok(
+    Math.abs(restored - expected) <= 2,
+    `clock should be around ${expected} s, got ${restored} s`,
+  );
+
+  // Stop: the elapsed time (not the wall clock) is what gets stored.
+  const before = Date.now();
+  await room.stop();
+  const stored = JSON.parse(await readFile(sidecar, 'utf8'));
+  assert.ok(Math.abs(stored.seconds - expected) <= 2, `stored ${stored.seconds}`);
+  assert.ok(stored.at >= before, 'the timestamp is fresh');
 });
