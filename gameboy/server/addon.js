@@ -171,6 +171,31 @@ export function createGameboyFeature({
   }
   const reply = (response, status, value) =>
     response.status(status).set('Cache-Control', 'no-store').json(value);
+  /**
+   * Stops the shared core and ejects every viewer. Shared by the explicit
+   * unload and by cartridge removal, which must not delete a cartridge the
+   * core still holds (mGBA would rewrite its .sav on the way out).
+   */
+  async function detachRoom() {
+    await starting;
+    const active = room;
+    if (!active) {
+      isRomUnloaded = true;
+      return false;
+    }
+    await active.stop();
+    room = null;
+    isRomUnloaded = true;
+    roomGeneration++;
+    broadcast(JSON.stringify({ type: 'unloaded' }));
+    // The transport close event only arrives after this response, so forget
+    // every viewer now: /status must never report players of a dead core.
+    for (const [socket, client] of [...clients]) {
+      client.release();
+      socket.close(1000, 'rom_unloaded');
+    }
+    return true;
+  }
   function routes(app, { apiLimiter } = {}) {
     const api = express.Router();
     if (apiLimiter) api.use(apiLimiter);
@@ -210,12 +235,46 @@ export function createGameboyFeature({
             });
             request.uploadSignal.throwIfAborted();
             media ||= { status: 'empty', fetchedAt: now() };
-            await serialize(() => library.writeMedia(entry.crc, media));
+            // The cartridge can be removed — or replaced by another dump under
+            // the same name — while its cover downloads. The entry must still
+            // carry this CRC, otherwise the artwork belongs to nobody.
+            await serialize(async () => {
+              if (library.crcOf(entry.file) === String(entry.crc))
+                await library.writeMedia(entry.crc, media);
+              // The fetcher writes its images itself, after this point.
+              else await library.pruneMedia(entry.crc);
+            });
           }
           reply(response, 200, { rom: entry, media });
         },
       ),
     );
+    /* Removing a cartridge is the only write that also stops the core: deleting
+       one that is loaded would let mGBA rewrite its .sav on the way out, and
+       the shared console would keep running a file that no longer exists. */
+    api.delete('/roms/:file', async (request, response, next) => {
+      try {
+        const file = request.params.file;
+        if (!file || /[\\/]/.test(file)) return reply(response, 400, { error: 'invalid_rom' });
+        const result = await serialize(async () => {
+          await ensureLibrary();
+          if (!library.has(file)) throw Object.assign(new Error('rom_not_found'), { status: 404 });
+          // Compare paths rather than names: the core was opened with the path
+          // resolved by the library, and a cartridge deleted outside the app
+          // still has to be ejected before its entry goes.
+          const isActive = Boolean(
+            room?.romPath && resolve(room.romPath) === resolve(join(dataDir, file)),
+          );
+          const unloaded = isActive ? await detachRoom() : false;
+          const removed = await library.remove(file);
+          if (!removed) throw Object.assign(new Error('rom_not_found'), { status: 404 });
+          return { unloaded, removed: { title: removed.entry.title, ...removed.existed } };
+        });
+        reply(response, 200, { ok: true, file, ...result });
+      } catch (error) {
+        next(error);
+      }
+    });
     api.post('/load', express.json({ limit: '8kb' }), async (request, response, next) => {
       try {
         const result = await serialize(async () => {
@@ -243,24 +302,7 @@ export function createGameboyFeature({
           return reply(response, 400, { error: 'invalid_room_generation' });
         const unloaded = await serialize(async () => {
           if (generation !== undefined && generation !== roomGeneration) return false;
-          await starting;
-          const active = room;
-          if (!active) {
-            isRomUnloaded = true;
-            return false;
-          }
-          await active.stop();
-          room = null;
-          isRomUnloaded = true;
-          roomGeneration++;
-          broadcast(JSON.stringify({ type: 'unloaded' }));
-          // The transport close event only arrives after this response, so forget
-          // every viewer now: /status must never report players of a dead core.
-          for (const [socket, client] of [...clients]) {
-            client.release();
-            socket.close(1000, 'rom_unloaded');
-          }
-          return true;
+          return detachRoom();
         });
         reply(response, 200, { ok: true, unloaded });
       } catch (error) {

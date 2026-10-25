@@ -25,6 +25,8 @@ Tout reste dans `games/gameboy/data/`, exclu de Git et monté **en lecture/écri
 - jaquettes réencodées dans `media/<crc>/` et métadonnées `meta.json` ;
 - `<rom>.rtc.json`, l’horloge de la cartouche (voir ci-dessous).
 
+Retirer une cartouche depuis la bibliothèque (bouton de retrait d’une boîte, `DELETE /gameboy-api/roms/<fichier>`) supprime la cartouche, son `.sav`, son `.rtc.json`, la jaquette `media/<crc>/` et son entrée d’index. Deux fichiers peuvent légitimement partager ces fichiers dérivés : deux copies d’un même dump partagent la jaquette de leur CRC, et deux cartouches de même nom sans extension (`jeu.gb` et `jeu.gbc`, mGBA ne retirant que la dernière extension) partagent leur `.sav` et leur `.rtc.json` — dans les deux cas ils ne sont supprimés qu’avec la dernière entrée qui les référence. Si la cartouche est celle de la console partagée, le cœur est arrêté d’abord et les spectateurs sont éjectés — le même chemin que le déchargement — sinon mGBA réécrirait un `.sav` au passage. Une entrée dont le fichier a été supprimé hors de l’application peut être retirée de la même façon : c’est elle qui dessine une boîte vide dans la bibliothèque, et elle ne disparaissait auparavant qu’au prochain scan, donc au redémarrage du serveur. Compte actif et même origine exigés, comme pour les autres écritures.
+
 ### Horloge de cartouche (RTC)
 
 Les jeux à pile et horloge (Pokémon Or/Argent/Cristal, Harvest Moon…) lisent une
@@ -52,7 +54,7 @@ Fermer la fenêtre arrête la console partagée : le serveur sauvegarde la carto
 
 ## Bibliothèque et artwork
 
-La bibliothèque s’ouvre dans une fenêtre séparée sous `/gameboy-library`. Son chargement de ROM réveille aussi une console qui avait démarré sans cartouche. Les jaquettes viennent de l’API publique RetroBase Collection, par CRC32 : avant, tranche et dos quand ils existent. Aucun compte tiers n’est requis. En cas de refus, de timeout ou de jeu inconnu, une boîte dessinée depuis le titre reste disponible et le jeu est jouable.
+La bibliothèque s’ouvre dans une fenêtre séparée sous `/gameboy-library`. Son chargement de ROM réveille aussi une console qui avait démarré sans cartouche. Les jaquettes viennent de l’API publique RetroBase Collection, par CRC32 : avant, tranche et dos quand ils existent. Aucun compte tiers n’est requis. En cas de refus, de timeout ou de jeu inconnu, une boîte dessinée depuis le titre reste disponible et le jeu est jouable. Chaque boîte porte un bouton de retrait, qui demande confirmation avant de supprimer les fichiers, puis recharge la liste : la boîte et le fichier disparaissent ensemble.
 
 Les requêtes utilisent le client HTTP public du site : HTTPS, DNS public épinglé, redirections revérifiées et délai de 15 s. Réponse JSON bornée à 1 Mio, chaque image à 8 Mio et 16 millions de pixels ; réencodage WebP avant exposition. Seules les faces autorisées sont servies sous `/gameboy-media/<crc>/` : ni ROM, ni sauvegarde, ni index ne sont publics.
 
@@ -81,7 +83,7 @@ node --import ./tests/helpers/isolated-env.mjs --test games/gameboy/tests/*.test
 npm run test:gameboy:browser
 ```
 
-Les tests couvrent l’authentification, la révocation, les uploads, les chemins, le remplacement d’une ROM, les callbacks tardifs, le codec et les téléchargements de jaquettes. Le vrai cœur démarre trois ROM de diagnostic écrites pour les tests (GB/GBC/GBA), produit images et audio, ferme puis rouvre les cartouches sans utiliser les jeux du développeur. Le banc Chromium vérifie le premier lancement vide et sa bibliothèque, deux clients indépendants, Opus et PCM, le clavier, le sommeil local, le démontage complet et l’upload/changement partagé en GBA. Aucun ROM commercial ni firmware n’est fourni par ces tests.
+Les tests couvrent l’authentification, la révocation, les uploads, les chemins, le remplacement d’une ROM, les callbacks tardifs, le codec, les téléchargements de jaquettes et le retrait d’une cartouche (fichiers, sauvegarde, horloge, jaquette, entrée d’index, déchargement préalable du cœur, entrée orpheline d’un fichier supprimé à la main). Le vrai cœur démarre trois ROM de diagnostic écrites pour les tests (GB/GBC/GBA), produit images et audio, ferme puis rouvre les cartouches sans utiliser les jeux du développeur. Le banc Chromium vérifie le premier lancement vide et sa bibliothèque, deux clients indépendants, Opus et PCM, le clavier, le sommeil local, le démontage complet, l’upload/changement partagé en GBA et le retrait d’une cartouche depuis la bibliothèque. Aucun ROM commercial ni firmware n’est fourni par ces tests.
 
 
 ## Formatage des sources

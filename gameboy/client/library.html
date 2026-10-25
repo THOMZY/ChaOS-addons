@@ -294,6 +294,34 @@
         box-shadow: 0 0 9px var(--led);
       }
 
+      /* Remove control on every box: a cartridge leaves the library from here,
+         which also deletes its save, its clock and its cover. */
+      .game .remove {
+        position: absolute;
+        top: -6px;
+        right: -8px;
+        z-index: 3;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 232, 200, 0.26);
+        background: rgba(28, 16, 10, 0.82);
+        color: rgba(255, 236, 205, 0.8);
+        font: 400 15px/1 var(--font);
+        cursor: pointer;
+        opacity: 0.55;
+        transition: 0.15s;
+      }
+
+      .game .remove:hover,
+      .game .remove:focus-visible {
+        opacity: 1;
+        color: #fff;
+        border-color: rgba(255, 190, 180, 0.72);
+        background: rgba(122, 32, 28, 0.94);
+      }
+
       /* --------------------------------- add tile -------------------------------- */
       .add {
         position: relative;
@@ -565,6 +593,17 @@
       }
 
       wireSpin(el, el.querySelector('.cube'));
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'remove';
+      removeButton.textContent = '×';
+      removeButton.title = 'Retirer de la bibliothèque';
+      removeButton.setAttribute('aria-label', `Retirer ${title} de la bibliothèque`);
+      removeButton.addEventListener('click', (event) => {
+        event.stopPropagation(); // the box itself starts the game
+        void discard(rom);
+      });
+      el.append(removeButton);
       el.addEventListener('click', () => {
         if (rom.file !== currentFile) void play(rom.file);
       });
@@ -629,6 +668,37 @@
         await refresh();
       } catch {
         toast('Server unreachable', true);
+      }
+    }
+
+    /* Removing a cartridge takes its save, its clock and its cover with it, so
+       the shelf never keeps a box for a file that is gone. */
+    const REMOVAL_ERRORS = {
+      rom_not_found: 'Cartouche introuvable — rechargez la bibliothèque',
+      gameboy_stopping: 'La console est en cours d’arrêt, réessayez',
+    };
+
+    async function discard(rom) {
+      const name = prettyName(rom);
+      const confirmed = window.confirm(
+        `Retirer « ${name} » de la bibliothèque ?\n\nLa cartouche, sa sauvegarde et sa jaquette seront supprimées.`,
+      );
+      if (!confirmed) return;
+      try {
+        const res = await fetch(`${API}/roms/${encodeURIComponent(rom.file)}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok)
+          return toast(REMOVAL_ERRORS[data.error] || data.error || 'Suppression refusée', true);
+        toast(
+          data.unloaded
+            ? `${name} retirée — la console a été déchargée`
+            : `${name} retirée de la bibliothèque`,
+        );
+        await refresh();
+      } catch {
+        toast('Serveur injoignable', true);
       }
     }
 

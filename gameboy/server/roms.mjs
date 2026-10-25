@@ -4,7 +4,7 @@
  * A ROM is identified by its header, not by its file name: a user uploading
  * "mario (1).gb" must still be recognised.
  */
-import { readFile, writeFile, readdir, lstat, mkdir, rename } from 'node:fs/promises';
+import { readFile, writeFile, readdir, lstat, mkdir, rename, rm } from 'node:fs/promises';
 import { existsSync, readFileSync, lstatSync } from 'node:fs';
 import { join, extname, basename } from 'node:path';
 
@@ -167,6 +167,20 @@ export class RomLibrary {
     await writeFile(join(dir, 'meta.json'), JSON.stringify(data, null, 2));
   }
 
+  /**
+   * Drops an artwork folder no remaining entry references. A cover download can
+   * finish after its cartridge was removed, and the fetcher writes its images
+   * itself: without this the folder comes back with pictures but no meta.json.
+   */
+  async pruneMedia(crc) {
+    if (!/^[a-f0-9]{8}$/i.test(String(crc))) return false;
+    if ([...this.index.values()].some((entry) => entry.crc === String(crc))) return false;
+    const dir = this.mediaFolder(crc);
+    if (!existsSync(dir)) return false;
+    await rm(dir, { recursive: true, force: true });
+    return true;
+  }
+
   /** Adds an uploaded ROM. Returns the created entry. */
   async add(filename, buf) {
     const safe = basename(filename)
@@ -205,5 +219,71 @@ export class RomLibrary {
       if (error.code === 'ENOENT') return null;
       throw error;
     }
+  }
+
+  /** Is this exact name a cartridge the library knows about? */
+  has(file) {
+    return typeof file === 'string' && !/[\\/]/.test(file) && this.index.has(file);
+  }
+
+  /** CRC of a known cartridge, or null when that name is unknown. */
+  crcOf(file) {
+    return this.has(file) ? String(this.index.get(file).crc) : null;
+  }
+
+  /**
+   * Paths a cartridge owns besides its own file. mGBA derives the battery save
+   * the same way (`path.parse().name + '.sav'`), so the stem is authoritative.
+   */
+  ownedFiles(file) {
+    const stem = file.replace(/\.[^./\\]+$/, '');
+    return {
+      rom: join(this.root, file),
+      save: join(this.root, `${stem}.sav`),
+      clock: join(this.root, `${stem}.rtc.json`),
+    };
+  }
+
+  /**
+   * Removes a cartridge and everything derived from it: its battery save, its
+   * clock sidecar, its artwork folder and its index entry. Every write is
+   * tolerant of a missing file, because the entry is also what keeps an empty
+   * box on the shelf when the cartridge was deleted outside the app.
+   *
+   * Returns null when the name is unknown; otherwise what existed before.
+   */
+  async remove(file) {
+    if (!this.has(file)) return null;
+    const entry = this.index.get(file);
+    const { rom, save, clock } = this.ownedFiles(file);
+    // A hand-edited index may carry no CRC: never let that turn a removal into
+    // an exception, the entry itself still has to go.
+    const media = /^[a-f0-9]{8}$/i.test(String(entry.crc)) ? this.mediaFolder(entry.crc) : null;
+    // mGBA strips only the last extension when it derives the save path, so
+    // demo.gb and demo.gbc share demo.sav: the sidecars may only go with the
+    // last cartridge that reads them.
+    const sharedSidecars = [...this.index].some(
+      ([name]) => name !== file && this.ownedFiles(name).save === save,
+    );
+    const existed = {
+      rom: existsSync(rom),
+      save: !sharedSidecars && existsSync(save),
+      clock: !sharedSidecars && existsSync(clock),
+      media: Boolean(media) && existsSync(media),
+    };
+    await rm(rom, { force: true });
+    if (!sharedSidecars) {
+      await rm(save, { force: true });
+      await rm(clock, { force: true });
+    }
+    // Two uploads of the same dump share one artwork folder: the second copy
+    // still needs its cover, so only the last reference may drop it.
+    const shared = [...this.index].some(
+      ([name, other]) => name !== file && other.crc === entry.crc,
+    );
+    if (existed.media && !shared) await rm(media, { recursive: true, force: true });
+    this.index.delete(file);
+    await this.save();
+    return { entry, existed: { ...existed, media: existed.media && !shared } };
   }
 }

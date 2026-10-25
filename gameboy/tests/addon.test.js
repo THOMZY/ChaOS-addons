@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createServer } from 'node:http';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import WebSocket from 'ws';
@@ -14,6 +15,7 @@ import {
 } from '../../../server/auth/service.js';
 import { invalidateConnections } from '../../../server/security/connections.js';
 import { createGameboyFeature } from '../server/addon.js';
+import { crc32 } from '../server/roms.mjs';
 
 let accountSequence = 0;
 
@@ -92,7 +94,7 @@ async function fixture(context, options = {}) {
     });
     return { socket, hello: await hello };
   }
-  return { feature, origin, room, cookie, token, account, connect, buffer };
+  return { feature, origin, room, cookie, token, account, connect, buffer, dataDir };
 }
 
 // Waits for an observable effect instead of a fixed delay: the full suite runs
@@ -351,4 +353,199 @@ test('closing during a pending native boot waits for it and unloads the returned
   assert.equal((await closing).status, 200);
   assert.equal(scene.room.stopped, true);
   assert.equal(scene.feature.status().rom, null);
+});
+
+test('cartridge removal requires a live same-origin account and deletes nothing', async (context) => {
+  const scene = await fixture(context);
+  const url = scene.origin + '/gameboy-api/roms/fixture.gb';
+  assert.equal((await fetch(url, { method: 'DELETE' })).status, 401);
+  assert.equal(
+    (
+      await fetch(url, {
+        method: 'DELETE',
+        headers: { Cookie: scene.cookie, Origin: 'https://other.example' },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(existsSync(join(scene.dataDir, 'fixture.gb')), true);
+  assert.equal(
+    (await fetch(scene.origin + '/gameboy-api/roms/missing.gb', { method: 'DELETE' })).status,
+    401,
+  );
+});
+
+test('removing the cartridge on the console unloads the core and empties the shelf', async (context) => {
+  const scene = await fixture(context);
+  const player = await scene.connect({ Cookie: scene.cookie });
+  const closed = new Promise((resolve) => player.socket.once('close', resolve));
+  const response = await fetch(scene.origin + '/gameboy-api/roms/fixture.gb', {
+    method: 'DELETE',
+    headers: { Cookie: scene.cookie },
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.unloaded, true, 'the core must be stopped before its file goes');
+  assert.equal(body.removed.rom, true);
+  assert.equal(scene.room.stopped, true);
+  assert.equal(scene.feature.status().players, 0);
+  assert.equal(scene.feature.status().rom, null);
+  await closed;
+  assert.equal(existsSync(join(scene.dataDir, 'fixture.gb')), false);
+  const listed = await (await fetch(scene.origin + '/gameboy-api/roms')).json();
+  assert.deepEqual(listed.roms, []);
+  assert.equal(listed.current, null);
+  const again = await fetch(scene.origin + '/gameboy-api/roms/fixture.gb', {
+    method: 'DELETE',
+    headers: { Cookie: scene.cookie },
+  });
+  assert.equal(again.status, 404);
+});
+
+test('a cartridge deleted outside the app can be dropped from the library through the API', async (context) => {
+  const scene = await fixture(context);
+  const extra = Buffer.from(scene.buffer);
+  extra.write('EXTRA', 0x134);
+  const uploaded = await fetch(scene.origin + '/gameboy-api/roms?name=extra.gb', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/octet-stream' },
+    body: extra,
+  });
+  assert.equal(uploaded.status, 200);
+  // What a hand deletion leaves: the file is gone, the shelf still draws a box
+  // because the index entry only disappears at the next scan.
+  await rm(join(scene.dataDir, 'extra.gb'));
+  const listed = await (await fetch(scene.origin + '/gameboy-api/roms')).json();
+  assert.ok(
+    listed.roms.some((rom) => rom.file === 'extra.gb'),
+    'the entry outlives an external deletion',
+  );
+
+  const response = await fetch(scene.origin + '/gameboy-api/roms/extra.gb', {
+    method: 'DELETE',
+    headers: { Cookie: scene.cookie },
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.removed.rom, false, 'nothing was left on disk to delete');
+  assert.equal(body.unloaded, false, 'an unloaded cartridge has no core to stop');
+  const after = await (await fetch(scene.origin + '/gameboy-api/roms')).json();
+  assert.deepEqual(
+    after.roms.map((rom) => rom.file),
+    ['fixture.gb'],
+  );
+});
+
+test('a cartridge removed while its cover downloads leaves no artwork behind', async (context) => {
+  let reportArtwork, releaseArtwork;
+  const artworkStarted = new Promise((resolve) => {
+    reportArtwork = resolve;
+  });
+  const artwork = new Promise((resolve) => {
+    releaseArtwork = resolve;
+  });
+  const scene = await fixture(context, {
+    fetchArtwork: async ({ crc }, mediaDir) => {
+      reportArtwork();
+      await artwork;
+      // The real fetcher writes the images itself, after the removal.
+      mkdirSync(join(mediaDir, crc), { recursive: true });
+      writeFileSync(join(mediaDir, crc, 'front.webp'), 'webp');
+      return { status: 'ok', front: `/gameboy-media/${crc}/front.webp` };
+    },
+  });
+  const late = Buffer.from(scene.buffer);
+  late.write('LATE', 0x134);
+  const uploading = fetch(scene.origin + '/gameboy-api/roms?name=late.gb', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/octet-stream' },
+    body: late,
+  });
+  await artworkStarted;
+  // The cartridge is removed while its cover is still downloading: writing the
+  // media afterwards would recreate media/<crc>/ for an entry that is gone.
+  const removed = await fetch(scene.origin + '/gameboy-api/roms/late.gb', {
+    method: 'DELETE',
+    headers: { Cookie: scene.cookie },
+  });
+  assert.equal(removed.status, 200);
+  releaseArtwork({ status: 'ok', front: '/gameboy-media/00000000/front.webp' });
+  assert.equal((await uploading).status, 200);
+  assert.equal(
+    existsSync(join(scene.dataDir, 'media', crc32(late))),
+    false,
+    'no artwork may be recreated after the removal',
+  );
+  const listed = await (await fetch(scene.origin + '/gameboy-api/roms')).json();
+  assert.deepEqual(
+    listed.roms.map((rom) => rom.file),
+    ['fixture.gb'],
+  );
+});
+
+test('a re-upload under the same name during a cover download keeps only its own artwork', async (context) => {
+  let reportArtwork, releaseArtwork;
+  let calls = 0;
+  const artworkStarted = new Promise((resolve) => {
+    reportArtwork = resolve;
+  });
+  const artwork = new Promise((resolve) => {
+    releaseArtwork = resolve;
+  });
+  const scene = await fixture(context, {
+    fetchArtwork: async ({ crc }, mediaDir) => {
+      calls += 1;
+      if (calls === 1) {
+        reportArtwork();
+        await artwork;
+      }
+      mkdirSync(join(mediaDir, crc), { recursive: true });
+      writeFileSync(join(mediaDir, crc, 'front.webp'), 'webp');
+      return { status: 'ok', front: `/gameboy-media/${crc}/front.webp` };
+    },
+  });
+  const first = Buffer.from(scene.buffer);
+  first.write('FIRST', 0x134);
+  const uploading = fetch(scene.origin + '/gameboy-api/roms?name=swap.gb', {
+    method: 'POST',
+    headers: { Cookie: scene.cookie, 'Content-Type': 'application/octet-stream' },
+    body: first,
+  });
+  await artworkStarted;
+  assert.equal(
+    (
+      await fetch(scene.origin + '/gameboy-api/roms/swap.gb', {
+        method: 'DELETE',
+        headers: { Cookie: scene.cookie },
+      })
+    ).status,
+    200,
+  );
+  // Another dump takes the same name while the first cover is in flight.
+  const second = Buffer.from(scene.buffer);
+  second.write('SECOND', 0x134);
+  assert.equal(
+    (
+      await fetch(scene.origin + '/gameboy-api/roms?name=swap.gb', {
+        method: 'POST',
+        headers: { Cookie: scene.cookie, 'Content-Type': 'application/octet-stream' },
+        body: second,
+      })
+    ).status,
+    200,
+  );
+  releaseArtwork();
+  assert.equal((await uploading).status, 200);
+  assert.equal(
+    existsSync(join(scene.dataDir, 'media', crc32(first))),
+    false,
+    'the removed dump keeps no cover under its own CRC',
+  );
+  assert.equal(
+    existsSync(join(scene.dataDir, 'media', crc32(second))),
+    true,
+    'the new dump keeps its own cover',
+  );
+  const listed = await (await fetch(scene.origin + '/gameboy-api/roms')).json();
+  assert.equal(listed.roms.find((rom) => rom.file === 'swap.gb').crc, crc32(second));
 });

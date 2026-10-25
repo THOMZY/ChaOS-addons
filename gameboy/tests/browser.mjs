@@ -93,6 +93,10 @@ try {
   socket.onmessage = ({ data }) => {
     const message = JSON.parse(data);
     if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails);
+    // The library asks for a confirmation before deleting a cartridge: the bench
+    // accepts it, then asserts the observable effect on the shelf and on disk.
+    if (message.method === 'Page.javascriptDialogOpening' && message.sessionId)
+      void send('Page.handleJavaScriptDialog', { accept: true }, message.sessionId).catch(() => {});
     const call = pending.get(message.id);
     if (!call) return;
     pending.delete(message.id);
@@ -391,6 +395,46 @@ try {
   console.info(
     'PASS authenticated ROM upload/load updates both consoles to full GBA geometry; no browser exceptions',
   );
+  // Removing a cartridge from the library must take its box off the shelf and
+  // its file off the disk. The popup stays open from the first installation.
+  let shelfTarget;
+  await until(async () => {
+    shelfTarget = (await send('Target.getTargets')).targetInfos.find(
+      (target) => target.url === origin + '/gameboy-library',
+    );
+    return shelfTarget;
+  }, 'library popup for removal');
+  const { sessionId: shelfSession } = await send('Target.attachToTarget', {
+    targetId: shelfTarget.targetId,
+    flatten: true,
+  });
+  await send('Runtime.enable', {}, shelfSession);
+  await send('Page.enable', {}, shelfSession);
+  const shelfEvaluate = async (expression) => {
+    const result = await send(
+      'Runtime.evaluate',
+      { expression, awaitPromise: true, returnByValue: true },
+      shelfSession,
+    );
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  const shelfBox = '.game[title=\\"diagnostic.gb\\"]';
+  await until(
+    () => shelfEvaluate(`!!document.querySelector("${shelfBox}")`),
+    'cartridge on the shelf',
+  );
+  await shelfEvaluate(`document.querySelector("${shelfBox} .remove").click()`);
+  await until(
+    () => shelfEvaluate(`!document.querySelector("${shelfBox}")`),
+    'cartridge removed from the shelf',
+  );
+  assert.equal(
+    existsSync(resolve(dataDir, 'diagnostic.gb')),
+    false,
+    'the cartridge file must be deleted with its box',
+  );
+  console.info('PASS library removal deletes the cartridge file and clears its box');
 } catch (error) {
   console.error('[gameboy browser]', JSON.stringify({ status: feature.status(), errors }));
   for (const client of clients)
