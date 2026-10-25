@@ -189,9 +189,9 @@ function create(host) {
   let monoGame = true;
   let powerOn = true;
   let overlayVisible = true;
-  let destroyed = false; // la fenêtre est fermée : plus aucune reconnexion
-  let closing = false; // fermeture volontaire : le onclose ne doit pas relancer
-  let stopped = true; // coupé à la demande : on attend de revoir la fenêtre
+  let destroyed = false; // A closed owner must never reconnect.
+  let closing = false; // Intentional closes must not schedule reconnection.
+  let stopped = true; // An intentional disconnect waits for an explicit restore.
   let lastFrameAt = 0;
   let bytes = 0;
 
@@ -357,7 +357,7 @@ function create(host) {
 
   /* ---------------- network ---------------- */
   function connect() {
-    if (destroyed) return;
+    if (destroyed || !started || !isVisible()) return;
     // a single live socket: otherwise the room keeps a ghost player
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
     closing = false;
@@ -380,7 +380,7 @@ function create(host) {
       if (ws !== connection || destroyed) return;
       ws = null;
       $('gb-state').textContent = 'coupé';
-      if (destroyed || closing) return; // coupure volontaire
+      if (destroyed || closing) return; // Intentional disconnects must not reconnect.
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         if (!destroyed && !stopped && isVisible()) connect();
@@ -676,7 +676,7 @@ function create(host) {
   listen(window, 'keydown', onKey);
   listen(window, 'keyup', offKey);
 
-  /* ---------------- indicateurs ---------------- */
+  /* ---------------- status ---------------- */
   let lastBytes = 0,
     lastAt = performance.now();
   const statusTimer = setInterval(() => {
@@ -772,6 +772,7 @@ function create(host) {
   function destroy() {
     if (destroyed) return;
     destroyed = true;
+    started = false;
     scope.abort();
     for (const observer of observers) observer.disconnect();
     if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
@@ -782,20 +783,14 @@ function create(host) {
     window.removeEventListener('keyup', offKey);
     stopStream();
     host.dataset.gbMounted = '0';
+    host.replaceChildren();
+    if (mounted?.host === host) mounted = null;
   }
 
-  /* Close / reopen: the desktop fires "wm:close" then marks the window
-     data-minimized="1". We cut the stream on both signals and start it again
-     when the window comes back. */
+  // Close is terminal for this local owner; minimize only suspends its stream.
   const winEl = host.closest('.wm-win');
   if (winEl) {
-    listen(winEl, 'wm:close', () => {
-      try {
-        stopStream();
-      } catch {
-        /* ignore */
-      }
-    });
+    listen(winEl, 'wm:close', destroy);
     observe(
       MutationObserver,
       winEl,
@@ -806,7 +801,7 @@ function create(host) {
           stopStream();
           return;
         }
-        if (!ws) {
+        if (started && !ws) {
           closing = false;
           stopped = false;
           showOverlay('CONNEXION…');

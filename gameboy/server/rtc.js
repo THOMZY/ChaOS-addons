@@ -9,7 +9,7 @@
  * did. Writes go through the MBC3 registers, so the game sees them exactly like
  * a cartridge that kept counting.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 
 export const RTC_SECONDS_PER_DAY = 86400;
 /** MBC3 keeps a 9-bit day counter. */
@@ -35,8 +35,18 @@ export function projectRtc(state, wallNow = Date.now()) {
   const seconds = Number(state?.seconds);
   if (!Number.isFinite(seconds)) return 0;
   const at = Number(state?.at);
-  const elapsed = Number.isFinite(at) ? Math.max(0, wallNow - at) / 1000 : 0;
+  const elapsed = !state?.isHalted && Number.isFinite(at) ? Math.max(0, wallNow - at) / 1000 : 0;
   return normalizeRtcSeconds(seconds + elapsed);
+}
+
+export function projectRtcState(state, wallNow = Date.now()) {
+  const elapsed =
+    !state?.isHalted && Number.isFinite(state?.at) ? Math.max(0, wallNow - state.at) / 1000 : 0;
+  return {
+    seconds: projectRtc(state, wallNow),
+    isHalted: state?.isHalted === true,
+    hasCarry: state?.hasCarry === true || Number(state?.seconds) + elapsed >= RTC_SPAN,
+  };
 }
 
 export function partsFromRtc(total) {
@@ -52,13 +62,15 @@ export function partsFromRtc(total) {
 }
 
 export function rtcFromParts({ second = 0, minute = 0, hour = 0, day = 0 } = {}) {
-  return normalizeRtcSeconds(
-    day * RTC_SECONDS_PER_DAY + hour * 3600 + minute * 60 + second,
-  );
+  return normalizeRtcSeconds(day * RTC_SECONDS_PER_DAY + hour * 3600 + minute * 60 + second);
 }
 
 /** Latch, then read the five RTC registers as a number of elapsed seconds. */
 export async function readRtc(memory) {
+  return (await readRtcState(memory)).seconds;
+}
+
+async function readRtcState(memory) {
   await memory.write8(MBC.LATCH, 0x00);
   await memory.write8(MBC.LATCH, 0x01);
   await memory.write8(MBC.ENABLE, 0x0a);
@@ -74,16 +86,35 @@ export async function readRtc(memory) {
     value.push(await memory.read8(MBC.DATA));
   }
   await memory.write8(MBC.SELECT, 0x00);
-  return rtcFromParts({
+  const seconds = rtcFromParts({
     second: value[0],
     minute: value[1],
     hour: value[2],
     day: ((value[4] & 1) << 8) | value[3],
   });
+  return { seconds, isHalted: (value[4] & 0x40) !== 0, hasCarry: (value[4] & 0x80) !== 0 };
+}
+
+/** MBC registers are write-only: restore a snapshot instead of guessing the active bank. */
+export async function readRtcSnapshot(core) {
+  const snapshot = await core.states.save();
+  let state, readError;
+  try {
+    state = await readRtcState(core.memory);
+  } catch (error) {
+    readError = error;
+  }
+  try {
+    if (!(await core.states.restore(snapshot))) throw new Error('snapshot_refused');
+  } catch (cause) {
+    throw new Error('gameboy_clock_snapshot_restore_failed', { cause });
+  }
+  if (readError) throw readError;
+  return state;
 }
 
 /** Write an elapsed time into the clock; the core keeps counting from there. */
-export async function writeRtc(memory, total) {
+export async function writeRtc(memory, total, state) {
   const { second, minute, hour, day } = partsFromRtc(total);
   // Latch first: the data port serves the latched snapshot, and the halt and
   // carry bits of the day register live there too.
@@ -91,7 +122,9 @@ export async function writeRtc(memory, total) {
   await memory.write8(MBC.LATCH, 0x01);
   await memory.write8(MBC.ENABLE, 0x0a);
   await memory.write8(MBC.SELECT, RTC_REG.dayHigh);
-  const flags = await memory.read8(MBC.DATA); // keep the halt / carry bits
+  const flags = state
+    ? (state.isHalted ? 0x40 : 0) | (state.hasCarry ? 0x80 : 0)
+    : await memory.read8(MBC.DATA);
   const registers = [
     [RTC_REG.second, second],
     [RTC_REG.minute, minute],
@@ -110,16 +143,33 @@ export async function loadRtcState(file) {
   try {
     const parsed = JSON.parse(await readFile(file, 'utf8'));
     return Number.isFinite(Number(parsed?.seconds))
-      ? { seconds: normalizeRtcSeconds(parsed.seconds), at: Number(parsed.at) || 0 }
+      ? {
+          seconds: normalizeRtcSeconds(parsed.seconds),
+          at: Number(parsed.at) || 0,
+          isHalted: parsed.isHalted === true,
+          hasCarry: parsed.hasCarry === true,
+        }
       : null;
   } catch {
+    // Missing or invalid sidecars are treated like a cartridge with a new battery.
     return null;
   }
 }
 
 export async function saveRtcState(file, state) {
-  await writeFile(
-    file,
-    JSON.stringify({ seconds: normalizeRtcSeconds(state.seconds), at: Math.round(state.at) }) + '\n',
-  );
+  const pendingFile = file + '.pending';
+  try {
+    await writeFile(
+      pendingFile,
+      JSON.stringify({
+        seconds: normalizeRtcSeconds(state.seconds),
+        at: Math.round(state.at),
+        isHalted: state.isHalted === true,
+        hasCarry: state.hasCarry === true,
+      }) + '\n',
+    );
+    await rename(pendingFile, file);
+  } finally {
+    await rm(pendingFile, { force: true });
+  }
 }

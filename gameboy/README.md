@@ -36,12 +36,17 @@ chargement. On la conserve donc à côté, dans `<rom>.rtc.json` :
   passé hors ligne, puis écrit dans les registres MBC3 (`0x08`→`0x0C`) — le jeu
   retrouve une cartouche qui a continué de compter ;
 - l’horloge est ensuite relue et enregistrée toutes les 30 s, au changement de
-  ROM et à l’arrêt propre, ce qui couvre aussi un arrêt brutal ;
+  ROM et à l’arrêt propre. Chaque lecture restaure un instantané du cœur pour
+  préserver la banque RAM, l’activation de la SRAM et les registres du jeu.
+  Le fichier est remplacé atomiquement ; un arrêt brutal peut perdre les
+  dernières 30 secondes de réglages, mais ne tronque pas le dernier fichier ;
 - si le fichier est absent (première mise en service), l’horloge part de zéro,
   comme une pile neuve : le jeu propose de régler l’heure une fois.
 
-Seules les cartouches que le cœur annonce avec `hasRtc` sont concernées ;
-pour les autres, `room.rtcClock` reste faux et rien n’est écrit.
+Seules les cartouches GB/GBC MBC3 avec horloge (`0x0f` ou `0x10`) annoncées
+avec `hasRtc` sont concernées. Les drapeaux d’arrêt et de dépassement sont
+conservés ; une horloge arrêtée ne progresse pas hors ligne. Les protocoles RTC
+GBA et non-MBC3 ne sont pas modifiés par ce mécanisme.
 
 La fermeture locale ne réinitialise pas la console partagée. Quand personne ne regarde, sa boucle attend sans avancer la simulation. L’arrêt définitif ferme le cœur natif et ses codecs. Les sauvegardes sont celles du jeu partagé, pas une sauvegarde par compte ; l’état CPU complet et un arrêt brutal ne sont pas couverts par cette persistance.
 
@@ -55,7 +60,7 @@ Les requêtes utilisent le client HTTP public du site : HTTPS, DNS public éping
 
 `/gameboy-ws` est raccordé avant Socket.IO, avec vérification d’origine, bans et suivi de révocation. Un spectateur reçoit le flux mais n’acquiert pas de commandes par un message forgé. Les entrées authentifiées sont revérifiées ; sommeil, déconnexion et révocation libèrent les touches. Les commandes de mise hors tension partagée ne sont pas exposées : l’interrupteur et le volume restent locaux. Les messages entrants et les buffers des clients lents sont bornés.
 
-Le clavier n’agit que dans la console focalisée ; les champs texte restent utilisables. Les boutons fonctionnent au pointeur et au clavier. Fermer, réduire ou masquer la page libère le flux ; le démontage définitif libère aussi observers, timers, contextes audio et décodeurs. Rouvrir crée un propriétaire neuf. Un import refusé est retentable depuis le registre de fenêtres.
+Le clavier n’agit que dans la console focalisée ; les champs texte restent utilisables. Les boutons fonctionnent au pointeur et au clavier. Réduire la fenêtre coupe le flux et libère l’audio ; la restaurer reprend le flux si la console avait été lancée. Fermer détruit le propriétaire local, retire sa console du DOM et libère observers, timers, contexte audio et décodeurs. Rouvrir crée un propriétaire neuf et demande de cliquer sur ▶. Un onglet de navigateur en arrière-plan conserve le flux et le son. Ces actions locales ne réinitialisent jamais la cartouche partagée : elle continue pour les autres joueurs ; sans spectateur éveillé, la boucle serveur attend sans avancer le jeu. Un import refusé est retentable depuis le registre de fenêtres.
 
 Le protocole v4 transmet des images indexées/RLE avec deltas XOR, de l’Opus 48 kHz mono, ou du PCM lorsque WebCodecs est indisponible. Une perte de delta demande une keyframe. La Game Boy et la GBC gardent leur image 160×144 ; la GBA utilise 240×160, avec une quantification à 252 couleurs adaptée au format indexé. Les deux canaux audio sont mélangés en mono, sans perte des blocs PCM intermédiaires.
 
@@ -72,7 +77,7 @@ Le binaire Linux de node-mgba 0.3.2 demande glibc 2.38 et ne charge pas directem
 Depuis le dépôt du site, après installation de l’add-on :
 
 ```bash
-node --import ./tests/helpers/isolated-env.mjs --test games/gameboy/tests/*.test.js
+node --import ./tests/helpers/isolated-env.mjs --test games/gameboy/tests/*.test.js games/gameboy/tests/*.test.mjs
 npm run test:gameboy:browser
 ```
 

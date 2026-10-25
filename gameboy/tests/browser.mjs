@@ -126,6 +126,30 @@ try {
     await send('Network.setCookie', { name: SESSION_COOKIE, value: token, url: origin }, sessionId);
     await send('Page.navigate', { url: origin + (index ? '/?pcm' : '/') }, sessionId);
     clients.push({ evaluate, sessionId, cookie: `${SESSION_COOKIE}=${token}` });
+    await until(
+      () => evaluate('!!window.ready && !document.getElementById("gb-start").hidden'),
+      'explicit start screen',
+    );
+    await evaluate('document.querySelector(".wm-win").dataset.minimized="1"');
+    await delay(80);
+    await evaluate('document.querySelector(".wm-win").dataset.minimized="0"');
+    await delay(80);
+    assert.equal(
+      await evaluate('owner.status().hasSocket'),
+      false,
+      'restore cannot bypass explicit start',
+    );
+    const startButton = await evaluate(
+      'document.getElementById("gb-startbtn").getBoundingClientRect().toJSON()',
+    );
+    const startPosition = {
+      x: startButton.x + startButton.width / 2,
+      y: startButton.y + startButton.height / 2,
+      button: 'left',
+      clickCount: 1,
+    };
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...startPosition }, sessionId);
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...startPosition }, sessionId);
     if (index === 0) {
       await until(
         () =>
@@ -157,31 +181,32 @@ try {
         flatten: true,
       });
       await send('Runtime.enable', {}, librarySession);
-      const upload = await fetch(origin + '/gameboy-api/roms?name=diagnostic.gb', {
-        method: 'POST',
-        headers: {
-          Cookie: `${SESSION_COOKIE}=${token}`,
-          'Content-Type': 'application/octet-stream',
-        },
-        body: buildDiagnosticRom(),
-      });
-      assert.equal(upload.status, 200);
+      const libraryEvaluate = async (expression) => {
+        const result = await send(
+          'Runtime.evaluate',
+          { expression, awaitPromise: true, returnByValue: true },
+          librarySession,
+        );
+        if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+        return result.result.value;
+      };
       await until(
-        async () =>
-          (
-            await send(
-              'Runtime.evaluate',
-              { expression: 'typeof play === "function"', returnByValue: true },
-              librarySession,
-            )
-          ).result.value,
-        'library controls',
+        () => libraryEvaluate('!!document.querySelector(".add")'),
+        'library upload control',
       );
-      await send(
-        'Runtime.evaluate',
-        { expression: 'play("diagnostic.gb")', awaitPromise: true },
-        librarySession,
+      await libraryEvaluate(`(() => {
+        const bytes = Uint8Array.from(atob(${JSON.stringify(buildDiagnosticRom().toString('base64'))}), character => character.charCodeAt(0));
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([bytes], 'diagnostic.gb', {type:'application/octet-stream'}));
+        const input = document.getElementById('file');
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change'));
+      })()`);
+      await until(
+        () => libraryEvaluate('!!document.querySelector(".game[title=\\"diagnostic.gb\\"]")'),
+        'uploaded cartridge on the library shelf',
       );
+      await libraryEvaluate('document.querySelector(".game").click()');
       await send('Page.bringToFront', {}, sessionId);
       console.info(
         'PASS first installation: empty console, library popup, authenticated upload/load and opener resume',
@@ -281,8 +306,24 @@ try {
   console.info(
     'PASS scoped keyboard, text input exclusion, held-key release and independent local power',
   );
+  await first.evaluate('document.querySelector(".wm-win").dataset.minimized="1"');
+  await until(() => feature.status().players === 1, 'minimized console disconnect');
+  assert.equal(
+    await first.evaluate('owner.status().isStopped'),
+    false,
+    'minimize preserves its local owner',
+  );
+  await until(
+    () => first.evaluate('probe.contexts.every(context=>context.state === "closed")'),
+    'minimized audio cleanup',
+  );
+  await first.evaluate('document.querySelector(".wm-win").dataset.minimized="0"');
+  await until(() => feature.status().players === 2, 'minimized console resumes');
+  console.info(
+    'PASS minimize disconnects local streaming and audio; restore resumes without resetting the shared game',
+  );
   await first.evaluate(
-    'window.previousOwner=owner; owner.destroy(); document.querySelector(".wm-win").dataset.minimized="1"',
+    'window.previousOwner=owner; document.querySelector(".wm-win").dispatchEvent(new Event("wm:close")); document.querySelector(".wm-win").dataset.minimized="1"',
   );
   await until(() => feature.status().players === 1, 'closed console disconnect');
   assert.deepEqual(
@@ -294,6 +335,13 @@ try {
   await first.evaluate(
     'document.querySelector(".wm-win").dataset.minimized="0"; window.owner=mount()',
   );
+  assert.equal(
+    await first.evaluate('document.getElementById("gb-start").hidden'),
+    false,
+    'a closed console requires an explicit new start',
+  );
+  assert.equal(await first.evaluate('owner.status().hasSocket'), false);
+  await first.evaluate('document.getElementById("gb-startbtn").click()');
   await until(() => feature.status().players === 2, 'console remount');
   assert.equal(await first.evaluate('previousOwner.status().hasSocket'), false);
   console.info(

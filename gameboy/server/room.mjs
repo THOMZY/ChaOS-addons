@@ -1,6 +1,13 @@
 import { Mgba, PcmS16StereoResampler } from 'node-mgba';
 import { Encoder as OpusEncoder } from '@evan/opus';
-import { loadRtcState, projectRtc, readRtc, rtcSidecarPath, saveRtcState, writeRtc } from './rtc.js';
+import {
+  loadRtcState,
+  projectRtcState,
+  readRtcSnapshot,
+  rtcSidecarPath,
+  saveRtcState,
+  writeRtc,
+} from './rtc.js';
 
 export const FPS = 59.7275;
 export const FRAME_MS = 1000 / FPS;
@@ -102,7 +109,7 @@ export class GbRoom {
     this.audioReady = true;
     this.rtcFile = rtcSidecarPath(path);
     // A cartridge with a battery clock (Pokemon Gold/Silver, Harvest Moon...).
-    this.rtcClock = core.romInfo?.hasRtc === true;
+    this.rtcClock = core.romInfo?.hasRtc === true && this.model !== 'AGB';
   }
   async init() {
     this.configureCore(await this.loadCore(this.romPath), this.romPath);
@@ -112,8 +119,14 @@ export class GbRoom {
   async restoreClock() {
     if (!this.rtcClock || !this.emu) return;
     try {
-      const seconds = projectRtc(await loadRtcState(this.rtcFile), Date.now());
-      await writeRtc(this.emu.memory, seconds);
+      // GBA and non-MBC3 clocks use other protocols; never write MBC3 commands there.
+      const cartridgeType = await this.emu.memory.read8(0x147);
+      if (cartridgeType !== 0x0f && cartridgeType !== 0x10) {
+        this.rtcClock = false;
+        return;
+      }
+      const state = projectRtcState(await loadRtcState(this.rtcFile), Date.now());
+      await writeRtc(this.emu.memory, state.seconds, state);
       this.rtcSavedAt = Date.now();
     } catch (error) {
       this.logger.warn('[gameboy] clock restore failed:', error.message);
@@ -124,11 +137,15 @@ export class GbRoom {
     if (!this.rtcClock || !this.emu || this.rtcBusy) return;
     this.rtcBusy = true;
     try {
-      const seconds = await readRtc(this.emu.memory);
-      await saveRtcState(this.rtcFile, { seconds, at: Date.now() });
+      const state = await readRtcSnapshot(this.emu);
+      await saveRtcState(this.rtcFile, { ...state, at: Date.now() });
       this.rtcSavedAt = Date.now();
     } catch (error) {
       this.logger.warn('[gameboy] clock save failed:', error.message);
+      if (error.message === 'gameboy_clock_snapshot_restore_failed') {
+        this.running = false;
+        this.rtcClock = false;
+      }
     } finally {
       this.rtcBusy = false;
     }

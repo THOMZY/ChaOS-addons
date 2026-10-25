@@ -19,13 +19,19 @@ function mbc3() {
       if (address === MBC.ENABLE) enabled = value === 0x0a;
       else if (address === MBC.SELECT) select = value;
       else if (address === MBC.LATCH && value === 0x01) Object.assign(latched, live);
-      else if (address === MBC.DATA && enabled && select >= RTC_REG.second && select <= RTC_REG.dayHigh) {
+      else if (
+        address === MBC.DATA &&
+        enabled &&
+        select >= RTC_REG.second &&
+        select <= RTC_REG.dayHigh
+      ) {
         const key = keys[select - RTC_REG.second];
         latched[key] = value;
         live[key] = value;
       }
     },
     async read8(address) {
+      if (address === 0x147) return 0x10;
       if (address !== MBC.DATA || !enabled) return 0;
       if (select < RTC_REG.second || select > RTC_REG.dayHigh) return 0;
       return latched[keys[select - RTC_REG.second]];
@@ -149,8 +155,16 @@ test('a battery clock is restored at boot and stored before the core closes', as
   await writeFile(sidecar, JSON.stringify({ seconds: 1000, at: Date.now() - 3600_000 }));
 
   const chip = mbc3();
-  const emulator = { ...core(), romInfo: { title: 'Pokemon', model: 'DMG', hasRtc: true }, memory: chip };
-  const room = await GbRoom.create(romPath, options(async () => emulator));
+  const emulator = {
+    ...core(),
+    romInfo: { title: 'Pokemon', model: 'DMG', hasRtc: true },
+    memory: chip,
+    states: { save: async () => 'snapshot', restore: async () => true },
+  };
+  const room = await GbRoom.create(
+    romPath,
+    options(async () => emulator),
+  );
 
   // Boot: the clock was projected forward by the hour spent offline.
   const expected = 1000 + 3600;
@@ -167,4 +181,44 @@ test('a battery clock is restored at boot and stored before the core closes', as
   const stored = JSON.parse(await readFile(sidecar, 'utf8'));
   assert.ok(Math.abs(stored.seconds - expected) <= 2, `stored ${stored.seconds}`);
   assert.ok(stored.at >= before, 'the timestamp is fresh');
+});
+
+test('a GBA RTC never receives MBC3 memory commands', async () => {
+  let writes = 0;
+  const emulator = {
+    ...core('AGB'),
+    romInfo: { model: 'AGB', hasRtc: true },
+    memory: {
+      write8: async () => {
+        writes++;
+      },
+    },
+  };
+  const room = await GbRoom.create(
+    'advance.gba',
+    options(async () => emulator),
+  );
+  await room.stop();
+  assert.equal(writes, 0);
+  assert.equal(emulator.closed, 1);
+});
+
+test('a failed clock snapshot restore halts emulation but still allows terminal cleanup', async () => {
+  const emulator = {
+    ...core(),
+    romInfo: { model: 'DMG', hasRtc: true },
+    memory: mbc3(),
+    states: { save: async () => 'snapshot', restore: async () => false },
+  };
+  const warnings = [];
+  const room = await GbRoom.create(
+    'clock.gb',
+    options(async () => emulator, { logger: { warn: (...args) => warnings.push(args) } }),
+  );
+  room.running = true;
+  await room.saveClock();
+  assert.equal(room.running, false);
+  assert.equal(warnings.length, 1);
+  await room.stop();
+  assert.equal(emulator.closed, 1);
 });
