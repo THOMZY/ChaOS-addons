@@ -13,6 +13,8 @@ Le Worms du site (parties à plusieurs, mises, tickets) : salles, règles et min
 | `client/worms-effects.js` | rendu des projectiles et comptes à rebours ; explosions, particules et dégâts flottants privés ; reset par manche et stop terminal |
 | `client/worms-overlays.js` | rendu des caisses/objets posés, outils et aides de visée ; lectures injectées, reset des rendus en cours et stop terminal |
 | `client/worms-physics.js` | calcul des mouvements locaux, outils et collisions ; état partagé emprunté, accesseurs scalaires conservés, reset des pas en cours et stop terminal |
+| `client/worms-hud.js` | affichage du tour, santé, armes/munitions, vent, mèches et compte à rebours ; annonce canvas privée, DOM emprunté |
+| `client/worms-turn-animations.js` | animation de sortie/visée, cadence des pas et bips de fin de tour ; délais privés annulables, reset/stop |
 | `media/` | images (niveaux, armes) et sons, servis sous `/worms-assets/` ; les niveaux sont aussi lus par le serveur |
 
 Le site garde la fenêtre « Worms » (`website/features/worms/`), son entrée légère `website/core/js/games/worms-entry.js` (liste des événements, chargement du contrôleur à l'ouverture ou à l'admission dans une salle) et ses textes (`worms.*` dans les catalogues du site). Le contrôleur importe les modules du site par URL (`/core/js/...`).
@@ -89,4 +91,15 @@ Le contrôleur reste propriétaire de l’objet physique, des touches, vers, hau
 
 Vingt-six tests de caractérisation passent avant/après extraction ; onze couvrent cycle de vie, accesseurs et annulation réentrante. Les 85 fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium vérifie des simulations numériques dans le navigateur avec les mêmes accesseurs, sauts/touches, collisions hauteur/masque/cratère et pas invalidés. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
 
-Suite : **A9-worms-g, HUD et animations de tour** ; puis interface, entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes.
+Le lot A9-worms-g ci-dessous poursuit le HUD et les animations de tour ; interface, entrées et événements restent à découper.
+
+
+## Découpage du client — A9-worms-g (25/10/2026)
+
+Le noyau passe de 1 904 à 1 735 lignes. `worms-hud.js` (290 lignes) reçoit lectures d’état/vue, création de nœuds, rendu sécurisé des pseudos/HTML, traduction, règles de munitions, horloges et dimensions. Construction inactive ; il conserve tour/santé, états des boutons et badges, vent/round, mèche, timer et fondu d’annonce. L’annonce est privée ; les nœuds restent au contrôleur. `reset` en début/fin de manche invalide les mises à jour et retire l’annonce ; `stop` est terminal. Une erreur de mesure du texte restaure le contexte canvas par `finally`.
+
+`worms-turn-animations.js` (165 lignes) reçoit état, catalogue d’animation, son, horloges et `setTimeout`/`clearTimeout` raccordés à la portée du jeu. Il possède l’animation, le choix précédent, la cadence/alternance des pas et le registre des bips/délais. `getWeaponAnimation` fournit l’état au rendu des vers. Un changement d’arme annule le délai précédent ; changement de tour, nouvelle/fin de manche et arrêt vident les délais et bips. Les callbacks déjà capturés restent inertes, même après retour sur la même arme A → B → A ; cette visée avancée prématurément est reproduite sur l’ancien code. Un délai terminé ne peut pas annuler un identifiant réutilisé par un autre propriétaire. L’alternance des pas reste conservée entre resets, comme auparavant.
+
+Les deux factories exposent `reset`, `stop` idempotent et `status`. Rien ne démarre à l’import/construction. Erreurs réelles propagées ; une allocation de délai invalidée est libérée après retour de son créateur. Vingt-deux tests de caractérisation passent avant/après extraction ; vingt-six tests supplémentaires couvrent régressions, cycle de vie, accès réentrants et erreurs. Les 74 fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium vérifie de vrais nœuds, noms textuels, munitions/ARIA, pixels du fondu et délais natifs, A → B → A et libération. Les modules restent hors premier écran et aucun plafond frontend n’augmente.
+
+Suite : **A9-worms-h, construction de l’interface de partie et contrôles** ; puis lobby/résultats, entrées et événements. Le noyau reste au-dessus de la cible de 800 lignes.

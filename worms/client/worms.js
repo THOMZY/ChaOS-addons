@@ -1,3 +1,5 @@
+import { createWormsHud } from './worms-hud.js';
+import { createWormsTurnAnimations } from './worms-turn-animations.js';
 import { createWormsPhysics } from './worms-physics.js';
 import { createWormsOverlays } from './worms-overlays.js';
 import { createWormsEffects } from './worms-effects.js';
@@ -168,18 +170,6 @@ let _dyingWorms   = new Map(); // wormId → {startMs} — playing death anim
 // Camera
 const _cam = { x: 0, y: 0, tx: 0, ty: 0 }; // current + target
 
-// Aim via keyboard (W/S keys)
-
-// Walk sound state
-let _walkSoundStep = 0; // 0 or 1 — alternates WalkExpand / WalkCompress
-let _walkSoundTimer = 0; // seconds since last walk sound
-const _playedTimerTicks = new Set();
-const WALK_SOUND_INTERVAL = 0.22; // every ~220ms one step sound
-
-// Weapon anim state (take-out then aim)
-let _weaponAnim = null; // { phase:'takeout'|'aim', img, frames, ms, frameY, startMs }
-let _prevWeapon = null; // last selected weapon — triggers take-out anim on change
-
 // Wind, retreat, round, sudden death
 let _wind         = 0;
 let _retreating   = false;
@@ -207,9 +197,8 @@ let _dynamites      = [];   // [{id, cx, cy, fuseMs, placedAt}] — client-side 
 let _mines          = [];   // [{id, cx, cy}]
 let _teleportTarget = null; // {x, y} — pending teleport destination
 
-// Crates and turn announcement
+// Crates
 let _crates           = [];    // [{id,cx,cy,type,weapon,landed,fallingCy}]
-let _turnAnnouncement = null;  // {text,color,startMs}
 
 // Collision
 let _terrainMask = null;  // Server heights drive collision; image pixels never do.
@@ -228,7 +217,7 @@ const { redraw: _redrawTerrain, drawBackground: _drawWorldBackground } = terrain
 const wormRenderer = createWormsSprites({
   getState: () => ({ worms: _worms, activeWormId: _activeWormId,
     isPhysicsSynced: _wsSynced, physics: _ws, bumps: _wormBumps, dying: _dyingWorms,
-    weaponAnimation: _weaponAnim, aimAngle: _aimAngle }),
+    weaponAnimation: turnAnimations.getWeaponAnimation(), aimAngle: _aimAngle }),
   getImage: _assetImage, isActive: () => scope.active, wormRadius: WORM_R,
 });
 const { draw: _drawWorms } = wormRenderer;
@@ -273,6 +262,29 @@ const wormPhysics = createWormsPhysics({
   isActive: () => scope.active, width: WORLD_W, height: WORLD_H, wormRadius: WORM_R,
 });
 const { initTurn: _initWsTurn } = wormPhysics;
+const turnAnimations = createWormsTurnAnimations({
+  getState: () => ({ isMyTurn: _myTurn(), physics: _ws, selectedWeapon: _selectedWeapon, turnDeadline: _turnDeadline }),
+  getWeaponDefinition: _weaponAnimDef, playSound: _playSound,
+  timers: { setTimeout: scope.timeout, clearTimeout: scope.clearTimeout },
+  isActive: () => scope.active,
+});
+const { updateWalkSounds: _updateWalkSounds, updateWeaponTakeoutAnim: _updateWeaponTakeoutAnim,
+  playTimerTickIfNeeded: _playTimerTickIfNeeded } = turnAnimations;
+const hud = createWormsHud({
+  getState: () => ({ isMyTurn: _myTurn(), players: _players, worms: _worms,
+    currentTurn: _currentTurn, myUserId: _myUserId, activeWormId: _activeWormId,
+    round: _round, wind: _wind, isSuddenDeath: _suddenDeath, selectedWeapon: _selectedWeapon,
+    ammo: _ammo, hasShotFired: _shotFired, grenadeFuse: _grenadefuse,
+    turnDeadline: _turnDeadline, isRetreating: _retreating, retreatEnd: _retreatEnd }),
+  getView: () => ({ turnLabel: _turnLabel, wind: _windEl, health: _healthEl,
+    weaponButtons: _weaponBtns, fuse: _fuseEl, timer: _timerEl }),
+  createElement: _el, renderUserName, setSafeHtml, translate: t, unlimitedAmmo: _unlimitedAmmo,
+  fuseWeapons: FUSE_WEAPONS, isActive: () => scope.active, width: WORLD_W, height: WORLD_H,
+});
+const { updateHUD: _updateHUD, updateTimerDisplay: _updateTimerDisplay,
+  updateHealthBar: _updateHealthBar, updateWeaponBtns: _updateWeaponBtns,
+  updateFuseDisplay: _updateFuseDisplay, showTurnAnnouncement: _showTurnAnnouncement,
+  drawTurnAnnouncement: _drawTurnAnnouncement } = hud;
 
 // DOM
 let _container  = null;
@@ -584,6 +596,7 @@ function _setupGame(data) {
 }
 
 function _resetGameData(data) {
+  turnAnimations.reset();
   wormPhysics.reset();
   overlaysRenderer.reset();
   _terrain      = data.terrain;
@@ -616,7 +629,7 @@ function _resetGameData(data) {
   const myAmmo = _myUserId ? Reflect.get(data.playerAmmo || {}, _myUserId) : null;
   _ammo         = myAmmo ? { ...myAmmo } : {};
   _teleportTarget = null;
-  _turnAnnouncement = null;
+  hud.reset();
 }
 
 function _buildGameLayout() {
@@ -852,12 +865,11 @@ function _stopGame() {
   effectsRenderer.reset();
   _wormBumps.clear();
   _dyingWorms.clear();
-  _weaponAnim = null;
-  _prevWeapon = null;
+  turnAnimations.reset();
   _terrainMask = null;
   terrainRenderer.reset();
   _crates = [];
-  _turnAnnouncement = null;
+  hud.reset();
   if (_fuseInterval) { scope.clearInterval(_fuseInterval); _fuseInterval = null; }
   _rope          = null;
   _jetpackActive = false;
@@ -916,124 +928,6 @@ function _applyScreenShake(ctx, now) {
   ctx.translate((randomUnit() - 0.5) * mag, (randomUnit() - 0.5) * mag);
 }
 
-function _drawTurnAnnouncement(ctx, now) {
-  if (!_turnAnnouncement) return;
-  const elapsed = now - _turnAnnouncement.startMs;
-  if (elapsed >= 2400) {
-    _turnAnnouncement = null;
-    return;
-  }
-  const alpha = elapsed < 1600 ? 1 : 1 - (elapsed - 1600) / 800;
-  const cy    = WORLD_H * 0.38;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  const pad = 22, tw = ctx.measureText(_turnAnnouncement.text).width + pad * 2;
-  ctx.fillStyle = 'rgba(0,0,0,0.62)';
-  _roundRect(ctx, WORLD_W / 2 - tw / 2, cy - 18, tw, 34, 8);
-  ctx.fill();
-  ctx.font      = 'bold 16px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = _turnAnnouncement.color;
-  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-  ctx.lineWidth   = 3;
-  ctx.strokeText(_turnAnnouncement.text, WORLD_W / 2, cy + 4);
-  ctx.fillText(_turnAnnouncement.text, WORLD_W / 2, cy + 4);
-  ctx.globalAlpha = 1;
-  ctx.textAlign   = 'left';
-  ctx.restore();
-}
-
-function _updateTimerDisplay() {
-  if (!_timerEl || _turnDeadline <= 0) return;
-  if (_retreating) {
-    const s = Math.max(0, Math.ceil((_retreatEnd - Date.now()) / 1000));
-    _timerEl.textContent = t('games.worms.retreatTimer', { seconds: String(s).padStart(2, '0') });
-    _timerEl.style.color = '#88ddff';
-    return;
-  }
-  const s = Math.max(0, Math.ceil((_turnDeadline - Date.now()) / 1000));
-  _timerEl.textContent = `⏱ ${String(s).padStart(2, '0')}s`;
-  _timerEl.style.color = s <= 5 ? '#ff2222' : s <= 8 ? '#ff8844' : '#ffcc00';
-}
-
-// ── HUD updates ────────────────────────────────────────────────────────────────
-function _updateHUD() {
-  if (!_turnLabel) return;
-  const pl  = _players.find(p => p.userId === _currentTurn);
-  const aw  = _worms.find(w => w.id === _activeWormId);
-  const rnd = _round ?? 1;
-  if (pl && aw) {
-    const nameEl = renderUserName(pl, { fallbackPseudo: '?' });
-    const wormEl = _el('span', { style: { color: '#ccc' }}, aw.name);
-  _turnLabel.replaceChildren(`${t('games.worms.turnOf')} `, nameEl, ' — ', wormEl);
-    if (_currentTurn === _myUserId) _turnLabel.append(' ', _el('span', { style: { color: '#ff0' }}, t('games.worms.you')));
-  }
-  if (_windEl) {
-    const arrow = _wind > 0 ? '→' : _wind < 0 ? '←' : '·';
-    const str   = Math.abs(_wind);
-    const roundLabel = _suddenDeath ? `<span style="color:#f44">💀R${rnd}</span>` : `<span style="color:#aaa">R${rnd}</span>`;
-    setSafeHtml(_windEl, (str === 0 ? `💨 ${t('games.worms.calmWind')}` : `💨 ${arrow} ${str}`) + ' ' + roundLabel);
-  }
-  _updateHealthBar();
-  _updateWeaponBtns();
-  _updateFuseDisplay();
-}
-
-function _updateHealthBar() {
-  if (!_healthEl) return;
-  _healthEl.replaceChildren();
-  for (const p of _players) {
-    const mine = _worms.filter(w => w.playerId === p.userId);
-    const row  = _el('div', { style: { display: 'flex', alignItems: 'center', gap: '3px', marginRight: '10px', flexWrap: 'wrap' }});
-    const nameSpan = _el('span', { style: { fontSize: '11px', marginRight: '2px' }});
-    nameSpan.append(renderUserName(p, { fallbackPseudo: '?' }), ':');
-    row.appendChild(nameSpan);
-    for (const w of mine) {
-      const chip = _el('span', { style: {
-        fontSize: '10px', padding: '1px 4px', borderRadius: '3px', marginRight: '2px',
-        background: w.alive ? (w.id === _activeWormId ? 'rgba(255,255,100,0.18)' : 'rgba(0,0,0,0.3)') : '#1a1a1a',
-        color: w.alive ? (w.id === _activeWormId ? '#ffff88' : '#ccc') : '#555',
-        border: w.id === _activeWormId ? '1px solid rgba(255,255,100,0.5)' : '1px solid rgba(255,255,255,0.08)',
-        textDecoration: w.alive ? 'none' : 'line-through',
-      }});
-      chip.textContent = `${w.name ?? '?'} ${w.alive ? w.hp : '☠'}`;
-      row.appendChild(chip);
-    }
-    _healthEl.appendChild(row);
-  }
-}
-
-function _updateWeaponBtns() {
-  for (const [key, btn] of Object.entries(_weaponBtns)) {
-    const active  = key === _selectedWeapon && _myTurn();
-    const count   = Object.hasOwn(_ammo, key) ? Reflect.get(_ammo, key) : undefined;
-    const noAmmo  = !_unlimitedAmmo(count) && count <= 0;
-    btn.style.background = active ? '#2a4a1a' : '#1a1a1a';
-    btn.style.border = `1px solid ${active ? '#66dd33' : '#333'}`;
-    btn.style.color  = noAmmo ? '#444' : (active ? '#66dd33' : '#888');
-    btn.style.opacity = noAmmo ? '0.45' : '1';
-    btn.disabled = noAmmo;
-    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    // Update ammo badge
-    const ammoEl = btn.querySelector('[data-ammo]');
-    if (ammoEl) {
-      ammoEl.textContent = _unlimitedAmmo(count) ? '∞' : `×${count}`;
-      ammoEl.style.color = !_unlimitedAmmo(count) && count <= 1 ? '#ff6644' : '#ffcc44';
-    }
-  }
-}
-
-function _updateFuseDisplay() {
-  if (!_fuseEl) return;
-  const isFuse = FUSE_WEAPONS.has(_selectedWeapon) && _myTurn() && !_shotFired;
-  if (isFuse) {
-    _fuseEl.textContent = `⏱ ${_grenadefuse}s`;
-    _fuseEl.style.display = '';
-  } else {
-    _fuseEl.style.display = 'none';
-  }
-}
-
 function _selectWeapon(key) {
   if (!_weaponDef(key)) return;
   const count = Object.hasOwn(_ammo, key) ? Reflect.get(_ammo, key) : Infinity;
@@ -1056,42 +950,6 @@ function _physicsStep(dt) {
   _collectNearbyCrate();
   _mirrorActiveWormPosition();
   _syncActiveWormPosition();
-}
-
-function _updateWalkSounds(dt) {
-  if (!_ws.walking) {
-    _walkSoundTimer = 0;
-    return;
-  }
-  _walkSoundTimer -= dt;
-  if (_walkSoundTimer > 0) return;
-  _walkSoundTimer = WALK_SOUND_INTERVAL;
-  _playSound(_walkSoundStep % 2 === 0 ? 'WalkExpand' : 'WalkCompress', 0.25);
-  _walkSoundStep++;
-}
-
-function _updateWeaponTakeoutAnim() {
-  if (!_myTurn() || _prevWeapon === _selectedWeapon) return;
-  _prevWeapon = _selectedWeapon;
-  const wdef = _weaponAnimDef(_selectedWeapon);
-  if (!wdef?.takeOut) return;
-  _weaponAnim = { ...wdef.takeOut, phase: 'takeout', startMs: performance.now() };
-  const takeoutDur = wdef.takeOut.frames * wdef.takeOut.ms;
-  scope.timeout(() => {
-    if (_prevWeapon !== _selectedWeapon) return;
-    if (wdef.aim) _weaponAnim = { ...wdef.aim, phase: 'aim', startMs: performance.now() };
-    else _weaponAnim = null;
-  }, takeoutDur);
-}
-
-function _playTimerTickIfNeeded() {
-  if (_turnDeadline <= 0) return;
-  const msLeft = _turnDeadline - Date.now();
-  const sLeft  = Math.ceil(msLeft / 1000);
-  if (sLeft > 5 || sLeft <= 0 || !_myTurn() || _playedTimerTicks.has(sLeft)) return;
-  _playedTimerTicks.add(sLeft);
-  _playSound('TIMERTICK', 0.6);
-  scope.timeout(() => { _playedTimerTicks.delete(sLeft); }, 950);
 }
 
 function _collectNearbyCrate() {
@@ -1468,8 +1326,7 @@ function _resetTurnState({ currentTurn, activeWormId, turnMs }) {
   _shotFired    = false;
   _chargeStart  = null;
   _wsSynced     = false;
-  _weaponAnim   = null;
-  _prevWeapon   = null;
+  turnAnimations.reset();
   _retreating   = false;
   _retreatEnd   = 0;
   _movementToolUsed = false;
@@ -1495,17 +1352,6 @@ function _updateTurnAmmo({ currentTurn, ammo }) {
   if (!ammo || currentTurn !== _myUserId) return;
   _ammo = { ...ammo };
   _updateWeaponBtns();
-}
-
-function _showTurnAnnouncement({ currentTurn, activeWormId, worms }) {
-  const pl = _players.find(p => p.userId === currentTurn);
-  if (!pl) return;
-  const aw = _worms.find(w => w.id === activeWormId) ?? (worms ?? []).find(w => w.id === activeWormId);
-  _turnAnnouncement = {
-    text:    `${pl.pseudo}  —  ${aw?.name ?? '?'}`,
-    color:   pl.color ?? '#66dd33',
-    startMs: performance.now(),
-  };
 }
 
 // ── Socket events ─────────────────────────────────────────────────────────────
@@ -1862,21 +1708,6 @@ function _renderResults(data) {
 
 // ── Utility ──────────────────────────────────────────────────────────────────
 
-// Rounded rectangle helper (polyfill for older browsers)
-function _roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
 function _el(tag, attrs = {}, text = null) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -1896,7 +1727,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); hud.stop(); turnAnimations.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
