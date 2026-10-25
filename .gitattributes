@@ -1,0 +1,3 @@
+# Sources are checked out and installed with LF so the site Prettier check
+# (scripts/format-check-addons.mjs) sees the same bytes on every platform.
+* text=auto eol=lf
