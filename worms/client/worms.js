@@ -1,3 +1,4 @@
+import { createWormsPhysics } from './worms-physics.js';
 import { createWormsOverlays } from './worms-overlays.js';
 import { createWormsEffects } from './worms-effects.js';
 import { createWormsSprites } from './worms-sprites.js';
@@ -33,13 +34,6 @@ const WORLD_W  = 960;
 const WORLD_H  = 480;
 const WATER_Y  = 455;
 const WORM_R   = 10;
-const GRAVITY  = 400;
-const WALK_SPD = 88;
-// Jump physics
-const JUMP_FWD_VY  = -235;  // forward hop vertical   (~69 px rise with G=400)
-const JUMP_FWD_VX  =  110;  // forward hop horizontal
-const BACKFLIP_VY  = -310;  // backflip vertical       (~120 px rise)
-const BACKFLIP_VX  =  150;  // backflip horizontal (backward from facing)
 const TURN_MS  = 30_000;
 
 // ── Level definitions (must mirror server LEVELS order) ───────────────────────────
@@ -263,6 +257,22 @@ const { drawRope: _drawRope, drawJetpackFuel: _drawJetpackFuel,
   drawDynamites: _drawDynamites, drawMines: _drawMines,
   drawTeleportPreview: _drawTeleportPreview, drawParachute: _drawParachute,
   drawChargeBar: _drawChargeBar } = overlaysRenderer;
+const wormPhysics = createWormsPhysics({
+  getState: () => ({
+    isMyTurn: _myTurn(), physics: _ws, worms: _worms, activeWormId: _activeWormId,
+    terrain: _terrain, terrainMask: _terrainMask, holes: _holes, waterLevel: _waterLevel,
+    keys: _keys, hasShotFired: _shotFired, hasMovementToolUsed: _movementToolUsed,
+    isRetreating: _retreating, isAnimating: _animating,
+    get rope() { return _rope; }, set rope(value) { _rope = value; },
+    get isJetpackActive() { return _jetpackActive; }, set isJetpackActive(value) { _jetpackActive = value; },
+    get jetpackFuel() { return _jetpackFuel; }, set jetpackFuel(value) { _jetpackFuel = value; },
+    get aimAngle() { return _aimAngle; }, set aimAngle(value) { _aimAngle = value; },
+    get isPhysicsSynced() { return _wsSynced; }, set isPhysicsSynced(value) { _wsSynced = value; },
+  }),
+  playSound: _playSound, spawnParticles: _spawnParticles, randomUnit,
+  isActive: () => scope.active, width: WORLD_W, height: WORLD_H, wormRadius: WORM_R,
+});
+const { initTurn: _initWsTurn } = wormPhysics;
 
 // DOM
 let _container  = null;
@@ -574,6 +584,7 @@ function _setupGame(data) {
 }
 
 function _resetGameData(data) {
+  wormPhysics.reset();
   overlaysRenderer.reset();
   _terrain      = data.terrain;
   _holes        = data.holes  ?? [];
@@ -833,6 +844,7 @@ function _startRaf() {
 }
 
 function _stopGame() {
+  wormPhysics.reset();
   overlaysRenderer.reset();
   if (_raf) { scope.cancelFrame(_raf); _raf = null; }
   _unbindGameInput();
@@ -1034,138 +1046,9 @@ function _selectWeapon(key) {
   _updateFuseDisplay();
 }
 
-// ── Rope pendulum physics (called when _rope.state === 'attached') ─────────
-function _stepRopeAttached(dt, movingL, movingR) {
-  const ax = _rope.anchorX, ay = _rope.anchorY;
-  // Reel in / out
-  if (_keys.has('z') || _keys.has('arrowup'))   _rope.len = Math.max(25,  _rope.len - 80 * dt);
-  if (_keys.has('s') || _keys.has('arrowdown')) _rope.len = Math.min(260, _rope.len + 80 * dt);
-  // Gravity on worm
-  _ws.vy += GRAVITY * dt;
-  // L/R apply tangential swing force
-  if (movingL) _ws.vx -= 150 * dt;
-  if (movingR) _ws.vx += 150 * dt;
-  // Light air friction
-  _ws.vx *= Math.exp(-0.6 * dt);
-  // Integrate
-  _ws.cx += _ws.vx * dt;
-  _ws.cy += _ws.vy * dt;
-  // Radial constraint: keep worm on circle of radius _rope.len
-  const dx = _ws.cx - ax, dy = _ws.cy - ay;
-  const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
-  if (dist > _rope.len) {
-    const nx = dx / dist, ny = dy / dist;
-    const radV = _ws.vx * nx + _ws.vy * ny;
-    if (radV > 0) { _ws.vx -= radV * nx; _ws.vy -= radV * ny; }  // cancel outward velocity
-    _ws.cx = ax + nx * _rope.len;
-    _ws.cy = ay + ny * _rope.len;
-  }
-  // Terrain wall bounce while swinging
-  if (_terrain && _clientSolid(_ws.cx, _ws.cy)) {
-    _ws.vx *= -0.35; _ws.vy *= -0.35;
-  }
-  // Landing: auto-detach rope when worm touches ground
-  if (_ws.vy > 0 && _terrain) {
-    const surY = _surfaceAt(_ws.cx);
-    if (_ws.cy >= surY) {
-      _ws.cy      = surY; _ws.vy = 0; _ws.vx *= 0.35;
-      _ws.onGround = true;
-      _rope        = null;
-      _playSound('WormLanding', 0.4);
-    }
-  }
-  // Water: fall through, rope detaches
-  if (_ws.cy >= _waterLevel) _rope = null;
-  // Bounds
-  _ws.cx = Math.max(WORM_R, Math.min(WORLD_W - WORM_R, _ws.cx));
-}
-
-// ── Jetpack thrust physics ───────────────────────────────────────────────
-function _stepJetpackPhysics(dt, movingL, movingR) {
-  const thrusting = _jetpackThrusting();
-  _applyJetpackVertical(dt, thrusting);
-  _applyJetpackHorizontal(dt, movingL, movingR);
-  _moveJetpackWorm(dt);
-  _landJetpackWorm();
-  if (_jetpackFuel <= 0 && !thrusting) _jetpackActive = false;
-  _ws.cx = Math.max(WORM_R, Math.min(WORLD_W - WORM_R, _ws.cx));
-}
-
-function _jetpackThrusting() {
-  return _jetpackFuel > 0 && (_keys.has('z') || _keys.has('arrowup') || _keys.has(' '));
-}
-
-function _applyJetpackVertical(dt, thrusting) {
-  const THRUST = 340;
-  const DRAIN  = 0.22;  // ~4.5 s to empty tank
-  if (thrusting) {
-    _ws.vy = Math.max(_ws.vy - THRUST * dt, -220);
-    _jetpackFuel = Math.max(0, _jetpackFuel - DRAIN * dt);
-    if (randomUnit() < 0.5) _spawnParticles(_ws.cx, _ws.cy + WORM_R, 1);
-  } else {
-    _ws.vy += GRAVITY * 0.65 * dt;  // partial gravity without thrust
-  }
-  _ws.vy = Math.min(_ws.vy, 400);
-}
-
-function _applyJetpackHorizontal(dt, movingL, movingR) {
-  const H_THRUST = 200;
-  if (movingL) { _ws.vx -= H_THRUST * dt; _ws.facing = -1; }
-  if (movingR) { _ws.vx += H_THRUST * dt; _ws.facing =  1; }
-  _ws.vx *= Math.exp(-1.5 * dt);
-}
-
-function _moveJetpackWorm(dt) {
-  const newCx = Math.max(WORM_R, Math.min(WORLD_W - WORM_R, _ws.cx + _ws.vx * dt));
-  const leadX = newCx + Math.sign(_ws.vx || 1) * WORM_R;
-  if (!_terrain || !_clientSolid(leadX, _ws.cy)) _ws.cx = newCx;
-  else _ws.vx = 0;
-  _ws.cy += _ws.vy * dt;
-  if (_ws.cy < WORM_R) { _ws.cy = WORM_R; _ws.vy = 0; }
-}
-
-function _landJetpackWorm() {
-  if (!_terrain || _ws.vy < 0) return;
-  const surY = _surfaceAt(_ws.cx);
-  if (_ws.cy < surY) return;
-  _ws.cy = surY; _ws.vy = 0; _ws.vx = 0;
-  _ws.onGround   = true;
-  _jetpackActive = false;
-  _playSound('WormLanding', 0.45);
-}
-
 // ── Physics (active worm, my turn only) ─────────────────────────────────────
-function _initWsTurn() {
-  if (!_myTurn()) return;
-  const aw = _worms.find(w => w.id === _activeWormId);
-  if (!aw) return;
-  _ws.cx = aw.cx;
-  _ws.cy = aw.cy;
-  _ws.vx = 0;
-  _ws.vy = 0;
-  _ws.onGround      = true;
-  _ws.facing        = 1;
-  _ws.walking       = false;
-  _ws.backflipping  = false;
-  _ws.backflipAngle = 0;
-  _wsSynced         = true;
-  _rope             = null;
-  _jetpackActive    = false;
-  _jetpackFuel      = 0;
-}
-
 function _physicsStep(dt) {
-  if (!_canStepActiveWorm()) return;
-  const input = _readWormPhysicsInput(dt);
-  _updateGroundFacing(input);
-  _tryForwardHop(input);
-  _tryBackflip(input);
-  _stepBackflipSpin(dt);
-  _stepRopeHookFlight(dt);
-
-  const overridePhys = _stepToolOverridePhysics(dt, input);
-  if (!overridePhys) _stepNormalWormPhysics(dt, input);
-
+  if (!wormPhysics.step(dt)) return;
   _updateWalkSounds(dt);
   _updateWeaponTakeoutAnim();
   _playTimerTickIfNeeded();
@@ -1173,170 +1056,6 @@ function _physicsStep(dt) {
   _collectNearbyCrate();
   _mirrorActiveWormPosition();
   _syncActiveWormPosition();
-}
-
-function _canStepActiveWorm() {
-  // Allow physics to keep running when rope/jetpack is active (even though _shotFired=true)
-  const canMoveAfterAction = _rope !== null || _jetpackActive || _movementToolUsed || _retreating;
-  return _myTurn() && _wsSynced && (!_shotFired || canMoveAfterAction) && !_animating;
-}
-
-function _readWormPhysicsInput(dt) {
-  const input = {
-    movingL: _keys.has('q') || _keys.has('arrowleft'),
-    movingR: _keys.has('d') || _keys.has('arrowright'),
-    jumpKey: _keys.has(' '),
-    bfKey:   _keys.has('backspace'),
-  };
-  if (_keys.has('z') || _keys.has('arrowup'))   _aimAngle -= 1.8 * dt;
-  if (_keys.has('s') || _keys.has('arrowdown')) _aimAngle += 1.8 * dt;
-  return input;
-}
-
-function _updateGroundFacing({ movingL, movingR }) {
-  if (!_ws.onGround) return;
-  if (movingL && !movingR) _ws.facing = -1;
-  if (movingR && !movingL) _ws.facing =  1;
-}
-
-function _tryForwardHop({ jumpKey }) {
-  if (!jumpKey || !_ws.onGround || _ws.backflipping) return;
-  _ws.vy       = JUMP_FWD_VY;
-  _ws.vx       = _ws.facing * JUMP_FWD_VX;
-  _ws.onGround = false;
-  _ws.walking  = false;
-  _keys.delete(' ');
-  _playSound('JUMP1', 0.5);
-}
-
-function _tryBackflip({ bfKey }) {
-  if (!bfKey || !_ws.onGround || _ws.backflipping) return;
-  _ws.vy            = BACKFLIP_VY;
-  _ws.vx            = -_ws.facing * BACKFLIP_VX;  // opposite = backward
-  _ws.onGround      = false;
-  _ws.backflipping  = true;
-  _ws.backflipAngle = 0;
-  _ws.walking       = false;
-  _keys.delete('backspace');
-  _playSound('JUMP1', 0.5);
-}
-
-function _stepBackflipSpin(dt) {
-  if (_ws.backflipping) _ws.backflipAngle -= 5 * dt;  // ~286°/s — one full rotation per flight
-}
-
-function _stepRopeHookFlight(dt) {
-  if (_rope?.state !== 'flying') return;
-  _rope.vy += GRAVITY * dt;
-  _rope.cx += _rope.vx * dt;
-  _rope.cy += _rope.vy * dt;
-  if (_terrain && _clientSolid(_rope.cx, _rope.cy)) _attachRopeHook();
-  if (_rope && (_rope.cx < 0 || _rope.cx > WORLD_W || _rope.cy > _waterLevel)) _rope = null;
-}
-
-function _attachRopeHook() {
-  _rope.state   = 'attached';
-  _rope.anchorX = _rope.cx;
-  _rope.anchorY = _rope.cy;
-  _rope.len     = Math.hypot(_ws.cx - _rope.anchorX, _ws.cy - _rope.anchorY);
-  _ws.onGround  = false;  // launch worm off ground to start swinging
-  _playSound('GRENADEIMPACT', 0.25);
-}
-
-function _stepToolOverridePhysics(dt, { movingL, movingR }) {
-  const overridePhys = _rope?.state === 'attached' || _jetpackActive;
-  if (_rope?.state === 'attached') _stepRopeAttached(dt, movingL, movingR);
-  if (_jetpackActive)              _stepJetpackPhysics(dt, movingL, movingR);
-  return overridePhys;
-}
-
-function _stepNormalWormPhysics(dt, input) {
-  _applyWormGravity(dt);
-  _walkGroundWorm(dt, input);
-  _driftAirborneWorm(dt);
-  _settleVerticalWorm(dt);
-}
-
-function _applyWormGravity(dt) {
-  if (_ws.onGround) return;
-  _ws.vy += GRAVITY * dt;
-  if (_ws.vy > 260 && !_ws.parachute) {
-    _ws.parachute = true;
-    _playSound('ParachuteOpen', 0.55);
-  }
-  if (_ws.parachute) {
-    _ws.vy = Math.min(_ws.vy, 65);   // gentle terminal velocity
-    _ws.vx *= Math.exp(-1.5 * dt);   // extra air resistance
-  } else {
-    _ws.vy = Math.min(_ws.vy, 600);
-  }
-}
-
-function _walkGroundWorm(dt, { movingL, movingR }) {
-  _ws.walking = false;
-  if (!_ws.onGround || (!movingL && !movingR) || !_terrain) return;
-  _ws.walking = true;
-  const dir  = movingL ? -1 : 1;
-  const newX = Math.max(WORM_R, Math.min(WORLD_W - WORM_R, _ws.cx + dir * WALK_SPD * dt));
-  const surY = _surfaceAt(newX);
-  const step = _ws.cy - surY;  // >0 = slope up, <0 = slope down
-  if (_walkBlockedByWorm(newX) || step > 15) return;
-  if (step < -18) {
-    _ws.cx = newX;
-    _ws.onGround = false;
-    _ws.vy = 0;
-    return;
-  }
-  _ws.cx = newX;
-  _ws.cy = surY;
-}
-
-function _walkBlockedByWorm(newX) {
-  for (const w of _worms) {
-    if (w.id === _activeWormId || !w.alive) continue;
-    const dx = newX - w.cx, dy = _ws.cy - w.cy;
-    if (Math.abs(dx) < WORM_R * 2 && Math.abs(dy) < WORM_R * 1.5) return true;
-  }
-  return false;
-}
-
-function _driftAirborneWorm(dt) {
-  if (_ws.onGround) return;
-  _ws.vx *= Math.exp(-1.8 * dt);
-  const newCx = Math.max(WORM_R, Math.min(WORLD_W - WORM_R, _ws.cx + _ws.vx * dt));
-  const leadX = newCx + (Math.sign(_ws.vx) * WORM_R * 0.8);
-  if (_terrain && _airWallAt(leadX)) _ws.vx = 0;
-  else _ws.cx = newCx;
-}
-
-function _airWallAt(leadX) {
-  return _clientSolid(leadX, _ws.cy - WORM_R * 0.8) ||
-    _clientSolid(leadX, _ws.cy) ||
-    _clientSolid(leadX, _ws.cy + WORM_R * 0.5);
-}
-
-function _settleVerticalWorm(dt) {
-  if (_ws.onGround || !_terrain) return;
-  const prevCy = _ws.cy;
-  _ws.cy += _ws.vy * dt;
-  const surY = _surfaceAt(_ws.cx);
-  if (_ws.vy >= 0 && _ws.cy >= surY) _tryLandActiveWorm(prevCy, surY);
-  if (_ws.vy < 0 && _clientSolid(_ws.cx, _ws.cy - WORM_R)) _ws.vy = 0;
-}
-
-function _tryLandActiveWorm(prevCy, surY) {
-  if (prevCy < surY + WORM_R || _ws.cy - surY < WORM_R * 3) _landActiveWorm(surY, _ws.vy);
-}
-
-function _landActiveWorm(surY, speed) {
-  _ws.cy            = surY;
-  _ws.vy            = 0;
-  _ws.vx            = 0;
-  _ws.onGround      = true;
-  _ws.backflipping  = false;
-  _ws.backflipAngle = 0;
-  _ws.parachute     = false;
-  if (speed > 150) _playSound('WormLanding', 0.55);
 }
 
 function _updateWalkSounds(dt) {
@@ -1397,40 +1116,6 @@ function _syncActiveWormPosition() {
   _ws._lastSync = Date.now();
   _socket.emit('worms:pos', { roomId: _roomId, wormId: _activeWormId, cx: _ws.cx, cy: _ws.cy });
 }
-function _terrainIndexAt(x, y) {
-  if (x < 0 || x >= WORLD_W || y < 0 || y >= WORLD_H) return null;
-  const xi = Math.max(0, Math.min(WORLD_W - 1, Math.floor(x)));
-  const yi = Math.max(0, Math.min(WORLD_H - 1, Math.floor(y)));
-  return { xi, yi, maskIndex: yi * WORLD_W + xi };
-}
-
-function _pointCarvedByHole(x, y) {
-  return _holes.some(h => {
-    const dx = x - h.cx, dy = y - h.cy;
-    return dx * dx + dy * dy <= h.r * h.r;
-  });
-}
-
-function _clientSolid(x, y) {
-  const pos = _terrainIndexAt(x, y);
-  if (!pos || _pointCarvedByHole(x, y)) return false;
-  if (_terrainMask) return _terrainMask.at(pos.maskIndex) === 1;
-  return _terrain ? y >= (_terrain.at(pos.xi) ?? WORLD_H) : false;
-}
-
-function _surfaceAt(cx) {
-  if (!_terrain) return WORLD_H / 2;
-  const xi = Math.max(0, Math.min(WORLD_W - 1, Math.round(cx)));
-  let y = _terrain.at(xi) ?? WORLD_H;
-  if (_holes.length === 0) return Math.max(0, y - WORM_R);
-  // Scan down from terrain base to find solid Y through holes
-  while (y < _waterLevel) {
-    if (_clientSolid(xi, y)) return Math.max(0, y - WORM_R);
-    y++;
-  }
-  return _waterLevel;
-}
-
 function _updateAim() {
   if (!_myTurn() || _shotFired) return;
   // Don't override keyboard aim if W/S is currently held
@@ -2211,7 +1896,7 @@ function _colorSpan(pseudo, color) {
   return userNameHtml({ pseudo, color }, { fallbackPseudo: '?' });
 }
 
-  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); media.stop(); _root = null; });
+  scope.cleanup(() => { _stopGame(); terrainRenderer.stop(); wormRenderer.stop(); effectsRenderer.stop(); overlaysRenderer.stop(); wormPhysics.stop(); media.stop(); _root = null; });
   initWorms(socket, getMe, pushSystem);
   const instance = { get active() { return scope.active; }, activateWorms, releaseInput() { _keys.clear(); _chargeStart = null; }, stop: () => scope.stop() };
   scope.cleanup(() => { if (current === instance) current = null; });
