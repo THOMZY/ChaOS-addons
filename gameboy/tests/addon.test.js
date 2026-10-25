@@ -95,6 +95,16 @@ async function fixture(context, options = {}) {
   return { feature, origin, room, cookie, token, account, connect, buffer };
 }
 
+// Waits for an observable effect instead of a fixed delay: the full suite runs
+// with many files in parallel, so 30 ms is not a duration anything guarantees.
+async function until(condition, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (!condition()) {
+    if (Date.now() > deadline) throw new Error('condition not met before timeout');
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
 test('Game Boy writes require a live account and the same origin before reading an upload', async (context) => {
   const scene = await fixture(context);
   const url = scene.origin + '/gameboy-api/roms?name=uploaded.gb';
@@ -135,7 +145,7 @@ test('spectators cannot control the core; account revocation releases authentica
   const player = await scene.connect({ Cookie: scene.cookie });
   assert.equal(player.hello.canControl, true);
   player.socket.send(JSON.stringify({ type: 'input', btn: 'b', down: true }));
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await until(() => scene.room.inputs.length > 0);
   assert.deepEqual(
     scene.room.inputs.map((input) => input[1]),
     ['b'],
@@ -171,13 +181,23 @@ test('a core that finishes loading after stop is closed instead of resurrecting 
   const pending = new Promise((resolve) => {
     release = resolve;
   });
-  const scene = await fixture(context, { createRoom: () => pending });
+  let roomCreated;
+  const created = new Promise((resolve) => {
+    roomCreated = resolve;
+  });
+  const scene = await fixture(context, {
+    createRoom: () => {
+      roomCreated();
+      return pending;
+    },
+  });
   const request = fetch(scene.origin + '/gameboy-api/load', {
     method: 'POST',
     headers: { Cookie: scene.cookie, 'Content-Type': 'application/json' },
     body: '{"file":"fixture.gb"}',
   });
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  // The stop must land while the load is inside createRoom, not after a guess.
+  await created;
   const stopping = scene.feature.stop();
   release(scene.room);
   await stopping;
