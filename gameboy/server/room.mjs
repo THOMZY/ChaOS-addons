@@ -16,6 +16,8 @@ export const W = 160,
   AUDIO_RATE = 48000;
 const KEY_INTERVAL = 120,
   OPUS_FRAME = 960;
+// mGBA button names. L and R exist on the Game Boy Advance only: a DMG or CGB
+// cartridge has no shoulder, so they are dropped for those models.
 const BTN = {
   a: 'A',
   b: 'B',
@@ -25,7 +27,10 @@ const BTN = {
   down: 'Down',
   left: 'Left',
   right: 'Right',
+  l: 'L',
+  r: 'R',
 };
+const SHOULDERS = new Set(['l', 'r']);
 const ALL = Object.keys(BTN);
 
 export class GbRoom {
@@ -183,6 +188,7 @@ export class GbRoom {
   input(id, button, isDown) {
     const player = this.players.get(id);
     if (!player || typeof button !== 'string' || !Object.hasOwn(BTN, button)) return;
+    if (SHOULDERS.has(button) && this.model !== 'AGB') return;
     if (isDown) player.held.add(button);
     else player.held.delete(button);
   }

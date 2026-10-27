@@ -12,28 +12,9 @@ const WS_PATH = '/gameboy-ws';
 const PROTO = 4;
 
 const SHELL = `
-<div class="gb-shell">
-  <div class="gb-top">
-    <div class="gb-powerslot">
-      <span class="gb-plabel">ON/OFF</span>
-      <div class="gb-power" id="gb-power" role="switch" aria-checked="true" tabindex="0" title="Marche / arrêt"><i></i></div>
-    </div>
-    <div class="gb-volume">
-      <span class="gb-vlbl">VOL</span>
-      <input id="gb-vol" type="range" min="0" max="100" value="75" aria-label="Volume">
-      <span class="gb-vpct" id="gb-volpct">75</span>
-    </div>
-    <div class="gb-ledrow"><span class="gb-led" id="gb-led"></span></div>
-    <button class="gb-cart" id="gb-lib" title="Bibliothèque de ROMs" aria-label="Bibliothèque">
-      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-        <path d="M5 3.5h10.5L19 7v13.5H5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-        <rect x="8" y="7" width="8" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/>
-      </svg>
-    </button>
-  </div>
-
-  <div class="gb-bezel">
-    <div class="gb-brand"><span>DOT MATRIX WITH STEREO SOUND</span><em>GAME BOY</em></div>
+<div class="gb-shell" data-model="DMG">
+  <div class="gb-case">
+    <div class="gb-art-host"></div>
     <div class="gb-screen" id="gb-screen">
       <canvas id="gb-canvas" width="160" height="144"></canvas>
       <div class="gb-start" id="gb-start" hidden>
@@ -42,32 +23,54 @@ const SHELL = `
       </div>
       <div class="gb-wait" id="gb-wait">CONNEXION…</div>
     </div>
-  </div>
-
-  <div class="gb-controls">
-    <div class="gb-dpad">
-      <button class="gb-up"    data-btn="up"    aria-label="Haut"></button>
-      <button class="gb-left"  data-btn="left"  aria-label="Gauche"></button>
-      <span class="gb-hub"></span>
-      <button class="gb-right" data-btn="right" aria-label="Droite"></button>
-      <button class="gb-down"  data-btn="down"  aria-label="Bas"></button>
+    <div class="gb-utils">
+      <div class="gb-power" id="gb-power" role="switch" aria-checked="true" tabindex="0" title="Marche / arrêt"><i></i></div>
+      <span class="gb-led" id="gb-led"></span>
+      <input class="gb-vol" id="gb-vol" type="range" min="0" max="100" value="75" aria-label="Volume" />
+      <span class="gb-vpct" id="gb-volpct">75</span>
+      <button class="gb-cart" id="gb-lib" title="Bibliothèque de ROMs" aria-label="Bibliothèque">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M5 3.5h10.5L19 7v13.5H5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <rect x="8" y="7" width="8" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4" />
+        </svg>
+      </button>
     </div>
-    <div class="gb-ab">
-      <button type="button" class="gb-key gb-b" data-btn="b">B</button>
-      <button type="button" class="gb-key gb-a" data-btn="a">A</button>
-    </div>
-  </div>
-
-  <div class="gb-bottom">
-    <div class="gb-startsel">
-      <div class="gb-pill"><button type="button" class="gb-cap" data-btn="select" aria-label="select"></button><div class="gb-lbl">SELECT</div></div>
-      <div class="gb-pill"><button type="button" class="gb-cap" data-btn="start" aria-label="start"></button><div class="gb-lbl">START</div></div>
-    </div>
-    <div class="gb-speaker"></div>
   </div>
 
   <div class="gb-hud"><span id="gb-state">…</span> · <span id="gb-rate">–</span> · <span id="gb-count">–</span> joueur(s)</div>
+  <div class="gb-keyboard" aria-label="Commandes clavier">
+    <span><kbd>↑ ↓ ← →</kbd> Croix</span>
+    <span><kbd>X / W</kbd> A · <kbd>Z</kbd> B</span>
+    <span><kbd>Entrée</kbd> Start · <kbd>Maj</kbd> Select</span>
+    <span class="gb-advance-controls"><kbd>Q</kbd> L · <kbd>E</kbd> R</span>
+  </div>
 </div>`;
+
+// The controls themselves form the case: no painted controls underneath them.
+function caseMarkup(advance) {
+  const key = (name, label, className, text = '') =>
+    `<button type="button" class="gb-key ${className}" data-btn="${name}" aria-label="${label}">${text}</button>`;
+  return `<div class="gb-art" data-case="${advance ? 'AGB' : 'DMG'}">
+    ${advance ? key('l', 'Gâchette L', 'gb-shoulder gb-l', 'L') + key('r', 'Gâchette R', 'gb-shoulder gb-r', 'R') : ''}
+    <div class="gb-plastic"></div>
+    <div class="gb-bezel"><span class="gb-dotmatrix">DOT MATRIX WITH STEREO SOUND</span>
+      <span class="gb-battery">BATTERY</span><span class="gb-advance-logo">GAME BOY <b>ADVANCE</b></span>
+    </div>
+    ${advance ? '' : '<div class="gb-brand"><span>Nintendo</span> <b>GAME BOY</b><sup>™</sup></div>'}
+    <div class="gb-dpad">
+      ${key('up', 'Haut', 'gb-up', '▲')}${key('left', 'Gauche', 'gb-left', '◀')}
+      ${key('right', 'Droite', 'gb-right', '▶')}${key('down', 'Bas', 'gb-down', '▼')}
+      <span class="gb-dpad-hub"></span>
+    </div>
+    <div class="gb-ab-well"></div>
+    ${key('b', 'B', 'gb-b', 'B')}${key('a', 'A', 'gb-a', 'A')}
+    <span class="gb-ab-label gb-label-b">B</span><span class="gb-ab-label gb-label-a">A</span>
+    ${key('select', 'Select', 'gb-select', '<span>SELECT</span>')}
+    ${key('start', 'Start', 'gb-start-key', '<span>START</span>')}
+    <div class="gb-speaker" aria-hidden="true">${'<i></i>'.repeat(6)}</div>
+    <span class="gb-phones" aria-hidden="true">PHONES</span>
+  </div>`;
+}
 
 const KEYMAP = {
   ArrowUp: 'up',
@@ -77,10 +80,13 @@ const KEYMAP = {
   KeyX: 'a',
   KeyW: 'a',
   KeyZ: 'b',
+  KeyQ: 'l',
+  KeyE: 'r',
   Enter: 'start',
   ShiftRight: 'select',
   ShiftLeft: 'select',
 };
+const CONTROL_BUTTONS = new Set(Object.values(KEYMAP));
 
 let mounted = null;
 /** The user pressed ▶ at least once: the console may connect. */
@@ -113,7 +119,9 @@ function create(host) {
   const observers = [];
   const sources = new Set();
   const heldButtons = new Set();
+  const remoteButtons = new Set();
   const inputSources = new Map();
+  let localPlayerId = null;
   let reconnectTimer = null,
     resizeFrame = null,
     canControl = false,
@@ -131,15 +139,62 @@ function create(host) {
   };
 
   /**
-   * The shell has a fixed size (430 px). In a small window it would be
-   * clipped: we scale it down and reserve the matching height.
+   * The shell has a fixed size (430 px classic, 620 px Advance). In a small
+   * window it would be clipped: we scale it down and reserve the matching
+   * height.
    */
   const fit = host.querySelector('.gb-fit');
-  const shell = host.querySelector('.gb-shell');
+  const artHost = host.querySelector('.gb-art-host');
+  let shell = null,
+    canvas = null,
+    ctx2d = null,
+    scrEl = null,
+    startEl = null,
+    startBtn = null,
+    powerEl = null,
+    ledEl = null,
+    volEl = null,
+    volPct = null;
+  let model = null;
+
+  /** Acquire the elements of whichever console body is currently mounted. */
+  function grab() {
+    shell = host.querySelector('.gb-shell');
+    canvas = host.querySelector('#gb-canvas');
+    ctx2d = canvas.getContext('2d', { alpha: false });
+    canvas.tabIndex = 0;
+    scrEl = $('gb-screen');
+    startEl = $('gb-start');
+    startBtn = $('gb-startbtn');
+    powerEl = $('gb-power');
+    ledEl = $('gb-led');
+    volEl = $('gb-vol');
+    volPct = $('gb-volpct');
+  }
+
+  // Only the case and its game controls change. Screen, utility controls,
+  // audio and socket retain their nodes and listeners across cartridge changes.
+  function buildShell(next) {
+    const wanted = next === 'AGB' ? 'AGB' : 'DMG';
+    if (wanted === model && artHost.firstElementChild) return;
+    releaseInputs();
+    model = wanted;
+    artHost.innerHTML = caseMarkup(wanted === 'AGB');
+    shell.dataset.model = wanted;
+    bindButtons();
+    applyVolume();
+    applyPower();
+    if (startEl) startEl.hidden = started;
+    if (started) showOverlay('CONNEXION…');
+    else hideOverlay();
+    resizeScreen(wanted === 'AGB' ? 240 : 160, wanted === 'AGB' ? 160 : 144);
+    rescale();
+  }
+
   function rescale() {
-    // The shell has a natural size of 430 px. We scale it both ways: down to
-    // fit a small window, up (to 1.6x) when the window is large — the game and
-    // the SVG scale together.
+    // The shell has a fixed natural width (430 px portrait, 620 px landscape).
+    // We scale it both ways: down to fit a small window, up (to 1.6x) when the
+    // window is large — the artwork, the screen and the overlays scale together.
     const w = shell.offsetWidth,
       h = shell.offsetHeight;
     if (!w || !h) return;
@@ -159,11 +214,11 @@ function create(host) {
   });
 
   const $ = (id) => host.querySelector('#' + id);
-  const canvas = $('gb-canvas');
-  const ctx2d = canvas.getContext('2d', { alpha: false });
-  let img = ctx2d.createImageData(160, 144);
-  let packed = new Uint8Array(160 * 144),
-    tmp = new Uint8Array(160 * 144);
+  // The frame buffers belong to the canvas of the mounted body: buildShell()
+  // re-creates them through resizeScreen().
+  let img = null,
+    packed = null,
+    tmp = null;
   let lastFrameNumber = null;
   function resizeScreen(width = 160, height = 144) {
     if (
@@ -182,7 +237,6 @@ function create(host) {
     tmp = new Uint8Array(width * height);
     lastFrameNumber = null;
   }
-  canvas.tabIndex = 0;
 
   let ws = null;
   let palette = null;
@@ -210,9 +264,6 @@ function create(host) {
   }
   let adec = null,
     opusTs = 0;
-
-  const volEl = $('gb-vol'),
-    volPct = $('gb-volpct');
 
   function applyVolume() {
     if (master) {
@@ -321,17 +372,12 @@ function create(host) {
     overlayVisible = false;
   }
 
-  const scrEl = $('gb-screen');
-  const startEl = $('gb-start');
-  const startBtn = $('gb-startbtn');
-  const powerEl = $('gb-power');
-  const ledEl = $('gb-led');
-
   function applyPower() {
     powerEl.classList.toggle('off', !powerOn);
     powerEl.setAttribute('aria-checked', String(powerOn));
     scrEl.classList.toggle('off', !powerOn);
     ledEl.classList.toggle('off', !powerOn);
+    syncButtonVisuals();
     if (!powerOn) {
       releaseInputs();
       hideOverlay();
@@ -380,6 +426,9 @@ function create(host) {
     ws.onclose = () => {
       if (ws !== connection || destroyed) return;
       ws = null;
+      releaseInputs();
+      remoteButtons.clear();
+      syncButtonVisuals();
       $('gb-state').textContent = 'coupé';
       if (destroyed || closing) return; // Intentional disconnects must not reconnect.
       reconnectTimer = setTimeout(() => {
@@ -401,9 +450,12 @@ function create(host) {
           return;
         }
         if (m.type === 'hello') {
+          localPlayerId = m.id;
           roomGeneration = m.generation;
           canControl = m.canControl === true;
+          buildShell(m.model);
           resizeScreen(m.width, m.height);
+          applyControls(m.controls);
           try {
             adec?.close();
           } catch {
@@ -454,8 +506,15 @@ function create(host) {
           $('gb-count').textContent = m.players.length;
           return;
         }
+        if (m.type === 'controls') {
+          applyControls(m.players);
+          return;
+        }
         if (m.type === 'rom') {
+          remoteButtons.clear();
+          releaseInputs();
           roomGeneration = m.generation ?? roomGeneration;
+          buildShell(m.model);
           resizeScreen(m.width, m.height);
           nextTime = 0;
           opusTs = 0;
@@ -550,21 +609,7 @@ function create(host) {
   }
 
   /* ---------------- volume / power / library ---------------- */
-  if (volEl) {
-    volEl.value = String(volume);
-    listen(volEl, 'input', () => {
-      volume = Number(volEl.value);
-      try {
-        localStorage.setItem('gb.vol', String(volume));
-      } catch {
-        /* Storage can be disabled. */
-      }
-      applyVolume();
-    });
-    applyVolume();
-  }
-
-  listen(powerEl, 'click', () => {
+  function onPower() {
     if (!started) {
       begin();
       return;
@@ -573,7 +618,7 @@ function create(host) {
     if (actx?.state === 'suspended') actx.resume().catch(() => {});
     powerOn = !powerOn;
     applyPower();
-  });
+  }
 
   function begin() {
     if (started) return;
@@ -587,10 +632,7 @@ function create(host) {
     connect(true);
   }
 
-  if (startBtn) listen(startBtn, 'click', begin);
-  if (startEl) listen(startEl, 'click', begin);
-
-  listen($('gb-lib'), 'click', () => {
+  function openLibrary() {
     const w = 980,
       h = 760;
     const left = Math.max(0, Math.round((screen.width - w) / 2));
@@ -600,9 +642,66 @@ function create(host) {
       'chaos-gameboy-library',
       `width=${w},height=${h},left=${left},top=${top}`,
     );
-  });
+  }
+
+  /**
+   * The utility controls are mounted and wired once.
+   */
+  function wireShell() {
+    if (volEl) {
+      volEl.value = String(volume);
+      listen(volEl, 'input', () => {
+        volume = Number(volEl.value);
+        try {
+          localStorage.setItem('gb.vol', String(volume));
+        } catch {
+          /* Storage can be disabled. */
+        }
+        applyVolume();
+      });
+      applyVolume();
+    }
+
+    if (powerEl) {
+      listen(powerEl, 'click', onPower);
+      listen(powerEl, 'keydown', (event) => {
+        if (!['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        powerEl.click();
+      });
+    }
+
+    if (startBtn) listen(startBtn, 'click', begin);
+    if (startEl) listen(startEl, 'click', begin);
+    listen($('gb-lib'), 'click', openLibrary);
+    bindButtons();
+  }
 
   /* ---------------- input ---------------- */
+  function syncButtonVisuals() {
+    for (const node of host.querySelectorAll('[data-btn]')) {
+      node.classList.toggle(
+        'active',
+        powerOn && (heldButtons.has(node.dataset.btn) || remoteButtons.has(node.dataset.btn)),
+      );
+    }
+  }
+
+  function applyControls(players) {
+    remoteButtons.clear();
+    if (Array.isArray(players)) {
+      for (const player of players) {
+        // Own input renders immediately; a delayed echo must not re-press it.
+        if (player?.id === localPlayerId || !Array.isArray(player?.buttons)) continue;
+        for (const button of player.buttons) {
+          if (CONTROL_BUTTONS.has(button)) remoteButtons.add(button);
+        }
+      }
+    }
+    syncButtonVisuals();
+  }
+
   function send(btn, down, source = 'pointer') {
     if (!canControl || (down && (!powerOn || stopped))) return;
     const sources = inputSources.get(btn) || new Set();
@@ -611,9 +710,13 @@ function create(host) {
     else sources.delete(source);
     inputSources.set(btn, sources);
     down = sources.size > 0;
-    if (heldButtons.has(btn) === down) return;
+    if (heldButtons.has(btn) === down) {
+      syncButtonVisuals();
+      return;
+    }
     if (down) heldButtons.add(btn);
     else heldButtons.delete(btn);
+    syncButtonVisuals();
     try {
       if (ws?.readyState === 1) ws.send(JSON.stringify({ type: 'input', btn, down }));
     } catch {
@@ -624,56 +727,64 @@ function create(host) {
   function releaseInputs() {
     for (const button of [...heldButtons]) {
       send(button, false, 'all');
-      host.querySelector(`[data-btn="${button}"]`)?.classList.remove('active');
     }
+    heldButtons.clear();
+    inputSources.clear();
+    syncButtonVisuals();
   }
   function ownsKeyboard(event) {
     if (!canControl || !powerOn || stopped || destroyed) return false;
     if (event.target?.closest?.('input, textarea, select, [contenteditable]')) return false;
     return host.contains(document.activeElement) || document.activeElement === winEl;
   }
-  host.querySelectorAll('[data-btn]').forEach((node) => {
-    const btn = node.dataset.btn;
-    listen(node, 'pointerdown', (e) => {
-      if (!canControl || !powerOn || stopped) return;
-      e.preventDefault();
-      node.setPointerCapture?.(e.pointerId);
-      canvas.focus();
-      node.classList.add('active');
-      send(btn, true);
-    });
-    const up = () => {
-      node.classList.remove('active');
-      send(btn, false);
-    };
-    listen(node, 'pointerup', up);
-    listen(node, 'pointercancel', up);
-    listen(node, 'pointerleave', (e) => {
-      if (e.buttons) up();
-    });
-    listen(node, 'keydown', (event) => {
-      if (!['Enter', ' '].includes(event.key)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.repeat || !canControl || !powerOn || stopped) return;
-      node.classList.add('active');
-      send(btn, true, event.code);
-    });
-    listen(node, 'keyup', (event) => {
-      if (!['Enter', ' '].includes(event.key)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      node.classList.remove('active');
-      send(btn, false, event.code);
-    });
-  });
+  /**
+   * Bind fresh HTML buttons after a model change. Each pointer and keyboard
+   * source holds its own press, so releasing one cannot release another.
+   */
+  function bindButtons() {
+    for (const node of host.querySelectorAll('[data-btn]')) {
+      const btn = node.dataset.btn;
+      listen(node, 'pointerdown', (e) => {
+        if (e.button !== 0) return;
+        if (!canControl || !powerOn || stopped) return;
+        e.preventDefault();
+        node.setPointerCapture?.(e.pointerId);
+        canvas.focus();
+        send(btn, true, `pointer:${e.pointerId}`);
+      });
+      const up = (e) => {
+        send(btn, false, `pointer:${e.pointerId}`);
+      };
+      listen(node, 'pointerup', up);
+      listen(node, 'pointercancel', up);
+      listen(node, 'lostpointercapture', up);
+      listen(node, 'keydown', (event) => {
+        if (!['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.repeat || !canControl || !powerOn || stopped) return;
+        send(btn, true, `control:${event.code}`);
+      });
+      listen(node, 'keyup', (event) => {
+        if (!['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        send(btn, false, `control:${event.code}`);
+      });
+      listen(node, 'blur', () => {
+        send(btn, false, 'control:Space');
+        send(btn, false, 'control:Enter');
+      });
+    }
+  }
 
   const onKey = (e) => {
     if (e.repeat || !ownsKeyboard(e)) return;
     const btn = KEYMAP[e.code];
     if (!btn) return;
+    // L and R only exist on the Advance shell.
+    if ((btn === 'l' || btn === 'r') && model !== 'AGB') return;
     e.preventDefault();
-    host.querySelector(`[data-btn="${btn}"]`)?.classList.add('active');
     send(btn, true, e.code);
   };
   const offKey = (e) => {
@@ -681,7 +792,6 @@ function create(host) {
     if (!heldButtons.has(btn)) return;
     if (!btn) return;
     e.preventDefault();
-    host.querySelector(`[data-btn="${btn}"]`)?.classList.remove('active');
     send(btn, false, e.code);
   };
   listen(window, 'keydown', onKey);
@@ -713,6 +823,8 @@ function create(host) {
 
   function stopStream() {
     releaseInputs();
+    remoteButtons.clear();
+    syncButtonVisuals();
     if (reconnectTimer !== null) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
@@ -886,17 +998,24 @@ function create(host) {
       connect();
     }
   });
-  listen(powerEl, 'keydown', (event) => {
-    if (['Enter', ' '].includes(event.key)) {
-      event.preventDefault();
-      event.stopPropagation();
-      powerEl.click();
-    }
-  });
+  // Mount the console: the overlay layer exists once, then the cartridge decides
+  // which case is injected into it (buildShell). The status route primes the
+  // choice so an Advance game already running does not appear on a Game Boy.
+  grab();
+  wireShell();
+  buildShell('DMG');
+  void fetch('/gameboy-api/status')
+    .then((response) => (response.ok ? response.json() : null))
+    .then((status) => {
+      // A WebSocket handshake is newer than this initial HTTP snapshot.
+      if (!destroyed && !ws && status?.model) buildShell(status.model);
+    })
+    .catch(() => {
+      /* No status route (static preview, add-on absent): the handshake decides. */
+    });
 
   // The console no longer connects on its own: we show the start screen and
   // the ▶ button launches the game (the ROM is already picked server-side).
-  applyPower();
   if (started) {
     showOverlay('CONNEXION…');
     connect();

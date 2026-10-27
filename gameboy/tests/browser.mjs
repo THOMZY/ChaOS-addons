@@ -24,8 +24,8 @@ const dataDir = mkdtempSync(resolve(tmpdir(), 'chaos-gameboy-browser-data-'));
 const feature = createGameboyFeature({ dataDir, fetchArtwork: async () => null });
 const app = createHttpApp();
 feature.routes(app);
-const root = resolve(import.meta.dirname, '../../..');
-app.use('/games/gameboy/client', express.static(resolve(root, 'games/gameboy/client')));
+const clientRoot = resolve(import.meta.dirname, '../client');
+app.use('/games/gameboy/client', express.static(clientRoot));
 app.get('/', (_request, response) =>
   response.send(`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/games/gameboy/client/gameboy.css">
 <style>.wm-win{width:600px;height:900px}.gameboy-body{width:100%;height:100%}</style>
@@ -256,6 +256,23 @@ try {
     'PASS real mGBA: two independent clients receive identical pixels and Opus/PCM audio',
   );
   const first = clients[0];
+  const press = await first.evaluate(`(()=>{
+    const r=document.querySelector('[data-btn=a]').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2,button:'left',clickCount:1};
+  })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...press }, first.sessionId);
+  await until(
+    () =>
+      clients[1].evaluate('document.querySelector("[data-btn=a]").classList.contains("active")'),
+    'mouse press visible on the other console',
+  );
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...press }, first.sessionId);
+  await until(
+    () =>
+      clients[1].evaluate('!document.querySelector("[data-btn=a]").classList.contains("active")'),
+    'mouse release visible on the other console',
+  );
+  console.info('PASS real mouse press and release animate both independent consoles');
   await first.evaluate('document.getElementById("gb-canvas").focus()');
   await send(
     'Input.dispatchKeyEvent',
@@ -390,6 +407,27 @@ try {
         )
       ).every((width) => width === 240),
     'full GBA canvas',
+  );
+  // The Advance shell must follow the cartridge: landscape body, 3/2 screen and
+  // the two shoulder buttons, on every connected console.
+  assert.deepEqual(
+    await Promise.all(
+      clients.map((client) =>
+        client.evaluate(`(() => {
+          const shell = document.querySelector('.gb-shell');
+          const screen = document.getElementById('gb-screen').getBoundingClientRect();
+          return [
+            shell.dataset.model,
+            Math.round((screen.width / screen.height) * 100) / 100,
+            Boolean(document.querySelector('[data-btn="l"]')),
+            Boolean(document.querySelector('[data-btn="r"]')),
+            Boolean(document.querySelector('.gb-art[data-case="AGB"]')),
+          ];
+        })()`),
+      ),
+    ),
+    clients.map(() => ['AGB', 1.5, true, true, true]),
+    'every console shows the Advance shell with its shoulders',
   );
   assert.deepEqual(errors, []);
   console.info(

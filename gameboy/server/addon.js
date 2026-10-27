@@ -104,6 +104,20 @@ export function createGameboyFeature({
     for (const [socket, client] of clients)
       if (typeof value === 'string' || !client.isSleeping) send(socket, value);
   }
+  const controls = () =>
+    room
+      ? [...clients.values()]
+          .filter((client) => !client.isSleeping && client.held.size > 0)
+          .map((client) => ({ id: client.id, buttons: [...client.held].sort() }))
+      : [];
+  let lastControls = '[]';
+  function broadcastControls() {
+    const players = controls();
+    const current = JSON.stringify(players);
+    if (current === lastControls) return;
+    lastControls = current;
+    broadcast(JSON.stringify({ type: 'controls', players }));
+  }
   function describeRoom() {
     return room
       ? {
@@ -185,6 +199,7 @@ export function createGameboyFeature({
     }
     await active.stop();
     room = null;
+    broadcastControls();
     isRomUnloaded = true;
     roomGeneration++;
     broadcast(JSON.stringify({ type: 'unloaded' }));
@@ -287,7 +302,9 @@ export function createGameboyFeature({
           assertAccepting();
           roomGeneration++;
           const details = { ...info, file, generation: roomGeneration };
+          for (const client of clients.values()) client.held.clear();
           broadcast(JSON.stringify({ type: 'rom', ...details }));
+          broadcastControls();
           return details;
         });
         reply(response, 200, { ok: true, ...result });
@@ -383,12 +400,14 @@ export function createGameboyFeature({
       security: null,
       startedAt: now(),
       messages: 0,
+      held: new Set(),
     };
     clients.set(socket, client);
     const release = () => {
       if (!clients.delete(socket)) return;
       client.security?.dispose();
       room?.removePlayer(id);
+      broadcastControls();
       syncClients();
       broadcast(JSON.stringify({ type: 'roster', players: roster() }));
     };
@@ -431,6 +450,7 @@ export function createGameboyFeature({
         id,
         color,
         players: roster(),
+        controls: controls(),
         ...describeRoom(),
         rom: active.title,
         canControl: Boolean(access.account),
@@ -465,12 +485,20 @@ export function createGameboyFeature({
         access.account &&
         !client.isSleeping &&
         typeof message.btn === 'string' &&
+        Object.hasOwn(CONST.BTN, message.btn) &&
+        (!['l', 'r'].includes(message.btn) || active.model === 'AGB') &&
         typeof message.down === 'boolean'
-      )
+      ) {
         active.input(id, message.btn, message.down);
+        if (message.down) client.held.add(message.btn);
+        else client.held.delete(message.btn);
+        broadcastControls();
+      }
       if (message.type === 'sleep' && typeof message.on === 'boolean') {
         client.isSleeping = message.on;
         for (const button of Object.keys(CONST.BTN)) active.input(id, button, false);
+        client.held.clear();
+        broadcastControls();
         if (!message.on) active.needKey = true;
         syncClients();
         // The counter must drop the player who just put the console on standby:

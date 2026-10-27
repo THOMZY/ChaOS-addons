@@ -146,6 +146,32 @@ test('shared input merges players, cancels opposites and ignores malformed butto
   await room.stop();
 });
 
+test('L and R reach the core on an Advance cartridge and nowhere else', async () => {
+  const holds = [];
+  const advanced = core('AGB');
+  advanced.controls.hold = async (buttons) => holds.push(...buttons);
+  const advance = await GbRoom.create(
+    'test.gba',
+    options(async () => advanced),
+  );
+  advance.addPlayer(1, 'First', 'red');
+  advance.input(1, 'l', true);
+  advance.input(1, 'r', true);
+  await advance.applyInput();
+  assert.deepEqual(holds, ['L', 'R']);
+  await advance.stop();
+
+  const classic = await GbRoom.create(
+    'test.gb',
+    options(async () => core('DMG')),
+  );
+  classic.addPlayer(1, 'First', 'red');
+  classic.input(1, 'l', true);
+  classic.input(1, 'r', true);
+  assert.deepEqual([...classic.mergedInput()], []);
+  await classic.stop();
+});
+
 test('a battery clock is restored at boot and stored before the core closes', async (context) => {
   const dir = await mkdtemp(join(tmpdir(), 'gb-clock-'));
   context.after(() => rm(dir, { recursive: true, force: true }));

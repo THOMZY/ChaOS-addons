@@ -159,6 +159,43 @@ test('spectators cannot control the core; account revocation releases authentica
   assert.equal(scene.room.players.size, 0);
 });
 
+test('shared control snapshots preserve simultaneous holds, prime newcomers and clear on sleep or disconnect', async (context) => {
+  const scene = await fixture(context);
+  const guest = await scene.connect();
+  const updates = [];
+  guest.socket.on('message', (value) => {
+    const message = JSON.parse(value.toString());
+    if (message.type === 'controls') updates.push(message.players);
+  });
+  const first = await scene.connect({ Cookie: scene.cookie });
+  first.socket.send(JSON.stringify({ type: 'input', btn: 'l', down: true }));
+  first.socket.send(JSON.stringify({ type: 'input', btn: '__proto__', down: true }));
+  first.socket.send(JSON.stringify({ type: 'input', btn: 'a', down: true }));
+  await until(() => updates.length > 0);
+  assert.deepEqual(updates.at(-1), [{ id: first.hello.id, buttons: ['a'] }]);
+  const second = await scene.connect({ Cookie: scene.cookie });
+  assert.deepEqual(second.hello.controls, [{ id: first.hello.id, buttons: ['a'] }]);
+  second.socket.send(JSON.stringify({ type: 'input', btn: 'a', down: true }));
+  await until(() => updates.at(-1)?.length === 2);
+  first.socket.send(JSON.stringify({ type: 'input', btn: 'a', down: false }));
+  await until(() => updates.at(-1)?.length === 1);
+  assert.deepEqual(updates.at(-1), [{ id: second.hello.id, buttons: ['a'] }]);
+  second.socket.send(JSON.stringify({ type: 'sleep', on: true }));
+  await until(() => updates.at(-1)?.length === 0);
+  first.socket.send(JSON.stringify({ type: 'input', btn: 'b', down: true }));
+  await until(() => updates.at(-1)?.[0]?.buttons[0] === 'b');
+  const beforeGuest = updates.length;
+  guest.socket.send(JSON.stringify({ type: 'input', btn: 'start', down: true }));
+  guest.socket.send(JSON.stringify({ type: 'sleep', on: false }));
+  await until(() => scene.feature.status().awake === 2);
+  first.socket.close();
+  await until(() => updates.length > beforeGuest && updates.at(-1)?.length === 0);
+  assert.ok(
+    updates.every((players) => players.every((player) => player.id !== guest.hello.id)),
+    'a spectator cannot forge a pressed button',
+  );
+});
+
 test('production accepts the local request origin alongside the public proxy origin', async (context) => {
   const previousMode = process.env.NODE_ENV;
   const previousOrigin = process.env.PUBLIC_ORIGIN;

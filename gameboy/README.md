@@ -66,6 +66,27 @@ Le clavier n’agit que dans la console focalisée ; les champs texte restent ut
 
 Le protocole v4 transmet des images indexées/RLE avec deltas XOR, de l’Opus 48 kHz mono, ou du PCM lorsque WebCodecs est indisponible. Une perte de delta demande une keyframe. La Game Boy et la GBC gardent leur image 160×144 ; la GBA utilise 240×160, avec une quantification à 252 couleurs adaptée au format indexé. Les deux canaux audio sont mélangés en mono, sans perte des blocs PCM intermédiaires.
 
+## Coques et boutons
+
+Les deux coques sont construites en HTML/CSS : Game Boy grise (DMG, également utilisée pour les cartouches CGB) et Game Boy Advance indigo. Les commandes sont de vrais boutons HTML, sans dessin de commande en doublon sous les éléments interactifs. Aucun fichier de coque n’est chargé.
+
+| Coque            | Dimensions naturelles | Écran                       |
+| ---------------- | --------------------- | --------------------------- |
+| Game Boy         | 430 × 700             | 350 × 315 (10/9) à (40, 88) |
+| Game Boy Advance | 620 × 360             | 360 × 240 (3/2) à (130, 67) |
+
+Les écrans sont volontairement agrandis par rapport aux consoles physiques : cadres réduits, commandes décalées et silhouette conservée. Le rapport de l’image du jeu reste inchangé.
+
+La coque, les commandes et l’écran partagent les coordonnées CSS et une seule transformation de mise à l’échelle. Le modèle vient du statut initial puis des messages WebSocket : une cartouche GBA affiche la coque Advance et ses gâchettes, une cartouche GB/GBC revient à la coque classique. L’écran, les utilitaires, l’audio et la socket conservent leurs éléments lors du changement de coque. Une image 160×144 reste en `object-fit: contain` dans l’écran Advance.
+
+Les calques décoratifs et celui des utilitaires utilisent `pointer-events: none` ; seuls les contrôles interceptent le pointeur. Chaque bouton `data-btn` gère le pointeur avec capture et le clavier (Entrée/Espace). Chaque source maintient sa propre pression ; le relâchement hors du bouton, l’annulation et la perte de capture libèrent la touche. Le changement de coque libère aussi les touches maintenues avant de remplacer les commandes.
+
+L’enfoncement des touches est partagé avec les autres consoles et les spectateurs. Le serveur diffuse un instantané des commandes maintenues par joueur lorsqu’il change, ainsi qu’à la connexion d’un nouveau client. Les pressions locales s’affichent immédiatement ; les autres pressions restent visibles tant qu’au moins un autre joueur les maintient. Déconnexion, révocation, veille et changement de cartouche retirent les pressions correspondantes. Un spectateur ne peut pas forger une animation de touche. L’interrupteur et le volume restent locaux.
+
+Sous le statut de connexion, chaque coque affiche ses raccourcis clavier ; ceux des gâchettes apparaissent uniquement sur l’Advance.
+
+Clavier : flèches = croix, `X`/`W` = A, `Z` = B, `Q` = L, `E` = R, `Entrée` = Start, `Maj` = Select. `L`/`R` n’existent que sur l’Advance : le client ne les envoie pas sur une Game Boy, et le serveur les ignore hors modèle `AGB` (une cartouche DMG/CGB n’a pas de gâchette).
+
 ## Déploiement
 
 Le proxy doit transmettre `Upgrade` pour `/gameboy-ws`. Le site installe ce code depuis le commit référencé dans `games/addons.lock.json` ; publier le commit ChaOS-games avant celui du site. La disponibilité HTTP du site ne prouve pas à elle seule que les bibliothèques natives chargent : le test natif est obligatoire sur la plateforme cible.
@@ -76,6 +97,14 @@ Le binaire Linux de node-mgba 0.3.2 demande glibc 2.38 et ne charge pas directem
 
 ## Vérification
 
+Test autonome de l’interface depuis ce dépôt (Chromium/Edge/Chrome requis, flux simulé, sans ROM ni cœur natif) :
+
+```bash
+node gameboy/tests/shell.browser.mjs
+```
+
+Il vérifie les clics réels sur toutes les touches des deux coques, le relâchement hors console, le clavier, les changements GB/GBA/GBC, l’interrupteur, le volume, la bibliothèque et les petites fenêtres. `BROWSER_PATH` permet de choisir le navigateur ; `GAMEBOY_SCREENSHOTS` permet d’enregistrer les captures de contrôle.
+
 Depuis le dépôt du site, après installation de l’add-on :
 
 ```bash
@@ -84,7 +113,6 @@ npm run test:gameboy:browser
 ```
 
 Les tests couvrent l’authentification, la révocation, les uploads, les chemins, le remplacement d’une ROM, les callbacks tardifs, le codec, les téléchargements de jaquettes et le retrait d’une cartouche (fichiers, sauvegarde, horloge, jaquette, entrée d’index, déchargement préalable du cœur, entrée orpheline d’un fichier supprimé à la main). Le vrai cœur démarre trois ROM de diagnostic écrites pour les tests (GB/GBC/GBA), produit images et audio, ferme puis rouvre les cartouches sans utiliser les jeux du développeur. Le banc Chromium vérifie le premier lancement vide et sa bibliothèque, deux clients indépendants, Opus et PCM, le clavier, le sommeil local, le démontage complet, l’upload/changement partagé en GBA et le retrait d’une cartouche depuis la bibliothèque. Aucun ROM commercial ni firmware n’est fourni par ces tests.
-
 
 ## Formatage des sources
 
