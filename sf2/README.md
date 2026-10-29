@@ -1,9 +1,21 @@
 # Street Fighter II
 
-Add-on J8 de ChaOS. Depuis le site : `node scripts/games-install.mjs sf2`. Le site conserve la fenêtre, ses styles et ses traductions ; les règles de mise et de session viennent du socle commun.
+Street Fighter II is an independent fighting add-on for the ChaOS website. It bundles a vanilla JavaScript client and media in `web/`, served under `/sf2/`. It does not require MUGEN or a Docker service.
 
-Le client embarqué est livré dans `web/` et reste servi sous `/sf2/`. Cet add-on fonctionne indépendamment de MUGEN ; le protocole de jeu et les arbitrages de KO restent identiques.
+## Install
 
-Le code navigateur attend l’ouverture de sa fenêtre. Les tests (runtime, financement, remboursement hors ligne et arrêt de vraies sockets) tournent via `npm test` une fois installé dans le site. Sans cet add-on, le catalogue affiche « À installer » et aucun gestionnaire de ses événements n’est monté.
+From the ChaOS website repository:
 
-Les tests HTTP vérifient les routes publiques, les en-têtes de cache et l’absence d’exposition du code serveur. Le client embarqué et ses médias sont versionnés ; aucune copie de personnages MUGEN ni nouveau service Docker n’est nécessaire.
+```sh
+node scripts/games-install.mjs sf2
+```
+
+Restart the website after installation. The shared platform supplies the window, translations, session and wager rules.
+
+## Test
+
+Run `npm test` from the ChaOS website repository. Tests cover the runtime, funding, refunds, socket shutdown and public HTTP routes.
+
+## Credits
+
+Original project and playable demo: [Street Fighter 2 JavaScript by Iuri Torres](https://iuritorres.github.io/street-fighter-2-javascript/). Development was guided by [Shezzor's Dev Corner](https://www.youtube.com/@ShezzorsDevCorner). The ChaOS integration is maintained in this repository.

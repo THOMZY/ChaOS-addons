@@ -1,180 +1,27 @@
 # Worms
 
-Le Worms du site (parties à plusieurs, mises, tickets) : salles, règles et minuteries côté serveur, contrôleur du navigateur et ses images et sons. Clone HTML5 de Worms Armageddon par CiaranMcCann (Apache-2.0) pour les médias. À terme remplacé par Hedgewars (`todo.txt` du site).
+Worms provides multiplayer rooms, wagers and tickets for the ChaOS website. The server handles rooms, rules and timers; the browser handles the battlefield, controls, graphics and sound.
 
-| Fichier | Rôle |
-| --- | --- |
-| `server/index.js` | point d'entrée : crochets `/chat` (salles, mises), arrêt, et route `/worms-assets` des médias |
-| `server/model.js`, `server/runtime.js` | règles (terrains, armes, tours) et salles, mises, minuteries |
-| `client/worms.js`, `client/style.css` | contrôleur du navigateur et style du champ de bataille, servis sous `/games/worms/client/` |
-| `client/worms-media.js` | propriétaire des sprites, sons préchargés et clones audio en lecture ; construction inactive, chargement au premier affichage, arrêt terminal et ressources consultables |
-| `client/worms-terrain.js` | masque de hauteurs serveur, terrain/ciel/eau/nuages, canvas intermédiaire et écouteurs de chargement possédés par manche ; reset réutilisable, stop terminal |
-| `client/worms-sprites.js` | rendu des vers vivants/morts, animations, noms/PV et flèche active ; bitmaps privés, clear réutilisable et stop terminal |
-| `client/worms-effects.js` | rendu des projectiles et comptes à rebours ; explosions, particules et dégâts flottants privés ; reset par manche et stop terminal |
-| `client/worms-overlays.js` | rendu des caisses/objets posés, outils et aides de visée ; lectures injectées, reset des rendus en cours et stop terminal |
-| `client/worms-physics.js` | calcul des mouvements locaux, outils et collisions ; état partagé emprunté, accesseurs scalaires conservés, reset des pas en cours et stop terminal |
-| `client/worms-hud.js` | affichage du tour, santé, armes/munitions, vent, mèches et compte à rebours ; annonce canvas privée, DOM emprunté |
-| `client/worms-turn-animations.js` | animation de sortie/visée, cadence des pas et bips de fin de tour ; délais privés annulables, reset/stop |
-| `client/worms-game-view.js` | construction de la partie, contrôles joueur/spectateur et icônes ; DOM, écouteurs et bitmap possédés par montage |
-| `media/` | images (niveaux, armes) et sons, servis sous `/worms-assets/` ; les niveaux sont aussi lus par le serveur |
+## Install
 
-Le site garde la fenêtre « Worms » (`website/features/worms/`), son entrée légère `website/core/js/games/worms-entry.js` (liste des événements, chargement du contrôleur à l'ouverture ou à l'admission dans une salle) et ses textes (`worms.*` dans les catalogues du site). Le contrôleur importe les modules du site par URL (`/core/js/...`).
+From the ChaOS website repository:
 
-## Installer
-
-```
+```sh
 node scripts/games-install.mjs worms
 ```
 
-Pas de données à part : les médias (~4 Mo) sont versionnés ici. Redémarrer le site.
+The images and sounds are included in this repository, so no separate data download is required. Restart the website after installation.
 
-## Tests
+## How it works
 
-`tests/*.test.js` tourne avec `npm test` du site : règles, salles et mises, arrêt sur vrais sockets, portefeuille sur SQLite, contrôleur du navigateur (inventaire des événements partagé avec le site, propriété des écouteurs, rendu des pseudos). `tests/site-modules.mjs` fait correspondre les imports `/core/js/...` du contrôleur aux fichiers du site sous node.
+Players join a room, choose a map and take turns. The server validates turns, weapons, scores and wagers. A spectator can watch without gaining control. The browser client loads its modules when the Worms window opens.
 
+The client is split into small modules for media, terrain, sprites, effects, physics, controls, menus, HUD and network events. Each module releases its own listeners, timers, canvases and audio when a round ends or the window closes. Shared match state remains owned by the controller.
 
-## Découpage du client — A9-worms-a (25/10/2026)
+## Test
 
-Le noyau passe de 3 239 à 3 149 lignes ; `worms-media.js` compte 254 lignes. Ses dépendances (images/audio, état actif/muet, hasard et journal) sont injectables. `ensureAssets()` conserve les 60 images et 36 sons, les noms et extensions sensibles à la casse, les groupes de répliques et volumes ; rien ne charge à la construction. La lecture clone ses modèles et possède ses écouteurs de fin/erreur. Fin, refus de lecture, arrêt ou remplacement retirent les écouteurs, sources et ressources audio ; les résultats tardifs ne peuvent pas agir sur un autre propriétaire. L’arrêt annule aussi les préchargements d’images et vide les caches privés. Il ne modifie ni les sockets partagées ni les mises. Le contrôleur garde sa façade publique et ne libère les médias qu’à sa sortie définitive, pas à chaque fin de manche.
+Run `npm test` from the ChaOS website repository. Tests cover rooms, rules, wagers, socket shutdown, wallet integration and browser controls.
 
-Dix-huit tests ajoutés : trois via le contrôleur public et quinze sur la factory. Les deux régressions de libération d’images échouaient avant correction. Le banc Chromium du site exerce des éléments image/audio natifs, avec les promesses de lecture pilotées et sans lecture sonore réelle dans ce scénario. Les 183 fonctions conservées et les cinq catalogues déplacés gardent leur arbre syntaxique. Ce premier lot laisse le noyau au-dessus de la cible de 800 lignes ; le lot terrain/décor ci-dessous poursuit ce chantier.
+## Credits
 
-
-## Découpage du client — A9-worms-b (25/10/2026)
-
-Le noyau passe de 3 149 à 2 950 lignes ; `worms-terrain.js` compte 319 lignes. Sa factory reçoit dimensions, état de terrain, images/niveaux, création de canvas, horloge et état actif. Construction inactive ; `prepare` calcule le masque depuis les hauteurs serveur et le rend au noyau physique, prépare thème/graines/nuages et possède les événements de l’image de niveau. `mount`, `redraw` et `drawBackground` dessinent sur un canvas privé. `reset` libère bitmap (dimensions mises à zéro), écouteurs et nuages entre manches ; `stop` est terminal. Les sources d’images appartiennent toujours au propriétaire des médias et ne sont pas détruites par le terrain. Un callback conservé de l’ancienne manche ne peut plus redessiner la suivante.
-
-Les formules de ciel, étoiles, nuages, eau, cratères et remplissage sont conservées ; les PNG ne déterminent jamais les collisions. Les 166 fonctions conservées sont syntaxiquement identiques ; seuls quatre raccords de composition/cycle de vie changent. Vingt tests couvrent masque, tracés, graines numériques d’origine et libération ; deux défauts de callback/bitmap ont été reproduits dans les fonctions d’origine avant extraction. Chromium vérifie les pixels réels d’un canvas avec un PNG synthétique, le masque indépendant, les trous et l’eau, puis le changement de manche et l’arrêt. Le banc distingue les interceptions CDP annulées par preuve réseau des erreurs non expliquées.
-
-Le noyau reste au-dessus de 800 lignes. Le lot A9-worms-c ci-dessous poursuit le rendu ; les autres dessins/effets, la physique, l’interface/les entrées et les événements restent à découper.
-
-
-## Découpage du client — A9-worms-c (25/10/2026)
-
-Le noyau passe de 2 950 à 2 683 lignes ; `worms-sprites.js` compte 499 lignes. `createWormsSprites` reçoit les lectures d’état/image, le créateur de canvas, l’horloge, le rayon et l’état actif. La construction ne lit ni état ni DOM. `draw` conserve poses locales/distantes, réactions aux impacts, priorités et cadences des animations, orientation/rotation, dessin de secours, noms/PV, flèche active, mort et tombes. Les états physiques, impacts et morts restent possédés par le noyau ; le rendu fait progresser les deux derniers comme auparavant. Les images restent au propriétaire des médias.
-
-Le cache privé tient compte de l’identité de l’image et de la hauteur des frames, en plus du nom/frame et des dimensions cibles. `clear` met chaque bitmap à zéro et invalide les lectures/allocations en cours ; il est raccordé à la nouvelle manche, au changement de tour/ver sélectionné et à la fin de manche. `stop` est terminal. Une allocation interrompue ne peut pas repeupler le cache ; une absence de contexte 2D utilise le dessin de secours.
-
-Trente-deux tests couvrent ces contrats ; les défauts d’image remplacée non repeinte et de bitmap conservé après vidage sont reproduits sur la fonction d’origine. Les 147 fonctions conservées sont syntaxiquement identiques ; seuls cinq raccords changent. Chromium vérifie des pixels natifs avec des sprites synthétiques asymétriques, leur orientation, le remplacement d’image et la libération/reprise/fin du cache. Les trois propriétaires restent différés, hors premier écran. Tests complets du site : 2 918 verts ; qualité, Chromium frontend et budget froid/chaud vérifiés.
-
-Le lot A9-worms-d ci-dessous poursuit les projectiles et effets ; objets/aides de visée, physique, interface/entrées et événements restent à découper.
-
-
-## Découpage du client — A9-worms-d (25/10/2026)
-
-Le noyau passe de 2 683 à 2 492 lignes ; `worms-effects.js` compte 297 lignes. `createWormsEffects({ getState, getImage, getWeaponDefinition, clock, randomUnit, isActive })` ne lit rien à la construction et ne crée ni boucle ni média. Il dessine/avance les projectiles et leurs mèches depuis les trajectoires conservées au noyau. Il possède les explosions, particules et dégâts flottants, alimentés par `addExplosion`, `addDamageLabel` et `spawnParticles`. Dessin et progression gardent leurs points d’appel et leur ordre dans la boucle du contrôleur.
-
-`reset`, raccordé au début et à la fin d’une manche, vide ces trois tableaux privés et invalide toute lecture d’état/image/arme/horloge/hasard interrompue. `stop` est terminal et idempotent ; `status` expose uniquement arrêt et effectifs. Les trajectoires et images empruntées restent intactes après reset/stop. L’ancienne fin de manche conservait les trois tableaux d’effets : ce défaut est reproduit sur la fonction d’origine. Un reset pendant la génération aléatoire ne peut pas injecter des particules dans la manche suivante.
-
-Vingt tests de caractérisation passent avant et après extraction : cadence à 20 points/s, traînée bornée, orientation des missiles, sprites/horloge, dégradés, gravité/fondu, textes et mèches. Onze tests supplémentaires couvrent arrêt, reset, réentrance et propagation des erreurs réelles. Les 130 fonctions conservées sont syntaxiquement identiques ; cinq raccords changent. Le banc Chromium du site vérifie des pixels synthétiques natifs de missile, explosion et particules, puis reset/reprise/arrêt. Le propriétaire reste hors premier écran ; aucun plafond de budget n’augmente.
-
-Le lot A9-worms-e ci-dessous poursuit le rendu des objets et aides de visée ; physique, interface/entrées et événements restent à découper.
-
-
-## Découpage du client — A9-worms-e (25/10/2026)
-
-Le noyau passe de 2 492 à 2 219 lignes ; `worms-overlays.js` compte 430 lignes. Sa factory `createWormsOverlays` reçoit lectures d’état/image/arme, son, traduction, deux horloges, dimensions/rayon et armes ciblées. Construction inactive, sans boucle, cache, média ni canvas créé. Les caisses, mines, dynamites, états d’outils/physique et images sont empruntés. Le rendu fait progresser la chute des caisses comme auparavant (38 px/s et un son à l’atterrissage) ; le noyau garde la propriété de leurs tableaux.
-
-Les neuf entrées de dessin conservent leurs points d’appel : corde, carburant du jetpack, réticule et ciblage, caisses, dynamites, mines, téléportation, parachute et charge. La dynamite garde le temps monotone ; la charge garde l’horloge civile et sa traduction. `reset` au début/à la fin de manche invalide les lectures interrompues, `stop` est terminal/idempotent, `status` expose l’arrêt. Aucun objet ou média emprunté n’est détruit. Le dessin d’une caisse restaure son contexte canvas via `finally`, y compris si une lecture d’arme échoue ou invalide le rendu ; ce contexte oublié après exception est reproduit sur la fonction d’origine.
-
-Vingt-trois tests de caractérisation passent sur les fonctions d’origine puis extraites ; douze tests supplémentaires couvrent arrêt, reset, réentrance, conservation des objets et erreurs réelles. Les 116 fonctions conservées sont syntaxiquement identiques ; trois raccords changent. Chromium vérifie des pixels natifs synthétiques de caisse de santé, mine, dynamite et réticule, puis restauration du contexte et reset/reprise/arrêt. Le module reste hors premier écran et aucun plafond frontend n’augmente.
-
-Le lot A9-worms-f ci-dessous poursuit la physique locale et les collisions ; interface/HUD/annonces, entrées et événements restent à découper.
-
-
-## Découpage du client — A9-worms-f (25/10/2026)
-
-Le noyau passe de 2 219 à 1 904 lignes ; `worms-physics.js` compte 487 lignes. `createWormsPhysics({ getState, playSound, spawnParticles, randomUnit, isActive, width, height, wormRadius })` est inactif à la construction, sans DOM, boucle, timer, média ni socket. Trente routines et les constantes de mouvement sont déplacées ; ces constantes gardent leurs valeurs à maintenir en accord avec le serveur. `initTurn` initialise le ver actif ; `step` applique admission, lecture des touches, sauts, gravité, parachute, corde, jetpack et collisions. `isSolid`/`getSurfaceAt` conservent bornes, masque de hauteurs serveur, cratères inclusifs et repli sur hauteurs/eau.
-
-Le contrôleur reste propriétaire de l’objet physique, des touches, vers, hauteurs/masque/trous et états d’outils. `getState` conserve des accesseurs en lecture/écriture pour corde, jetpack/carburant, angle et synchronisation : ne pas copier cet objet par spread, car les changements scalaires doivent être visibles avant les callbacks. Le rendu et les événements continuent à observer le même état. Le contrôleur conserve, dans leur ordre et avec leur syntaxe, les sons de marche, animations d’arme/timer, borne finale, collecte, miroir et envoi de position après intégration. Un pas invalidé ne poursuit pas cette fin de traitement.
-
-`reset` au début/à la fin de manche invalide les opérations en cours ; `stop` est terminal/idempotent et `status` expose l’arrêt. Les objets empruntés ne sont ni remplacés ni détruits. Une lecture ou un callback son/particule/hasard qui invalide le pas interrompt les écritures suivantes ; les mutations déjà réalisées restent visibles et les erreurs réelles sont propagées.
-
-Vingt-six tests de caractérisation passent avant/après extraction ; onze couvrent cycle de vie, accesseurs et annulation réentrante. Les 85 fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium vérifie des simulations numériques dans le navigateur avec les mêmes accesseurs, sauts/touches, collisions hauteur/masque/cratère et pas invalidés. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
-
-Le lot A9-worms-g ci-dessous poursuit le HUD et les animations de tour ; interface, entrées et événements restent à découper.
-
-
-## Découpage du client — A9-worms-g (25/10/2026)
-
-Le noyau passe de 1 904 à 1 735 lignes. `worms-hud.js` (290 lignes) reçoit lectures d’état/vue, création de nœuds, rendu sécurisé des pseudos/HTML, traduction, règles de munitions, horloges et dimensions. Construction inactive ; il conserve tour/santé, états des boutons et badges, vent/round, mèche, timer et fondu d’annonce. L’annonce est privée ; les nœuds restent au contrôleur. `reset` en début/fin de manche invalide les mises à jour et retire l’annonce ; `stop` est terminal. Une erreur de mesure du texte restaure le contexte canvas par `finally`.
-
-`worms-turn-animations.js` (165 lignes) reçoit état, catalogue d’animation, son, horloges et `setTimeout`/`clearTimeout` raccordés à la portée du jeu. Il possède l’animation, le choix précédent, la cadence/alternance des pas et le registre des bips/délais. `getWeaponAnimation` fournit l’état au rendu des vers. Un changement d’arme annule le délai précédent ; changement de tour, nouvelle/fin de manche et arrêt vident les délais et bips. Les callbacks déjà capturés restent inertes, même après retour sur la même arme A → B → A ; cette visée avancée prématurément est reproduite sur l’ancien code. Un délai terminé ne peut pas annuler un identifiant réutilisé par un autre propriétaire. L’alternance des pas reste conservée entre resets, comme auparavant.
-
-Les deux factories exposent `reset`, `stop` idempotent et `status`. Rien ne démarre à l’import/construction. Erreurs réelles propagées ; une allocation de délai invalidée est libérée après retour de son créateur. Vingt-deux tests de caractérisation passent avant/après extraction ; vingt-six tests supplémentaires couvrent régressions, cycle de vie, accès réentrants et erreurs. Les 74 fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium vérifie de vrais nœuds, noms textuels, munitions/ARIA, pixels du fondu et délais natifs, A → B → A et libération. Les modules restent hors premier écran et aucun plafond frontend n’augmente.
-
-Le lot A9-worms-h ci-dessous poursuit l’interface de partie et ses contrôles ; lobby/résultats, entrées et événements restent à découper.
-
-
-## Découpage du client — A9-worms-h (25/10/2026)
-
-Le noyau passe de 1 735 à 1 579 lignes ; `worms-game-view.js` compte 498 lignes. `createWormsGameView` reçoit état/catalogue, créateur de nœuds, libellés/icônes/traduction, attachement/détachement de l’arène, montage du terrain, actions et confirmation, dimensions et racine des médias. Construction inactive ; `mount(root)` conserve ordre/styles des quatre régions, canvas 960 × 480, étiquetage de l’arène, armes/raccourcis/badges, son, fin de tour/abandon ou sortie spectateur. Les commandes de jeu et l’état restent au contrôleur ; le son muet est partagé par accesseur.
-
-Chaque montage possède ses nœuds, écouteurs, images d’icônes et bitmap. `reset` retire uniquement ses éléments du root emprunté, détache l’entrée de son canvas, annule les anciennes entrées du contrôleur, retire les sources et met les dimensions du bitmap à zéro. `stop` est terminal/idempotent ; `status` expose montage, écouteurs et images ; `getView` rend les bindings au noyau/HUD. Un montage interrompu libère ses allocations ; nettoyer un ancien montage ne détruit pas le suivant. Les bindings devenus inutiles sont retirés du noyau, et ses autres références sont vidées à la fin de partie.
-
-Les anciens callbacks clic/erreur deviennent inertes, y compris après confirmation d’abandon si la vue a changé. Une erreur d’icône produit un seul emoji de secours. L’icône sonore reflète l’état muet déjà actif à la réouverture. Ces anciens contrôles actifs, fallback dupliqué et mauvaise icône persistée sont reproduits sur le code d’origine. Les échecs de libération sont journalisés sans empêcher les autres nettoyages ; erreurs de construction propagées après nettoyage.
-
-Dix tests de caractérisation passent avant/après extraction ; dix-neuf tests supplémentaires couvrent régressions, cycles, accès réentrants et erreurs. Seize builders sont déplacés ; 59 fonctions conservées sont syntaxiquement identiques, quatre raccords changent. Chromium vérifie DOM, input, canvas et images natifs, actions, contrôle spectateur, callbacks retirés et confirmation pilotée. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
-
-Suite : **A9-worms-i, lobby, attente et résultats** ; puis entrées, tirs/événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
-
-
-## Découpage du client — A9-worms-i (25/10/2026)
-
-Le noyau passe de 1 579 à 1 368 lignes. `worms-menu-view.js` (607 lignes) possède les écrans lobby, attente et résultats : création/jonction/spectateur, sélection de carte selon le rôle, lancement et sortie, gagnant/égalité/gain et relance. État, catalogue, créateur de nœuds, traduction, rendu sécurisé des noms/HTML et actions sont injectés. Les commandes réseau, la vérification du solde, le thème et les transitions restent au contrôleur.
-
-La factory expose `mount`, `reset`, `stop` idempotent/terminal et `status` ; elle ne monte aucun écran à la construction. Chaque montage possède ses nœuds et écouteurs. Remplacement, activation, début de partie, sortie et arrêt invalident les callbacks capturés. Le nettoyage retire seulement les éléments possédés ; une construction interrompue libère ses allocations sans détruire le montage qui l’a remplacée. Les erreurs de nettoyage sont journalisées et les autres libérations continuent. `markRematchWaiting` met à jour le bouton de résultats courant ; aucune recherche globale dans le document.
-
-Les anciens contrôles de salle actifs après reconstruction et la double relance par callback capturé sont reproduits sur le code d’origine. Dix tests de caractérisation passent sur les fonctions d’origine et extraites ; dix-huit tests supplémentaires couvrent régressions, cycle de vie, construction réentrante et erreurs. Une relance refusée ou invalidée pendant sa vérification/traduction n’envoie rien. Chromium vérifie DOM natif, noms sûrs, commandes et règles créateur/invité, changements de carte, résultats et contrôles retirés.
-
-Suite : **A9-worms-j, entrées de jeu** ; puis tirs/événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
-
-
-## Découpage du client — A9-worms-j (25/10/2026)
-
-Le noyau passe de 1 368 à 1 222 lignes. `worms-input.js` (323 lignes) possède les neuf écouteurs clavier/pointeur du jeu et la capture du pointeur qui charge. État et écritures partagées, cible clavier, inscription/retrait des écouteurs, droits de focus/visibilité, catalogue des mèches, actions et horloge sont injectés. Les touches restent le même `Set` emprunté à la physique ; les accesseurs de charge, puissance, visée, coordonnées, mèche et cible téléportation conservent les écritures immédiates du noyau. Commandes réseau et effets de tir restent dans le contrôleur.
-
-Construction inactive ; `bind(canvas)` est explicite et remplace le précédent jeu d’écouteurs. `release` annule touches/charge/capture sans valider de tir ; `reset` retire les écouteurs et invalide les callbacks ; `stop` est terminal/idempotent, `status` expose les ressources. Le focus/visibilité reste délégué à `createGameInput` ; ses pertes de focus, masquage et arrêt annulent aussi la capture. L’arrêt libère les états même après désactivation de la portée. Une construction ou dépendance interrompue ne peut agir dans le montage suivant ; une capture allouée tardivement est libérée. Les erreurs réelles sont propagées après libération du geste ; les erreurs de nettoyage sont journalisées sans bloquer les autres retraits.
-
-Visée dans le rectangle utile avec bandes, bornes 960 × 480, origine physique synchronisée, priorité du clavier, dix-sept raccourcis d’arme, priorité des mèches 1–5, cycle des vers vivants, Entrée et puissance bornée entre 0,08 et 1 conservent leurs règles. Téléportation reste immédiate à pleine puissance. Le pointeur propriétaire est désormais vérifié au mouvement, relâchement et annulation ; perte de capture, autre pointeur et relâchement de l’autre périphérique ne valident pas une charge. Les callbacks clavier retirés et le tir par relâchement d’un autre pointeur sont reproduits sur l’ancien code.
-
-Seize tests de caractérisation passent sur les fonctions d’origine et extraites ; vingt-deux tests supplémentaires couvrent régressions, cycle de vie, réentrance et erreurs. Cinquante-et-une fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium pilote de vrais gestes pointeur avec capture native, clavier/DOM et perte de focus, charge et téléportation, callbacks retirés et arrêt. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
-
-Lot source isolé sur `5f6004d` pour conserver le verrou des add-ons ; les commits Game Boy plus récents du dépôt principal ne sont ni modifiés ni intégrés implicitement. Suite : **A9-worms-k, tirs et outils** ; puis événements et orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
-
-
-## Découpage du client — A9-worms-k (25/10/2026)
-
-Le noyau passe de 1 222 à 1 177 lignes. `worms-actions.js` (118 lignes) possède la préparation des commandes de tir et d’outil : armes normales/ciblées, mèches réglables et fixe, corde, jetpack et téléportation. État/accesseurs partagés, envoi de commande, son, catalogues ciblés/mèches, rayon du ver et activité de portée sont injectés. Aucune ressource ni effet à la construction ; aucun état de partie copié ou possédé. Commandes et payloads `worms:fire` / `worms:use_tool`, ordre émission/écritures/son, vitesse de corde 530, impulsion jetpack −40 et téléportation à pleine puissance restent inchangés.
-
-La factory expose `fire`, `reset`, `stop` terminal/idempotent et `status`. Une seule action synchrone peut être en cours ; `reset` invalide sa continuation sans vider les objets empruntés au noyau. Il est raccordé aux nouvelles parties, changements de tour et fins de partie. Un envoi réentrant ne double plus l’usage d’un outil ; un ancien retour d’envoi/son ne peut plus modifier le tour ou la partie qui l’a remplacé. Le nettoyage de l’ancienne action ne déverrouille pas son successeur. Ces deux défauts sont reproduits sur la fonction d’origine.
-
-Seize tests de caractérisation passent sur l’ancien et le nouveau code ; dix-huit tests supplémentaires couvrent régressions, cycle de vie, accès réentrants et erreurs. Les écritures partagées restent immédiates ; un échec d’envoi/son se propage et libère le verrou sans inventer un retour arrière sur une commande déjà émise. Cinquante fonctions conservées sont syntaxiquement identiques ; cinq raccords changent. Chromium vérifie l’intégration clavier natif → charge → actions, payloads, outils, réentrance, retrait d’un tour et arrêt. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
-
-Lot source sur la branche locale `codex/a9-worms-actions`, issue du verrou `cfcf286`, sans intégrer les travaux Game Boy parallèles. Suite : **A9-worms-l, événements de partie** ; puis orchestration restante. Le noyau reste au-dessus de la cible de 800 lignes.
-
-
-## Découpage du client — A9-worms-l (25/10/2026)
-
-Le noyau passe de 1 177 à 924 lignes. `worms-events.js` (603 lignes) possède les 26 abonnements socket du contrôleur, les délais d’impact/dégâts/résultats et la répétition sonore des mèches. Socket emprunté, état/accesseurs, services du contrôleur/rendu, traduction, horloges et timers sont injectés ; aucun abonnement ni délai à la construction. Le noyau garde l’état de partie et les traitements physiques/visuels. L’inventaire du site est désormais comparé exactement à celui du module, au lieu d’un contrôle partiel des seules inscriptions encore visibles dans le noyau.
-
-`bind` est explicite et remplace les abonnements précédents ; `reset` annule seulement les délais de partie et invalide les continuations en cours. Les listes de salles continuent d’être reçues entre parties. `stop` est terminal/idempotent, retire seulement ses abonnements et annule ses timers ; `status` expose abonnements, délais et intervalles. Chaque timer possède une entrée distincte de son identifiant natif : un ancien callback ne peut pas annuler un identifiant réutilisé. Allocations tardives retirées ; construction interrompue sans destruction des abonnements qui l’ont remplacée. Les erreurs réelles sont propagées ; les échecs de nettoyage sont journalisés sans bloquer les autres retraits.
-
-Nouvelle partie et fin de partie déclenchent `reset`. Les anciens impacts, dégâts ou résultats ne peuvent plus modifier une nouvelle partie ; ces deux séquences sont reproduites sur l’ancien code, dont les délais restaient dans la portée du contrôleur. Les transitions intentionnelles de fin vers résultats et sortie spectateur restent valides pendant le nettoyage. Payloads, copies/identités des listes et munitions, ordre des effets, durée de projectile `max(500, ceil(maxLen × 1000 / 20) + 200)`, dégâts à +560 ms, résultats à +900 ms, son de mèche à 900 ms et synchronisation des explosifs conservent leurs règles.
-
-Trente-trois tests de caractérisation passent sur les handlers d’origine et extraits ; vingt-trois tests supplémentaires couvrent cycle de vie, réentrance et erreurs. Quarante-neuf fonctions conservées sont syntaxiquement identiques ; quatre raccords changent. Chromium vérifie de vrais timers, impacts/mèches/dégâts, prochain tour, résultats, anciennes échéances, sorties et consommateurs indépendants du hub socket. Les fixtures de tests Worms entrent aussi dans les globs de formatage, sans inclure le noyau historique. Le module reste hors premier écran ; aucun plafond frontend n’augmente.
-
-Lot source sur la branche locale `codex/a9-worms-events`, issue du verrou `a24db95`, sans intégrer les travaux Game Boy parallèles. Suite : **A9-worms-m, orchestration et catalogues restants** ; notamment la préparation/fin de partie et le délai sonore de démarrage encore dans le noyau. Le seuil de 800 lignes n’est pas encore atteint.
-
-
-## Découpage du client — A9-worms-m (25/10/2026)
-
-Le noyau passe de 924 à **796 lignes** : la cible du découpage Worms est atteinte. `worms-catalog.js` (322 lignes) regroupe géométrie, cinq niveaux, dix-sept armes/animations/icônes, ensembles de mèches/cibles et accès au catalogue. Factory pure avec traduction injectée, sans travail de libellé anticipé : chaque contrôleur garde ses propres objets/ensembles mutables. Les treize initialisations constantes sont syntaxiquement identiques à celles du noyau d’origine ; libellés, gardes de propriété propre, niveau de secours et munitions illimitées conservent leurs règles.
-
-`worms-round.js` (161 lignes) possède la boucle RAF et le délai sonore de démarrage. Services, caméra empruntée, allocation/annulation de frames et délais, horloge et activité sont injectés ; construction inactive. `start` conserve l’ordre menu/sprites/mode/état/terrain/vue/santé/caméra/tour/entrées/boucle/HUD/son. La frame suivante reste demandée avant physique/rendu/dégâts ; delta borné à 50 ms, son `StartRound` après 200 ms à volume 0,5. Le noyau garde son état partagé et le nettoyage des autres propriétaires.
-
-`reset` et remplacement annulent seulement les frames et le son possédés, invalident leurs callbacks et préservent la caméra/les données empruntées. `stop` est terminal/idempotent ; `status` expose la boucle et ses allocations. Chaque allocation est distincte de son identifiant ; callbacks achevés, identifiants réutilisés, allocations tardives et démarrages réentrants ne peuvent atteindre le successeur. Une erreur réelle de démarrage/frame est propagée après annulation des allocations, dont la frame suivante déjà programmée ; les échecs de nettoyage sont journalisés sans bloquer les autres retraits.
-
-Le son encore joué après fermeture et la seconde boucle déclenchée par une ancienne frame sont reproduits sur le code d’origine. Vingt-et-un tests de caractérisation passent sur les anciens catalogues/routines et leur extraction ; vingt-cinq tests supplémentaires couvrent régressions, cycle de vie, réentrance et erreurs. Quarante-et-une fonctions conservées sont syntaxiquement identiques ; trois raccords changent. Chromium vérifie RAF/timers et pixels canvas natifs, catalogues locaux, son, remplacement et arrêt. Les deux modules restent hors premier écran ; aucun plafond frontend n’augmente.
-
-Lot source sur la branche locale `codex/a9-worms-round`, issue du verrou `8ecdfce`, sans intégrer les travaux Game Boy parallèles. **A9-worms-a à m livré** : noyau et modules sous 800 lignes dans le périmètre contrôlé. La suite A9 concerne le site : `server/utils/media-assets.js`, puis l’éditeur Pachinko. Cette clôture de découpage ne vaut pas validation du VPS, de la CI ou de la stack LiveKit réelle.
+The browser game and media are adapted from [CiaranMcCann's HTML5 Worms Armageddon clone](https://github.com/CiaranMcCann/worms) under the Apache-2.0 license. The original Worms game is a work of [Team17](https://www.team17.com/). The ChaOS website integration and server rules are maintained in this repository.

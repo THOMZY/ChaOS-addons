@@ -189,7 +189,7 @@ async function play() {
 async function boot() {
   const session = await fetch('/api/auth/me', { credentials: 'same-origin' });
   if (!session.ok) {
-    loginNotice('Connecte-toi sur THOMZY.com pour jouer.');
+    loginNotice('Connecte-toi sur ChaOS website pour jouer.');
     return;
   }
   const response = await fetch('/api/v1/hammerfest/config');

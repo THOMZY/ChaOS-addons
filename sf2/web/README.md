@@ -1,7 +1,7 @@
-# Street Fighter 2 - JavaScript
+# Street Fighter II browser client
 
-Hi there! This repository contains a Street Fighter 2 game built using fundamental modern front-end technologies. I created it as a study project to deepen my understanding of vanilla JavaScript features and design patterns in large-scale projects, including cleaner utilization of Object Orientation.
+This directory contains the bundled vanilla JavaScript client served by the ChaOS website at `/sf2/`. See the [add-on README](../README.md) for installation.
 
-I created this with the assistance of Shezzor's Dev Corner's game-making playlist on YouTube.
+## Credits
 
-I hope you find it enjoyable!: [Click to play](https://iuritorres.github.io/street-fighter-2-javascript/)
+Original project: [Street Fighter 2 JavaScript by Iuri Torres](https://iuritorres.github.io/street-fighter-2-javascript/). Learning material: [Shezzor's Dev Corner](https://www.youtube.com/@ShezzorsDevCorner).

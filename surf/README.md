@@ -1,29 +1,22 @@
 # Surf
 
-Le client Surf (Counter-Strike: Source, recompilé pour le navigateur) servi sous `/surf/`, ses salles multijoueurs dans le processus du site, ses temps et classements (`/api/surf`), et la console du panneau d'administration.
+Surf integrates a browser build of Counter-Strike: Source with the ChaOS website. It provides multiplayer rooms, verified times, replays, rankings at `/api/surf` and an administration console. The client is served at `/surf/`.
 
-| Fichier | Rôle |
-| --- | --- |
-| `server/addon.js` | point d'entrée : routes `/api/surf` et `/surf`, console d'administration, salles |
-| `server/room.js` | salles sur le socle `games/platform/game-servers/core.js` (rotation des maps, votes, relais des positions) |
-| `server/api.js`, `server/runs.js` | actions JSON du client, temps vérifiés, replays et classements (tables `surf_*` propres à l’add-on) |
-| `schema.sql`, `server/schema.js` | création transactionnelle et idempotente des tables Surf, appelée explicitement par le point d’entrée ; le registre du site reste intact |
-| `server/admin.js` | console du panneau d'administration (carte, message, éjection, vote) |
-| `server/client-adapter.js` | remplace la couche Supabase du client d'origine, injecté par l'installateur |
-| `server/maps.json`, `server/boards.json` | générés par `install.mjs` à partir du miroir |
-| `install.mjs` | installe le client (~850 Mo) dans `games/surf/data/` |
+## Install
 
-## Installer
+From the ChaOS website repository:
 
-```
-node scripts/games-install.mjs surf               # code de l'add-on
-node games/surf/install.mjs <dossier-du-miroir>   # données, une fois
+```sh
+node scripts/games-install.mjs surf
+node games/surf/install.mjs <mirror-directory>
 ```
 
-Le miroir contient `index.html`, `assets/`, `packed/`, `previews/` et `brand/`. L'installateur est idempotent : il repart toujours du miroir. Il régénère `server/maps.json` et `server/boards.json` dans la copie installée ; si le miroir change, recopier ces deux fichiers ici.
+The mirror must contain `index.html`, `assets/`, `packed/`, `previews/` and `brand/`. The installer copies the large client into `games/surf/data/` and generates the map and leaderboard catalogs. Restart the website after installation.
 
-Une installation d'avant J7 (`server/games/surf/` du site) est déplacée automatiquement vers `games/surf/data/` par `games-install.mjs`.
+## Test
 
-## Tests
+Run `npm test` from the ChaOS website repository. Tests cover rooms, verified runs, rankings, administration, HTTP responses and WebSocket relay.
 
-`tests/` est lancé par `npm test` du site quand l'add-on est installé : salles, API, temps, console d'administration, contrat HTTP des fichiers du client et intégration complète (ticket, WebSocket, relais).
+## Credits
+
+The browser client and its maps come from the project mirror used by this add-on. Counter-Strike and Source are trademarks of [Valve](https://www.valvesoftware.com/). No Valve game files are redistributed in this Git repository.

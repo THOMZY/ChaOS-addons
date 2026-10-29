@@ -1,16 +1,26 @@
 # Minecraft
 
-Add-on de ChaOS : client EaglerCraft sous /mc/, proxy WebSocket /mc-ws et conteneur Paper + EaglerXServer.
+Minecraft adds an [EaglerCraft](https://github.com/lax1dude/eaglercraft) browser client at `/mc/`, a WebSocket proxy at `/mc-ws`, and a Paper server with [EaglerXServer](https://github.com/lax1dude/eaglercraftxserver).
 
-Depuis le dépôt du site :
+## Install
+
+From the ChaOS website repository:
 
 ```sh
 node scripts/games-install.mjs minecraft
 docker compose --profile minecraft up -d minecraft
 ```
 
-L’installation déplace une seule fois server/games/minecraft vers games/minecraft/data : monde, plugins, configuration et archives restent ensemble. Aucun monde ne fait partie de cet add-on. Arrêter le conteneur avant une migration manuelle. Au premier démarrage sans données, le conteneur prépare Paper et les plugins.
+The container creates Paper and its plugins on first start. Existing worlds and configuration are kept in `games/minecraft/data/`. No world is included in this repository. Mount this directory read/write and stop the container before manual migrations.
 
-Ajouter minecraft à COMPOSE_PROFILES pour les commandes Compose courantes ; le déploiement du site active le profil automatiquement. MC_HOST et MC_PORT configurent le tunnel ; MC_RCON_PASSWORD configure la console privée. Les contrôles de session, bannissement, admission et arrêt restent ceux du site.
+## Configuration
 
-Le client conserve sa CSP dédiée et sa Permissions-Policy sur /mc/. Les textes viennent des catalogues du site. Les tests se lancent depuis le site une fois l’add-on installé : npm test ; le banc node scripts/check-mc-csp-browser.mjs vérifie le vrai client dans Chromium.
+`MC_HOST` and `MC_PORT` configure the server tunnel. `MC_RCON_PASSWORD` protects the private RCON console. Include `minecraft` in `COMPOSE_PROFILES` for local Compose commands. The reverse proxy must forward WebSocket upgrades for `/mc-ws`.
+
+## Test
+
+Run `npm test` and `node scripts/check-mc-csp-browser.mjs` from the ChaOS website repository.
+
+## Credits
+
+Client: [EaglerCraft](https://github.com/lax1dude/eaglercraft). Server: [Paper](https://papermc.io/) and [EaglerXServer](https://github.com/lax1dude/eaglercraftxserver).

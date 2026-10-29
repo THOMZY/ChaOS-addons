@@ -180,7 +180,7 @@ function route() {
 async function boot() {
   const response = await fetch('/api/v1/hammerfest/profile', { credentials: 'same-origin' });
   if (!response.ok) {
-    loginNotice('Connecte-toi sur THOMZY.com pour voir ton frigo.');
+    loginNotice('Connecte-toi sur ChaOS website pour voir ton frigo.');
     return;
   }
   profile = await response.json();

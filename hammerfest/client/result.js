@@ -127,7 +127,7 @@ async function boot() {
   }
   const response = await fetch(`/api/v1/hammerfest/runs/${id}`, { credentials: 'same-origin' });
   if (!response.ok) {
-    loginNotice('Connecte-toi sur THOMZY.com pour voir cette partie.');
+    loginNotice('Connecte-toi sur ChaOS website pour voir cette partie.');
     return;
   }
   const { run } = await response.json();

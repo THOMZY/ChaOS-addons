@@ -1,11 +1,10 @@
 # Peggle artwork
 
-These web assets are lossless sprite sheets or WebP conversions of the artwork
-from the MIT-licensed WoW Classic Peggle addon kept in the repository's local
-`XXX/images` reference folder. The source folder is intentionally never used at
-runtime and remains untouched.
+These sprite sheets and WebP files come from the MIT-licensed World of Warcraft Classic Peggle add-on and are used by the ChaOS website Peggle client.
 
-- `bg1.webp`–`bg13.webp`: the 13 original level paintings.
-- `pegs.webp`: original 4-color peg atlas, with normal and lit rows.
-- `bricks.webp`: original 12 brick shapes for all 4 colors, followed by lit rows.
-- `ball.webp`, `shooter.webp`, `catcher.webp`: original game pieces.
+- `bg1.webp`–`bg13.webp`: level paintings.
+- `pegs.webp`: four-color peg atlas.
+- `bricks.webp`: brick shapes and lit rows.
+- `ball.webp`, `shooter.webp`, `catcher.webp`: game pieces.
+
+The original conversion reference was the repository-local `XXX/images` folder; it is not loaded at runtime.

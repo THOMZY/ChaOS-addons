@@ -3,7 +3,7 @@
 // account-backed endpoints the site reads (profile, runs, inventory).
 //
 // The loader derives its API base from its own origin, so serving it here is
-// enough for it to talk to THOMZY.com — nothing to configure on its side.
+// enough for it to talk to ChaOS website — nothing to configure on its side.
 import express from 'express';
 import { createReadStream, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -1,9 +1,23 @@
 # Fighting / MUGEN
 
-Add-on J8 de ChaOS. Depuis le site : `node scripts/games-install.mjs fighting`. Le site conserve la fenêtre, ses styles et ses traductions ; les règles de mise et de session viennent du socle commun.
+Fighting integrates the [M.U.G.E.N engine](https://www.elecbyte.com/mugen/) with the ChaOS website. It keeps the existing runtime and sandbox while the website provides the window, accounts and shared session rules.
 
-Le moteur MUGEN et le bac à sable sont déplacés sans refonte. Les personnages et stages ne sont pas versionnés : placer `Characters/` et `Stages/` dans `games/fighting/data/`. L’installation migre automatiquement l’ancien `server/games/MUGEN` une seule fois. Les URL `/mugen`, `/mugen-stages` et `/api/mugen` restent identiques. Les défauts du portage MUGEN, dont B13, restent à traiter dans des lots séparés.
+## Install
 
-Le code navigateur attend l’ouverture de sa fenêtre. Les tests (runtime, financement, remboursement hors ligne et arrêt de vraies sockets) tournent via `npm test` une fois installé dans le site. Sans cet add-on, le catalogue affiche « À installer » et aucun gestionnaire de ses événements n’est monté.
+From the ChaOS website repository:
 
-Les tests HTTP vérifient les routes publiques, les en-têtes de cache et l’absence d’exposition du code serveur. Le site teste aussi la migration unique, la mise à jour et le retrait du code sans perte de personnages.
+```sh
+node scripts/games-install.mjs fighting
+```
+
+Copy `Characters/` and `Stages/` into `games/fighting/data/`, then restart the website. These large game assets are intentionally not included in Git. The old `server/games/MUGEN` directory is migrated once when the add-on is installed.
+
+The public routes are `/mugen`, `/mugen-stages` and `/api/mugen`. Street Fighter II is a separate add-on.
+
+## Test
+
+Run `npm test` from the ChaOS website repository. Tests cover the runtime, funding and refunds, socket shutdown, HTTP routes, cache headers and data migration.
+
+## Credits
+
+Engine: [M.U.G.E.N](https://www.elecbyte.com/mugen/). Characters and stages are supplied separately by their respective authors and are not redistributed here.
