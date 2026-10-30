@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Checks every add-on of this repository without the site: addon.json fields,
 // files the site tracks itself, and the declared entry and installer.
+// Add-ons are grouped by kind: games/<id>/ today, applications/<id>/ later.
 //   node scripts/check-addons.mjs
 // The site applies the same rules when it installs an add-on
 // (scripts/games-install.mjs, games/addons.js).
@@ -11,14 +12,25 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ADDON_API = 1;
 const SITE_FILES = ['manifest.js', 'assets'];
+/** Folders that group add-ons by kind; a missing one is simply empty. */
+const KINDS = ['games', 'applications'];
 const problems = [];
 
-const addons = readdirSync(ROOT).filter(
-  (name) => statSync(resolve(ROOT, name)).isDirectory() && existsSync(resolve(ROOT, name, 'addon.json')),
+const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
+const addons = KINDS.filter((kind) => isDir(resolve(ROOT, kind))).flatMap((kind) =>
+  readdirSync(resolve(ROOT, kind))
+    .filter((name) => isDir(resolve(ROOT, kind, name)))
+    .map((id) => ({ kind, id, dir: resolve(ROOT, kind, id) })),
 );
-for (const id of addons) {
-  const dir = resolve(ROOT, id);
-  const fail = (message) => problems.push(`${id} : ${message}`);
+const ids = new Set();
+for (const { kind, id, dir } of addons) {
+  const fail = (message) => problems.push(`${kind}/${id} : ${message}`);
+  if (!existsSync(resolve(dir, 'addon.json'))) {
+    fail('addon.json manquant');
+    continue;
+  }
+  if (ids.has(id)) fail('id déjà utilisé par un autre add-on');
+  ids.add(id);
   let addon;
   try {
     addon = JSON.parse(readFileSync(resolve(dir, 'addon.json'), 'utf8'));
@@ -48,4 +60,7 @@ for (const id of addons) {
 if (problems.length) {
   for (const problem of problems) console.error(problem);
   process.exitCode = 1;
-} else console.info(`${addons.length} add-on(s) conformes : ${addons.join(', ')}`);
+} else
+  console.info(
+    `${addons.length} add-on(s) conformes : ${addons.map(({ kind, id }) => `${kind}/${id}`).join(', ')}`,
+  );

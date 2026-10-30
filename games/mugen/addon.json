@@ -1,0 +1,13 @@
+{
+  "id": "mugen",
+  "name": "MUGEN",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/index.js",
+  "data": {
+    "dir": "data",
+    "check": "engine/engine.json",
+    "legacyDir": "server/games/MUGEN",
+    "install": "node games/mugen/install.mjs"
+  }
+}

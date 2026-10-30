@@ -1,27 +1,27 @@
-# ChaOS-games
+# ChaOS-addons
 
-Game add-ons for the ChaOS website. Each add-on contains the code, browser client, optional media and tests for one game. The website keeps the catalog, windows, translations and shared accounts.
+Add-ons for the ChaOS website, grouped by kind: games in `games/`, and later applications in `applications/`. Each add-on contains the code, browser client, optional media and tests for one game or application. The website keeps the catalog, windows, translations and shared accounts.
 
 ## Games
 
 | Add-on | What it provides |
 | --- | --- |
-| [Surf](surf/README.md) | Multiplayer surf rooms, times and rankings |
-| [Quake 3](quake/README.md) | WebAssembly client and native server tunnel |
-| [Minecraft](minecraft/README.md) | EaglerCraft client and Minecraft server container |
-| [Worms](worms/README.md) | Multiplayer Worms rooms and browser game |
-| [Peggle](peggle/README.md) | Shared Peggle tables and scoring |
-| [Fighting / MUGEN](fighting/README.md) | MUGEN runtime and sandbox |
-| [Street Fighter II](sf2/README.md) | Standalone browser fighting game |
-| [Hammerfest](hammerfest/README.md) | Eternalfest client, inventory and quests |
-| [Game Boy](gameboy/README.md) | Shared mGBA console and cartridge library |
+| [Surf](games/surf/README.md) | Multiplayer surf rooms, times and rankings |
+| [Quake 3](games/quake/README.md) | WebAssembly client and native server tunnel |
+| [Minecraft](games/minecraft/README.md) | EaglerCraft client and Minecraft server container |
+| [Worms](games/worms/README.md) | Multiplayer Worms rooms and browser game |
+| [Peggle](games/peggle/README.md) | Shared Peggle tables and scoring |
+| [MUGEN](games/mugen/README.md) | Ikemen GO (WebAssembly) duels, training and MUGEN packs |
+| [Street Fighter II](games/sf2/README.md) | Standalone browser fighting game |
+| [Hammerfest](games/hammerfest/README.md) | Eternalfest client, inventory and quests |
+| [Game Boy](games/gameboy/README.md) | Shared mGBA console and cartridge library |
 
 ## Install an add-on
 
-From the ChaOS website repository, with this repository checked out beside it as `../ChaOS-games`:
+From the ChaOS website repository, with this repository checked out beside it as `../ChaOS-addons`:
 
 ```sh
-node scripts/games-install.mjs surf
+node scripts/games/games-install.mjs surf
 ```
 
 Some games need a separate data install. Follow that game's README, then restart the ChaOS website. Use `--from <directory>` when this repository is elsewhere. Installed data stays in `games/<id>/data/` and is not stored in this repository.
@@ -29,7 +29,7 @@ Some games need a separate data install. Follow that game's README, then restart
 ## Add-on structure
 
 ```text
-<id>/
+games/<id>/
   addon.json      package metadata
   README.md       game guide
   server/         server integration
@@ -53,4 +53,4 @@ Run game tests with `npm test` from the ChaOS website repository after installin
 
 ## Credits
 
-ChaOS-games is an integration project. Individual game credits and source links are listed in each add-on README. The ChaOS website is the host platform.
+ChaOS-addons is an integration project. Individual game credits and source links are listed in each add-on README. The ChaOS website is the host platform.

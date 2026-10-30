@@ -1,0 +1,549 @@
+/* MUGEN library: the packs shelf. Every rule is scoped under .mugen-library
+   because the MUGEN window loads this sheet next to the whole site; only the
+   standalone /mugen-library page uses the .mugen-library-page shell. */
+.mugen-library-page,
+.mugen-library {
+  --paper: #eee9df;
+  --muted: #9b9a92;
+  --orange: #ff6a3d;
+  --line: #363732;
+}
+
+.mugen-library a,
+.mugen-library button,
+.mugen-library-page a,
+.mugen-library-page button {
+  -webkit-tap-highlight-color: transparent;
+}
+.mugen-library button,
+.mugen-library-page button {
+  cursor: pointer;
+  font: inherit;
+}
+.mugen-library button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.mugen-library input {
+  font: inherit;
+}
+.mugen-library :focus-visible,
+.mugen-library-page :focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+
+/* ── Standalone page shell (/mugen-library) ─────────────────────────────── */
+.mugen-library-page {
+  color-scheme: dark;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--paper);
+  background: #141613;
+  font-family: 'Trebuchet MS', sans-serif;
+}
+.mugen-library-page * {
+  box-sizing: border-box;
+}
+.mugen-library-page .masthead {
+  min-height: 68px;
+  padding: 22px 34px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.mugen-library-page .brand {
+  font-size: 17px;
+  letter-spacing: -0.04em;
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--paper);
+}
+.mugen-library-page .brand span {
+  color: var(--muted);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  padding-left: 10px;
+}
+.mugen-library-page .edition {
+  font:
+    11px 'Courier New',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.library-mount {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  min-width: 0;
+}
+.library-mount > .mugen-library {
+  flex: 1;
+  width: 100%;
+}
+
+/* ── Overlay panel inside the MUGEN window ──────────────────────────────── */
+.mugen-library-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto; /* a narrow window stacks the shelf: keep it reachable */
+  background: #141613;
+}
+.mugen-library-overlay > .mugen-library {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Shelf ─────────────────────────────────────────────────────────────── */
+.mugen-library {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  max-width: 1500px;
+  margin: 0 auto;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  color: var(--paper);
+  background: #141613;
+  font-family: 'Trebuchet MS', sans-serif;
+}
+.mugen-library * {
+  box-sizing: border-box;
+}
+.mugen-library .sidebar {
+  padding: 30px 26px;
+  border-right: 1px solid var(--line);
+  background: #1b1d18;
+  overflow: auto;
+  min-height: 0;
+}
+.mugen-library .eyebrow {
+  font:
+    11px 'Courier New',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--orange);
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+.mugen-library h1 {
+  font-family: Impact, 'Arial Narrow', sans-serif;
+  font-weight: normal;
+  font-size: clamp(40px, 5vw, 60px);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  margin: 0 0 18px;
+}
+.mugen-library .intro,
+.mugen-library .local-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.mugen-library nav {
+  margin: 24px -8px;
+  display: grid;
+  gap: 4px;
+}
+.mugen-library .tab {
+  color: var(--muted);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-left: 2px solid transparent;
+}
+.mugen-library .tab.active {
+  color: var(--paper);
+  background: #292b24;
+  border-left-color: var(--orange);
+}
+.mugen-library .tab-count {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+.mugen-library .import-box {
+  border: 1px dashed #626451;
+  padding: 18px 14px 10px;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.mugen-library .import-box.dragging {
+  border-color: var(--orange);
+  background: #302d20;
+}
+.mugen-library .import-symbol {
+  display: block;
+  color: var(--orange);
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+.mugen-library .import-box h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+.mugen-library .import-box p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 8px 0;
+}
+.mugen-library .upload-button {
+  background: var(--orange);
+  color: #191a14;
+  border: 0;
+  padding: 11px;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 6px;
+}
+.mugen-library .upload-button:not(:disabled):hover {
+  background: #ff8a63;
+}
+.mugen-library .limit {
+  font-family: 'Courier New', monospace;
+  font-size: 10px !important;
+  letter-spacing: 0.03em;
+}
+.mugen-library .account-note {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.mugen-library .local-note {
+  font-size: 11px;
+  margin-top: 18px;
+}
+.mugen-library .library-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--paper);
+  font-size: 12px;
+}
+.mugen-library .library-back:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.mugen-library .collection {
+  padding: 30px 30px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.mugen-library .collection-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.mugen-library .collection-header .eyebrow {
+  margin-bottom: 6px;
+}
+.mugen-library .collection-header h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: normal;
+  letter-spacing: -0.035em;
+}
+.mugen-library .search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #737568;
+  min-width: min(225px, 100%);
+  padding: 8px 2px;
+}
+.mugen-library .search span {
+  color: var(--orange);
+  font-size: 22px;
+}
+.mugen-library .search-input {
+  border: 0;
+  background: transparent;
+  color: var(--paper);
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+  outline: none;
+}
+.mugen-library .search:focus-within {
+  border-bottom-color: var(--orange);
+  box-shadow: 0 1px 0 var(--orange);
+}
+.mugen-library .status {
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 20px;
+  margin: 0;
+  color: #b6c790;
+}
+.mugen-library .status.error {
+  color: #ff9a7a;
+}
+.mugen-library .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 16px;
+}
+.mugen-library .pack {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: #1c1f19;
+}
+.mugen-library .pack-art {
+  height: 144px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 23px, #36392b55 23px 24px),
+    repeating-linear-gradient(90deg, transparent 0 23px, #36392b55 23px 24px), #22261b;
+}
+.mugen-library .pack-art::before {
+  content: '';
+  position: absolute;
+  width: 60%;
+  height: 1px;
+  background: var(--orange);
+  opacity: 0.5;
+  bottom: 15px;
+}
+.mugen-library .pack-index {
+  position: absolute;
+  top: 9px;
+  left: 10px;
+  font:
+    10px 'Courier New',
+    monospace;
+  color: #969c81;
+}
+.mugen-library .pack .mugen-portrait {
+  width: 118px;
+  height: 126px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  position: relative;
+  margin-bottom: 9px;
+}
+.mugen-library .stage-mark {
+  align-self: center;
+  color: #a1ad77;
+  font-size: 42px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: -0.2em;
+  padding-right: 0.2em;
+}
+.mugen-library .mugen-stage-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mugen-library .pack-index {
+  z-index: 1;
+  background: #151813bb;
+  padding: 2px 4px;
+}
+.mugen-library .pack-info {
+  padding: 13px 12px;
+}
+.mugen-library .pack h3 {
+  font-size: 14px;
+  font-weight: normal;
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+}
+.mugen-library .pack-path {
+  color: var(--muted);
+  font:
+    10px/1.6 'Courier New',
+    monospace;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.mugen-library .empty {
+  color: var(--muted);
+  padding: 50px 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* ── Compact shelf: the MUGEN window is about half the screen ───────────── */
+.mugen-library.is-compact {
+  grid-template-columns: 208px minmax(0, 1fr);
+}
+.mugen-library.is-compact .sidebar {
+  padding: 12px;
+}
+.mugen-library.is-compact .eyebrow,
+.mugen-library.is-compact .intro,
+.mugen-library.is-compact .local-note {
+  display: none;
+}
+.mugen-library.is-compact h1 {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+.mugen-library.is-compact .library-back {
+  margin-bottom: 10px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.mugen-library.is-compact nav {
+  margin: 8px 0;
+}
+.mugen-library.is-compact .tab {
+  padding: 7px 8px;
+  font-size: 12px;
+}
+.mugen-library.is-compact .import-box {
+  padding: 10px 10px 6px;
+}
+.mugen-library.is-compact .import-symbol {
+  font-size: 16px;
+  margin: 0 0 2px;
+}
+.mugen-library.is-compact .import-box h2 {
+  font-size: 12px;
+  margin: 0 0 4px;
+}
+.mugen-library.is-compact .import-box p {
+  font-size: 11px;
+  margin: 6px 0;
+}
+.mugen-library.is-compact .upload-button {
+  padding: 8px;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.mugen-library.is-compact .collection {
+  padding: 12px 14px;
+}
+.mugen-library.is-compact .collection-header {
+  margin-bottom: 8px;
+  gap: 10px;
+  align-items: center;
+}
+.mugen-library.is-compact .collection-header h2 {
+  font-size: 17px;
+}
+.mugen-library.is-compact .search {
+  padding: 4px 2px;
+  min-width: min(160px, 100%);
+}
+.mugen-library.is-compact .search span {
+  font-size: 16px;
+}
+.mugen-library.is-compact .search-input {
+  font-size: 12px;
+}
+.mugen-library.is-compact .status {
+  font-size: 11px;
+  min-height: 14px;
+}
+.mugen-library.is-compact .grid {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+.mugen-library.is-compact .pack-art {
+  height: 82px;
+}
+.mugen-library.is-compact .pack .mugen-portrait {
+  width: 74px;
+  height: 72px;
+  margin-bottom: 4px;
+}
+.mugen-library.is-compact .stage-mark {
+  font-size: 26px;
+}
+.mugen-library.is-compact .pack-info {
+  padding: 7px 8px;
+}
+.mugen-library.is-compact .pack h3 {
+  font-size: 12px;
+  margin: 0 0 3px;
+}
+.mugen-library.is-compact .pack-path {
+  font-size: 9px;
+}
+.mugen-library.is-compact .empty {
+  padding: 28px 0;
+  font-size: 12px;
+}
+
+@media (max-width: 650px) {
+  .mugen-library-page .masthead {
+    padding: 18px 20px;
+  }
+  .mugen-library-page .edition {
+    display: none;
+  }
+  /* Stacked shelf: content decides its height and the panel scrolls. */
+  .library-mount,
+  .mugen-library-overlay {
+    align-items: flex-start;
+    overflow: auto;
+  }
+  .mugen-library,
+  .mugen-library.is-compact {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100%;
+    align-self: flex-start;
+  }
+  .mugen-library .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 20px 16px;
+    overflow: visible;
+    min-height: auto;
+  }
+  .mugen-library .grid {
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+  .mugen-library.is-compact .grid {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  }
+  .mugen-library .collection {
+    padding: 20px 16px;
+    overflow: visible;
+    min-height: auto;
+  }
+  .mugen-library.is-compact .collection {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mugen-library *,
+  .mugen-library-page * {
+    transition: none !important;
+  }
+}

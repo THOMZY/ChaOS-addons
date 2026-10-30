@@ -1,0 +1,12 @@
+{
+  "id": "hammerfest",
+  "name": "Hammerfest",
+  "version": "1.0.0",
+  "chaosAddonApi": 1,
+  "server": "server/index.js",
+  "data": {
+    "dir": "data",
+    "check": "game.swf",
+    "install": "node games/hammerfest/install.mjs <dossier-source>"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "ikemen": {
+    "repository": "https://github.com/energyjp/ikemen-go-web",
+    "commit": "96324a1c8aaaa5c0cb7756aebeb4b572588523ee"
+  },
+  "screenpack": {
+    "repository": "https://github.com/ikemen-engine/Ikemen_GO-Elecbyte-Screenpack",
+    "commit": "f1e63370f78161a743bdaab6c391562ef91424b8"
+  },
+  "go": "1.24",
+  "revision": 5,
+  "releaseRepository": "THOMZY/ChaOS-addons"
+}

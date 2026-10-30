@@ -1,0 +1,300 @@
+/* MUGEN window, loaded by client/index.js. The window frame and its fg-* title
+   bar controls are styled by the site. */
+.mugen-root {
+  --mugen-accent: #ff6a3d;
+  --mugen-line: rgba(255, 255, 255, 0.14);
+  --mugen-panel: rgba(0, 0, 0, 0.35);
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  color: #eee;
+  font-size: 13px;
+  position: relative; /* hosts the library panel (client/library.css) */
+}
+.mugen-lobby {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  overflow: auto;
+}
+.mugen-card,
+.mugen-room,
+.mugen-result {
+  background: var(--mugen-panel);
+  border: 1px solid var(--mugen-line);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+.mugen-room,
+.mugen-result {
+  margin: 8px;
+  flex: 1;
+}
+.mugen-result {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.mugen-card h3,
+.mugen-picker h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mugen-accent);
+}
+.mugen-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mugen-input {
+  background: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  border: 1px solid var(--mugen-line);
+  border-radius: 4px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+.mugen-button {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border: 1px solid var(--mugen-line);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.mugen-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+.mugen-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.mugen-primary {
+  background: var(--mugen-accent);
+  border-color: var(--mugen-accent);
+  color: #111;
+  font-weight: 600;
+}
+.mugen-primary:hover:not(:disabled) {
+  background: #ff8a63;
+}
+.mugen-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+}
+.mugen-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mugen-row > :first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mugen-bet {
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+}
+.mugen-empty {
+  opacity: 0.6;
+  font-style: italic;
+}
+.mugen-room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.mugen-sides {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.mugen-side {
+  border: 1px solid var(--mugen-line);
+  border-radius: 4px;
+  padding: 6px;
+}
+.mugen-mine {
+  border-color: var(--mugen-accent);
+}
+.mugen-pick {
+  margin-top: 4px;
+  font-weight: 600;
+}
+.mugen-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+}
+.mugen-stages {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 0 0 auto;
+  padding: 2px;
+  max-height: 92px;
+}
+.mugen-stage-card {
+  flex: 0 0 112px;
+  overflow: hidden;
+  background: #202321;
+  color: inherit;
+  border: 1px solid var(--mugen-line);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+}
+.mugen-stage-card[aria-pressed='true'] {
+  border-color: var(--mugen-accent);
+}
+.mugen-stage-card span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+.mugen-stage-preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.mugen-targets {
+  display: flex;
+  gap: 6px;
+}
+.mugen-characters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 4px;
+  overflow: auto;
+  flex: 1;
+  min-height: 80px;
+  align-content: start;
+}
+.mugen-character {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  border: 1px solid var(--mugen-line);
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.mugen-character.mugen-active,
+.mugen-target.mugen-active {
+  border-color: var(--mugen-accent);
+  background: rgba(255, 106, 61, 0.2);
+}
+.mugen-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mugen-match {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+.mugen-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.mugen-engine-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+.mugen-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 15px;
+  background: #101118;
+}
+.mugen-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--mugen-line);
+}
+.mugen-hint {
+  opacity: 0.7;
+  font-size: 12px;
+}
+.mugen-character .mugen-portrait {
+  width: 72px;
+  height: 84px;
+  object-fit: contain;
+}
+.mugen-character-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.mugen-side .mugen-portrait {
+  display: block;
+  margin: 6px auto 0;
+  width: 96px;
+  height: 112px;
+  object-fit: contain;
+}
+.mugen-face {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 4px;
+  image-rendering: pixelated;
+}
+.mugen-overlay[hidden] {
+  display: none;
+}
+.mugen-spectator-side {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.mugen-spectator-side .mugen-pick {
+  opacity: 0.7;
+  font-size: 12px;
+}

@@ -1,0 +1,71 @@
+# Builds the MUGEN engine bundle (Ikemen GO compiled to WebAssembly plus its
+# screenpack data) for the commits pinned in games/mugen/engine/engine.json, and
+# publishes it as the release that `node games/mugen/install.mjs` downloads.
+name: MUGEN engine
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'games/mugen/engine/**'
+      - '.github/workflows/mugen-engine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the pins
+        id: pins
+        run: |
+          node -e "
+            const p = require('./games/mugen/engine/engine.json');
+            const out = require('fs').createWriteStream(process.env.GITHUB_OUTPUT, { flags: 'a' });
+            out.write('go=' + p.go + '\n');
+            out.write('ikemen_repo=' + p.ikemen.repository + '\nikemen_commit=' + p.ikemen.commit + '\n');
+            out.write('screenpack_repo=' + p.screenpack.repository + '\nscreenpack_commit=' + p.screenpack.commit + '\n');
+          "
+          echo "tag=$(node --input-type=module -e "import { readPins, releaseTag } from './games/mugen/engine/pins.mjs'; console.log(releaseTag(readPins()))")" >> "$GITHUB_OUTPUT"
+
+      - name: Skip an existing release
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.pins.outputs.tag }}" > /dev/null 2>&1; then echo "found=true" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-go@v5
+        if: steps.existing.outputs.found != 'true'
+        with:
+          go-version: ${{ steps.pins.outputs.go }}
+          cache: false
+
+      - name: Fetch the pinned sources
+        if: steps.existing.outputs.found != 'true'
+        run: |
+          git init -q "$RUNNER_TEMP/ikemen"
+          git init -q "$RUNNER_TEMP/screenpack"
+          git -C "$RUNNER_TEMP/ikemen" fetch -q --depth 1 "${{ steps.pins.outputs.ikemen_repo }}" "${{ steps.pins.outputs.ikemen_commit }}"
+          git -C "$RUNNER_TEMP/ikemen" checkout -q FETCH_HEAD
+          git -C "$RUNNER_TEMP/screenpack" fetch -q --depth 1 "${{ steps.pins.outputs.screenpack_repo }}" "${{ steps.pins.outputs.screenpack_commit }}"
+          git -C "$RUNNER_TEMP/screenpack" checkout -q FETCH_HEAD
+
+      - name: Build the bundle
+        if: steps.existing.outputs.found != 'true'
+        run: |
+          node games/mugen/engine/build.mjs --ikemen "$RUNNER_TEMP/ikemen" --screenpack "$RUNNER_TEMP/screenpack" --out "$RUNNER_TEMP/bundle"
+          tar -czf "$RUNNER_TEMP/mugen-engine.tar.gz" -C "$RUNNER_TEMP/bundle" .
+
+      - name: Publish the release
+        if: steps.existing.outputs.found != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.pins.outputs.tag }}" "$RUNNER_TEMP/mugen-engine.tar.gz" \
+            --title "${{ steps.pins.outputs.tag }}" \
+            --notes "MUGEN engine bundle: ikemen-go-web ${{ steps.pins.outputs.ikemen_commit }}, screenpack ${{ steps.pins.outputs.screenpack_commit }}, Go ${{ steps.pins.outputs.go }}."
