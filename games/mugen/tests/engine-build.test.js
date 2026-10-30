@@ -5,19 +5,15 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { PATCHES, applyPatches } from '../engine/patches.mjs';
 import { SOURCE_PATCHES, applySourcePatches } from '../engine/source-patches.mjs';
-import { readPins, releaseTag, releaseUrl } from '../engine/pins.mjs';
+import { readPins } from '../engine/pins.mjs';
 import { createCatalog, parseSections } from '../server/catalog.js';
 
-test('MUGEN engine pins name one release', () => {
+test('MUGEN engine pins are valid', () => {
   const pins = readPins();
-  assert.equal(
-    releaseTag(pins),
-    `mugen-engine-${pins.ikemen.commit.slice(0, 10)}-${pins.screenpack.commit.slice(0, 10)}-go${pins.go}-r${pins.revision}`,
-  );
-  assert.match(
-    releaseUrl(pins),
-    /^https:\/\/github\.com\/THOMZY\/ChaOS-addons\/releases\/download\/mugen-engine-.+\/mugen-engine\.tar\.gz$/,
-  );
+  assert.match(pins.ikemen.commit, /^[0-9a-f]{40}$/);
+  assert.match(pins.screenpack.commit, /^[0-9a-f]{40}$/);
+  assert.match(pins.go, /^\d+\.\d+$/);
+  assert.ok(pins.revision >= 1);
 });
 
 test('MUGEN quick-match netplay patch applies once and refuses a changed script', (t) => {

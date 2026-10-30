@@ -8,6 +8,5 @@
     "commit": "f1e63370f78161a743bdaab6c391562ef91424b8"
   },
   "go": "1.24",
-  "revision": 5,
-  "releaseRepository": "THOMZY/ChaOS-addons"
+  "revision": 5
 }

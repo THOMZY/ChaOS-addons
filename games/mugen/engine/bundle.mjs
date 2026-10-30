@@ -1,5 +1,5 @@
-// Package the compiled engine for shipping with the add-on, independently of
-// a GitHub release or a Go installation on the destination server.
+// Package the compiled engine for shipping with the add-on, so the destination
+// server needs neither network access nor a Go installation.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
@@ -116,7 +116,7 @@ export function unpackBundledEngine(work) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     if (!process.argv[2])
-      throw new Error('usage: node mugen/engine/bundle.mjs <compiled-engine-directory>');
+      throw new Error('usage: node games/mugen/engine/bundle.mjs <compiled-engine-directory>');
     console.info(JSON.stringify(packageEngine(resolve(process.argv[2]))));
   } catch (error) {
     console.error('[mugen] package: ' + error.message);

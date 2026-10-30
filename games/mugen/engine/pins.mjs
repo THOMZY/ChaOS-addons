@@ -1,6 +1,6 @@
-// The engine release this add-on runs: one commit of the Ikemen GO browser
-// fork, one commit of the default screenpack, one Go version. The release tag
-// is derived from them, so the build and the installer agree on it.
+// The engine this add-on runs: one commit of the Ikemen GO browser fork, one
+// commit of the default screenpack, one Go version and a bundle revision. The
+// build stamps them into the bundle and the installer refuses any other.
 import { readFileSync } from 'node:fs';
 
 export const PINS_URL = new URL('./engine.json', import.meta.url);
@@ -15,12 +15,4 @@ export function readPins() {
   if (!Number.isSafeInteger(pins.revision) || pins.revision < 1)
     throw new Error('engine.json: revision');
   return pins;
-}
-
-export function releaseTag(pins) {
-  return `mugen-engine-${pins.ikemen.commit.slice(0, 10)}-${pins.screenpack.commit.slice(0, 10)}-go${pins.go}-r${pins.revision}`;
-}
-
-export function releaseUrl(pins) {
-  return `https://github.com/${pins.releaseRepository}/releases/download/${releaseTag(pins)}/${BUNDLE_NAME}`;
 }

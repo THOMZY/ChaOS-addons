@@ -23,10 +23,10 @@ The compiled engine ships in `engine/mugen-engine.tar.gz` (about 25 MiB).
 are preserved. The archive includes the WASM binary, matching Go loader, engine
 scripts, screenpack, fonts and upstream licence notices; it contains no user packs.
 
-With `--download` the installer explicitly downloads the pinned GitHub release;
-with `--build` it clones and compiles the pinned commits (needs Git and Go);
-with `--bundle <dir>` it installs an existing compiled bundle. A source checkout
-without the shipped archive falls back to downloading the pinned release.
+With `--build` the installer clones and compiles the pinned commits (needs Git
+and Go); with `--bundle <dir>` it installs an existing compiled bundle. Without
+the shipped archive and without either option, it stops with an error: nothing
+is downloaded.
 
 The library button in the lobby, character picker and training view opens the
 library inside the MUGEN window, not in a second window: the view underneath
@@ -115,12 +115,15 @@ for their local replay to finish. Closing the viewer stops its engine.
 
 ## Engine bundle
 
-`engine/engine.json` pins one commit of the browser fork, one commit of the [default screenpack](https://github.com/ikemen-engine/Ikemen_GO-Elecbyte-Screenpack) and one Go version. The **MUGEN engine** workflow builds the bundle for those pins and publishes it as a release of this repository. To build it by hand:
+`engine/engine.json` pins one commit of the browser fork, one commit of the [default screenpack](https://github.com/ikemen-engine/Ikemen_GO-Elecbyte-Screenpack) and one Go version. The engine is compiled by hand and shipped inside the add-on:
 
 ```sh
-node mugen/engine/build.mjs --ikemen <ikemen-go-web checkout> --screenpack <screenpack checkout> --out <dir>
-node mugen/engine/bundle.mjs <dir>
+node games/mugen/engine/build.mjs --ikemen <ikemen-go-web checkout> --screenpack <screenpack checkout> --out <dir>
+node games/mugen/engine/bundle.mjs <dir>
 ```
+
+`bundle.mjs` writes `engine/mugen-engine.tar.gz` and its checksum file
+`engine/mugen-engine.bundle.json`; commit both with the add-on.
 
 `engine/patches.mjs` lists the Lua changes; `engine/source-patches.mjs` and
 `engine/chaos_replay*.go` adapt native replay recording and pacing for the browser.
@@ -163,7 +166,7 @@ To test real netplay and a late spectator with the compiled WebAssembly engine,
 using only the screenpack's Kung Fu Man assets:
 
 ```sh
-node mugen/tests/browser-replay.mjs <built-bundle-directory> <screenpack-checkout>
+node games/mugen/tests/browser-replay.mjs <built-bundle-directory> <screenpack-checkout>
 ```
 
 This starts an isolated local HTTP server and headless Chromium. Set `BROWSER_PATH`

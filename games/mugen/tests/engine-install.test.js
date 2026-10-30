@@ -73,5 +73,10 @@ test('shipped engine installs offline without Go and preserves packs; corrupt ar
     wasmHash,
     'invalid bundle leaves the installed engine intact',
   );
-  assert.equal(run('--build', '--download').status, 1);
+  assert.equal(run('--build', '--bundle', root).status, 1);
+  assert.match(run('--download').stderr, /unknown option --download/);
+  rmSync(join(root, 'engine/mugen-engine.tar.gz'));
+  const missing = run();
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /mugen-engine\.tar\.gz is missing/);
 });
