@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-title="pageTitleRanking">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,22 +26,22 @@
 <body>
 <main class="sheet">
   <div class="page-head">
-    <h1 class="game-name">Les Cavernes de Hammerfest</h1>
+    <h1 class="game-name" data-i18n="gameTitle">Les Cavernes de Hammerfest</h1>
     <nav class="game-tabs">
-      <a class="blurred" href="play.html">Jeu</a>
-      <a href="leaderboard.html" aria-current="page">Classement</a>
-      <a class="blurred" href="profile.html#frigo">Frigo</a>
-      <a class="blurred" href="profile.html#objets">Mes objets</a>
-      <a class="blurred" href="profile.html#quetes">Mes quêtes</a>
+      <a class="blurred" href="play.html" data-i18n="tabPlay">Jeu</a>
+      <a href="leaderboard.html" aria-current="page" data-i18n="tabRanking">Classement</a>
+      <a class="blurred" href="profile.html#frigo" data-i18n="tabFridge">Frigo</a>
+      <a class="blurred" href="profile.html#objets" data-i18n="tabItems">Mes objets</a>
+      <a class="blurred" href="profile.html#quetes" data-i18n="tabQuests">Mes quêtes</a>
     </nav>
   </div>
 
   <div class="content">
-    <div class="notice" id="notice">Chargement…</div>
+    <div class="notice" id="notice" data-i18n="loading">Chargement…</div>
     <div id="modes"></div>
   </div>
 
-  <footer>
+  <footer data-i18n="footer">
     Hammerfest © Motion Twin — corrections et contenu : Eternalfest — lecteur : Ruffle.
     Version non officielle hébergée sur ChaOS website.
   </footer>

@@ -1,6 +1,6 @@
-/* Feuille commune aux pages Hammerfest, calquée sur le CSS global du site
-   Eternalfest : conteneur #ebd9e6 bordé de #c52f36, h1 18pt aligné à droite,
-   tableaux bordés #6a100e, onglets en forme d'onglet sur #e8b0b3. */
+/* Shared by the Hammerfest pages, modelled on Eternalfest's global CSS:
+   #ebd9e6 container with a #c52f36 border, 18pt right-aligned h1, bordered
+   tables in #6a100e, tab-shaped tabs on #e8b0b3. */
 :root {
   --pink: #e8b0b3;
   --sheet: #ebd9e6;
@@ -22,7 +22,7 @@ body {
   background: #17121f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%2317121f'/%3E%3C/svg%3E");
 }
 
-/* ── Conteneur (leur `.content`) ───────────────────────────────────────── */
+/* -- Container (their `.content`) ------------------------------------------ */
 .sheet {
   position: relative;
   width: 720px;
@@ -37,7 +37,7 @@ body {
   flex-direction: column;
 }
 
-/* ── Titre : 18pt, normal, aligné à droite, souligné (leur `.content h1`) ─ */
+/* -- Title: 18pt, normal, right-aligned, underlined (their `.content h1`) -- */
 h1.game-name {
   margin: 0 0 5px;
   padding: 0;
@@ -48,7 +48,7 @@ h1.game-name {
   color: var(--ink);
 }
 
-/* ── Onglets (leurs `ef-* .game-tabs a`) ───────────────────────────────── */
+/* -- Tabs (their `ef-* .game-tabs a`) ------------------------------------- */
 nav.game-tabs { overflow: hidden; margin: 0 0 14px; }
 nav.game-tabs a {
   display: block;
@@ -73,7 +73,7 @@ nav.game-tabs a.blurred {
 }
 nav.game-tabs a:hover { text-decoration: underline; }
 
-/* ── Tableaux (leur CSS global) ────────────────────────────────────────── */
+/* -- Tables (their global CSS) -------------------------------------------- */
 table {
   width: 100%;
   border: 1px solid var(--border);
@@ -94,7 +94,7 @@ td {
   border: 1px solid var(--border);
 }
 
-/* ── Cartes et blocs communs ───────────────────────────────────────────── */
+/* -- Shared cards and blocks ---------------------------------------------- */
 .content { flex: 0 0 auto; }
 
 .card {
@@ -116,7 +116,7 @@ h3 {
 ul.plain { list-style: none; margin: 0; padding: 0; }
 ul.plain li { margin: 1px 0; }
 
-/* ── Carte du jeu (page Jeu) ───────────────────────────────────────────── */
+/* -- Game card (Play page) ------------------------------------------------ */
 .details { display: flex; gap: 12px; margin-bottom: 14px; }
 .details .icon {
   width: 100px;
@@ -132,7 +132,7 @@ ul.plain li { margin: 1px 0; }
 .details dt { text-align: right; font-weight: bold; }
 .details dd { margin: 0; color: var(--accent); font-weight: bold; }
 
-/* ── Formulaire de partie ─────────────────────────────────────────────── */
+/* -- Run form ------------------------------------------------------------- */
 .run-form { display: flex; flex-direction: column; gap: 10px; }
 .run-form .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
 .run-form .row > * { flex: 1 1 260px; }
@@ -172,7 +172,7 @@ button.play {
 button.play:hover { filter: brightness(1.06); }
 button.play[disabled] { opacity: 0.55; cursor: default; box-shadow: none; }
 
-/* ── Zone de jeu ──────────────────────────────────────────────────────── */
+/* -- Play area ------------------------------------------------------------ */
 #stage { display: none; }
 body.playing { overflow: hidden; }
 body.playing .sheet {
@@ -220,3 +220,19 @@ footer {
   text-align: center;
 }
 footer a { color: #6b2a29; }
+
+/* Debug build: badge and link inside the tab row, shown only when the server
+   allows the account (`canDebug`). */
+nav.game-tabs .debug-badge,
+nav.game-tabs a.debug-link {
+  float: left;
+  margin-left: 10px;
+  padding: 10px 15px;
+  border-radius: 4px 4px 0 0;
+  color: #fff;
+  font-size: 10pt;
+  text-decoration: none;
+}
+nav.game-tabs .debug-badge { background: #c62828; letter-spacing: 0.06em; }
+nav.game-tabs a.debug-link { background: var(--accent); border: 1px solid var(--accent); border-bottom: none; }
+nav.game-tabs a.debug-link:hover { background: #b8386f; text-decoration: none; }

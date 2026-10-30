@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-title="pageTitleResult">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -97,31 +97,31 @@
 <body>
 <main class="sheet">
   <div class="page-head">
-    <h1 class="game-name">Résultat</h1>
+    <h1 class="game-name" data-i18n="resultTitle">Résultat</h1>
     <p class="result-sub" id="subtitle">…</p>
   </div>
 
   <div class="content">
-    <div class="notice" id="notice">Chargement…</div>
+    <div class="notice" id="notice" data-i18n="loading">Chargement…</div>
 
     <div id="result" hidden>
       <div class="summary" id="summary"></div>
 
-      <h3 class="section">Objets ramassés <small id="items-count"></small></h3>
+      <h3 class="section"><span data-i18n="rsItems">Objets ramassés</span> <small id="items-count"></small></h3>
       <div class="items-grid" id="items"></div>
 
-      <h3 class="section">Quêtes <small id="quests-count"></small></h3>
+      <h3 class="section"><span data-i18n="rsQuests">Quêtes</span> <small id="quests-count"></small></h3>
       <div id="quests"></div>
 
       <div class="actions">
-        <a class="primary" href="/games/hammerfest/client/play.html">Rejouer</a>
-        <a class="secondary" href="/games/hammerfest/client/profile.html#objets">Mes objets</a>
-        <a class="secondary" href="/games/hammerfest/client/profile.html#quetes">Mes quêtes</a>
+        <a class="primary" href="/games/hammerfest/client/play.html" data-i18n="rsReplay">Rejouer</a>
+        <a class="secondary" href="/games/hammerfest/client/profile.html#objets" data-i18n="tabItems">Mes objets</a>
+        <a class="secondary" href="/games/hammerfest/client/profile.html#quetes" data-i18n="tabQuests">Mes quêtes</a>
       </div>
     </div>
   </div>
 
-  <footer>
+  <footer data-i18n="footer">
     Hammerfest © Motion Twin — corrections et contenu : Eternalfest — lecteur : Ruffle.
     Version non officielle hébergée sur ChaOS website.
   </footer>

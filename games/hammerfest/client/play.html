@@ -9,59 +9,59 @@
 <body>
 <main class="sheet">
   <div class="page-head">
-    <h1 class="game-name">Les Cavernes de Hammerfest</h1>
+    <h1 class="game-name" data-i18n="gameTitle">Les Cavernes de Hammerfest</h1>
     <nav class="game-tabs">
-      <a href="play.html" aria-current="page">Jeu</a>
-      <a class="blurred" href="leaderboard.html">Classement</a>
-      <a class="blurred" href="profile.html#frigo">Frigo</a>
-      <a class="blurred" href="profile.html#objets">Mes objets</a>
-      <a class="blurred" href="profile.html#quetes">Mes quêtes</a>
+      <a href="play.html" aria-current="page" data-i18n="tabPlay">Jeu</a>
+      <a class="blurred" href="leaderboard.html" data-i18n="tabRanking">Classement</a>
+      <a class="blurred" href="profile.html#frigo" data-i18n="tabFridge">Frigo</a>
+      <a class="blurred" href="profile.html#objets" data-i18n="tabItems">Mes objets</a>
+      <a class="blurred" href="profile.html#quetes" data-i18n="tabQuests">Mes quêtes</a>
     </nav>
   </div>
 
   <div class="content launcher">
     <div class="card details">
-      <img class="icon" src="/games/hammerfest/assets/thumbnail.svg" alt="Hammerfest">
+      <img class="icon" src="/games/hammerfest/assets/thumbnail.webp" alt="Hammerfest">
       <div class="right">
-        <p>Le jeu officiel Hammerfest, par Motion-Twin. Contient également des niveaux inédits et de
+        <p data-i18n="description">Le jeu officiel Hammerfest, par Motion-Twin. Contient également des niveaux inédits et de
           nouvelles options loufoques !</p>
         <dl>
-          <div><dt>Propriétaire :</dt><dd>THOMZY</dd></div>
-          <div><dt>Build :</dt><dd>2.5.2 (Eternalfest)</dd></div>
-          <div><dt>Lecteur :</dt><dd>Ruffle</dd></div>
+          <div><dt data-i18n="owner">Propriétaire :</dt><dd>Moulins</dd></div>
+          <div><dt data-i18n="build">Build :</dt><dd>2.5.2 (Eternalfest)</dd></div>
+          <div><dt data-i18n="player">Lecteur :</dt><dd>Ruffle</dd></div>
         </dl>
       </div>
     </div>
 
-    <div class="notice" id="notice">Chargement…</div>
+    <div class="notice" id="notice" data-i18n="loading">Chargement…</div>
 
     <form class="run-form" id="run-form" hidden>
       <div class="row">
         <div class="card modes">
-          <h3>Mode de jeu</h3>
+          <h3 data-i18n="gameMode">Mode de jeu</h3>
           <ul class="plain" id="modes"></ul>
         </div>
         <div class="card settings">
-          <h3>Paramètres</h3>
+          <h3 data-i18n="settings">Paramètres</h3>
           <ul class="plain">
-            <li><label><input type="checkbox" id="set-detail" checked> Détails graphiques élevés</label></li>
-            <li><label><input type="checkbox" id="set-shake" checked> Vibrations fréquentes</label></li>
-            <li><label><input type="checkbox" id="set-sound" checked> Son</label></li>
-            <li><label><input type="checkbox" id="set-music"> Musique</label></li>
+            <li><label><input type="checkbox" id="set-detail" checked> <span data-i18n="setDetail">Détails graphiques élevés</span></label></li>
+            <li><label><input type="checkbox" id="set-shake" checked> <span data-i18n="setShake">Vibrations fréquentes</span></label></li>
+            <li><label><input type="checkbox" id="set-sound" checked> <span data-i18n="setSound">Son</span></label></li>
+            <li><label><input type="checkbox" id="set-music"> <span data-i18n="setMusic">Musique</span></label></li>
           </ul>
         </div>
       </div>
       <div class="card options">
-        <h3><b id="options-title">Aventure</b> — Options</h3>
+        <h3><b id="options-title">Aventure</b> <span data-i18n="optionsSuffix">— Options</span></h3>
         <ul class="plain" id="options"></ul>
-        <button class="play" type="submit" id="play">Jouer</button>
+        <button class="play" type="submit" id="play" data-i18n="play">Jouer</button>
       </div>
     </form>
   </div>
 
   <div id="stage"></div>
 
-  <footer>
+  <footer data-i18n="footer">
     Hammerfest © Motion Twin — corrections et contenu : Eternalfest — lecteur : Ruffle.
     Version non officielle hébergée sur ChaOS website.
   </footer>

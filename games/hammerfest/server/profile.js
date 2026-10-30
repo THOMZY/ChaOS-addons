@@ -16,19 +16,26 @@ const CATALOG = JSON.parse(readFileSync(new URL('../catalog/catalog.json', impor
 const TOTAL_ITEMS = Object.keys(CATALOG.items).length;
 const TOTAL_FAMILIES = Object.keys(CATALOG.families).length;
 
-/** @param {string} id */
-const familyName = (id) => CATALOG.families[id]?.name ?? `Famille ${id}`;
+/**
+ * @param {string} id
+ * @param {import('./locale-names.js').Labels} [labels]
+ */
+const familyName = (id, labels) => labels?.families.get(id) ?? CATALOG.families[id]?.name ?? `Famille ${id}`;
 /** @param {string} id */
 const unlockOf = (id) => CATALOG.items[id]?.unlock ?? 10;
-/** @param {string} id */
-const itemName = (id) => CATALOG.items[id]?.name ?? `Objet ${id}`;
+/**
+ * @param {string} id
+ * @param {import('./locale-names.js').Labels} [labels] Names in the account's language.
+ */
+const itemName = (id, labels) => labels?.items.get(id) ?? CATALOG.items[id]?.name ?? `Objet ${id}`;
 
 /**
  * One row per item of the game, plus the per-family counters.
  *
  * @param {Record<string, number>} owned
+ * @param {import('./locale-names.js').Labels} [labels]
  */
-function itemView(owned) {
+function itemView(owned, labels) {
   /** @type {Map<string, any[]>} */
   const byFamily = new Map();
   let discoveredCount = 0;
@@ -45,7 +52,7 @@ function itemView(owned) {
     if (!byFamily.has(key)) byFamily.set(key, []);
     byFamily.get(key)?.push({
       id,
-      name: spec.name,
+      name: itemName(id, labels),
       count,
       unlock,
       discovered,
@@ -54,7 +61,7 @@ function itemView(owned) {
       value: spec.value,
       // Sur notre site le nom est toujours affiché : la page ne liste que les
       // objets découverts, cacher leur nom n'apporte rien.
-      displayName: spec.name,
+      displayName: itemName(id, labels),
       state: unlocked ? 'unlocked' : discovered ? 'locked' : 'unknown',
     });
   }
@@ -66,7 +73,7 @@ function itemView(owned) {
     items.sort((a, b) => Number(a.id) - Number(b.id));
     families.push({
       id: key,
-      name: familyName(key),
+      name: familyName(key, labels),
       items,
       discovered: items.filter((item) => item.discovered).length,
       unlocked: items.filter((item) => item.unlocked).length,
@@ -76,7 +83,7 @@ function itemView(owned) {
   // Items outside a known family (custom families) keep their own block.
   const orphans = byFamily.get('other');
   if (orphans && orphans.length > 0) {
-    families.push({ id: 'other', name: 'Divers', items: orphans, discovered: orphans.filter((i) => i.discovered).length, unlocked: orphans.filter((i) => i.unlocked).length, total: orphans.length });
+    families.push({ id: 'other', name: labels?.otherFamily ?? 'Divers', items: orphans, discovered: orphans.filter((i) => i.discovered).length, unlocked: orphans.filter((i) => i.unlocked).length, total: orphans.length });
   }
 
   return {
@@ -91,8 +98,11 @@ function itemView(owned) {
   };
 }
 
-/** @param {Record<string, number>} owned */
-function fridgeOf(owned) {
+/**
+ * @param {Record<string, number>} owned
+ * @param {import('./locale-names.js').Labels} [labels]
+ */
+function fridgeOf(owned, labels) {
   return Object.entries(CATALOG.items)
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([id, spec]) => {
@@ -100,7 +110,7 @@ function fridgeOf(owned) {
       const unlock = spec.unlock ?? 10;
       return {
         id,
-        name: spec.name,
+        name: itemName(id, labels),
         count,
         state: count >= unlock ? 'unlocked' : count > 0 ? 'locked' : 'unknown',
       };
@@ -111,8 +121,9 @@ function fridgeOf(owned) {
  * Quests with their per-item progress, as the game's quest page shows them.
  *
  * @param {Record<string, number>} owned
+ * @param {import('./locale-names.js').Labels} [labels]
  */
-function questView(owned) {
+function questView(owned, labels) {
   /** @type {any[]} */
   const out = [];
   for (const [id, spec] of Object.entries(CATALOG.quests)) {
@@ -121,9 +132,9 @@ function questView(owned) {
       const unlocked = count >= unlockOf(itemId);
       return {
         id: itemId,
-        name: itemName(itemId),
+        name: itemName(itemId, labels),
         // Nom réel systématiquement sur notre site (plus de « ??? » dans les quêtes).
-        displayName: itemName(itemId),
+        displayName: itemName(itemId, labels),
         qty: quantity,
         // The game never shows more than the requirement.
         count: Math.min(count, quantity),
@@ -139,8 +150,9 @@ function questView(owned) {
     const state = have >= need ? 'completed' : 'partial';
     out.push({
       id,
-      name: spec.name,
-      text: spec.text,
+      name: labels?.quests.get(id)?.name ?? spec.name,
+      // Quest descriptions are game content: labels.en.json translates them.
+      text: labels?.quests.get(id)?.text ?? spec.text,
       require,
       have,
       need,
@@ -184,8 +196,9 @@ export function unlockedFamilies(owned) {
  *
  * @param {Record<string, number>} ownedBefore
  * @param {Record<string, number>} gained
+ * @param {import('./locale-names.js').Labels} [labels]
  */
-export function computeHighlights(ownedBefore, gained) {
+export function computeHighlights(ownedBefore, gained, labels) {
   /** @type {Record<string, number>} */
   const ownedAfter = { ...ownedBefore };
   /** @type {any[]} */
@@ -200,7 +213,7 @@ export function computeHighlights(ownedBefore, gained) {
     const unlock = unlockOf(id);
     items.push({
       id,
-      name: itemName(id),
+      name: itemName(id, labels),
       gained: count,
       before,
       after,
@@ -226,7 +239,7 @@ export function computeHighlights(ownedBefore, gained) {
     if (after === before) continue;
     quests.push({
       id,
-      name: spec.name,
+      name: labels?.quests.get(id)?.name ?? spec.name,
       before,
       after,
       need,
@@ -266,10 +279,11 @@ export function describeRun(run, modeLabel) {
  * @param {Record<string, number>} owned
  * @param {any[]} runs
  * @param {(mode: string) => string} modeLabel
+ * @param {import('./locale-names.js').Labels} [labels]
  */
-export function buildProfile(account, owned, runs, modeLabel) {
-  const { families, stats } = itemView(owned);
-  const quests = questView(owned);
+export function buildProfile(account, owned, runs, modeLabel, labels) {
+  const { families, stats } = itemView(owned, labels);
+  const quests = questView(owned, labels);
 
   let bestScore = 0;
   let maxLevel = 0;
@@ -305,7 +319,7 @@ export function buildProfile(account, owned, runs, modeLabel) {
       victories,
     },
     families,
-    fridge: fridgeOf(owned),
+    fridge: fridgeOf(owned, labels),
     quests,
     history,
   };

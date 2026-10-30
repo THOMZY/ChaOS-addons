@@ -1,9 +1,15 @@
 // @ts-check
-// Page de lancement (style Eternalfest) : mode de jeu, paramètres, options du
-// mode, puis la partie. Le loader Flash fait le reste ; il attend un clic dans
-// la zone de jeu pour démarrer.
+// Launch page (Eternalfest style): game mode, settings, mode options, then the
+// run itself. The Flash loader does the rest; it waits for a click inside the
+// play area before starting.
+import { applyPageLanguage, languageOf, modeName, optionName, translate } from './i18n.js';
+
 /** @type {{ gameId: string, locale: string, options: Record<string, {key: string, display_name: string, checked: boolean}[]>, modes: {id: string, display_name: string}[] } | null} */
 let config = null;
+/** Language the launcher speaks; the game itself gets the locale on its own. @type {'fr' | 'en'} */
+let language = 'fr';
+/** @param {string} key */
+const t = (key) => translate(key, language);
 let selectedMode = 'solo';
 /** @type {Set<string>} */
 let selectedOptions = new Set();
@@ -17,12 +23,12 @@ const optionsTitle = /** @type {HTMLElement} */ (document.getElementById('option
 const stage = /** @type {HTMLElement} */ (document.getElementById('stage'));
 const playButton = /** @type {HTMLButtonElement} */ (document.getElementById('play'));
 
-/** Message « connecte-toi » avec le lien de retour, sans innerHTML. */
+/** "Log in" message with the return link, built without innerHTML. */
 function loginNotice(message) {
   notice.hidden = false;
   notice.replaceChildren(
     document.createTextNode(message + ' '),
-    Object.assign(el('a', undefined, 'Retour au site'), { href: '/' }),
+    Object.assign(el('a', undefined, t('backToSite')), { href: '/' }),
   );
 }
 
@@ -58,7 +64,7 @@ function renderModes() {
       input.type = 'radio';
       input.name = 'game_mode';
       input.checked = mode.id === selectedMode;
-      label.append(input, document.createTextNode(mode.display_name));
+      label.append(input, document.createTextNode(modeName(mode, language)));
       label.addEventListener('click', (event) => {
         event.preventDefault();
         if (busy) return;
@@ -75,10 +81,10 @@ function renderModes() {
 function renderOptions() {
   if (!config) return;
   const mode = config.modes.find((entry) => entry.id === selectedMode);
-  optionsTitle.textContent = mode?.display_name ?? selectedMode;
+  optionsTitle.textContent = mode ? modeName(mode, language) : selectedMode;
   const options = config.options[selectedMode] ?? [];
   if (options.length === 0) {
-    optionsBox.replaceChildren(wrap('li', el('span', 'no-options', 'Aucune option disponible')));
+    optionsBox.replaceChildren(wrap('li', el('span', 'no-options', t('noOptions'))));
     return;
   }
   optionsBox.replaceChildren(
@@ -93,7 +99,7 @@ function renderOptions() {
         if (input.checked) selectedOptions.add(option.key);
         else selectedOptions.delete(option.key);
       });
-      label.append(input, document.createTextNode(' ' + option.display_name));
+      label.append(input, document.createTextNode(' ' + optionName(option, language)));
       return wrap('li', label);
     }),
   );
@@ -103,7 +109,7 @@ function quit() {
   document.body.classList.remove('playing');
   stage.replaceChildren();
   notice.hidden = false;
-  notice.textContent = 'Partie terminée. Choisis un mode pour rejouer.';
+  notice.textContent = t('gameOver');
   form.hidden = false;
 }
 
@@ -112,7 +118,7 @@ function mount(run) {
   if (!config) return;
   document.body.classList.add('playing');
   stage.replaceChildren();
-  const quitButton = el('button', undefined, 'Quitter');
+  const quitButton = el('button', undefined, t('quit'));
   quitButton.id = 'quit';
   quitButton.type = 'button';
   quitButton.addEventListener('click', quit);
@@ -121,12 +127,12 @@ function mount(run) {
   const ruffle = /** @type {any} */ (window).RufflePlayer?.newest?.();
   if (!ruffle) {
     notice.hidden = false;
-    notice.textContent = 'Lecteur Flash indisponible (Ruffle).';
+    notice.textContent = t('noRuffle');
     return;
   }
   const player = ruffle.createPlayer();
-  // Le lecteur doit remplir la zone et centrer le film : configuré avant load(),
-  // sinon Ruffle garde sa taille par défaut et colle le film à gauche.
+  // The player must fill the area and centre the movie: configured before load(),
+  // otherwise Ruffle keeps its default size and sticks the movie to the left.
   player.config = { ...player.config, scale: 'showAll', letterbox: 'on', autoplay: 'on', splashScreen: false };
   stage.append(player);
   player
@@ -153,7 +159,7 @@ function mount(run) {
     .catch((error) => {
       console.error('[hammerfest] load', error);
       notice.hidden = false;
-      notice.textContent = 'Le jeu n’a pas pu démarrer.';
+      notice.textContent = t('loadFailed');
     });
 }
 
@@ -162,7 +168,7 @@ async function play() {
   busy = true;
   playButton.disabled = true;
   notice.hidden = false;
-  notice.textContent = 'Préparation de la partie…';
+  notice.textContent = t('preparing');
   try {
     const response = await fetch('/api/v1/runs', {
       method: 'POST',
@@ -178,7 +184,7 @@ async function play() {
     if (!response.ok) throw new Error(`runs -> ${response.status}`);
     mount(await response.json());
   } catch (error) {
-    notice.textContent = 'Impossible de créer la partie.';
+    notice.textContent = t('createFailed');
     console.error('[hammerfest] run', error);
   } finally {
     busy = false;
@@ -189,12 +195,31 @@ async function play() {
 async function boot() {
   const session = await fetch('/api/auth/me', { credentials: 'same-origin' });
   if (!session.ok) {
-    loginNotice('Connecte-toi sur ChaOS website pour jouer.');
+    loginNotice(t('loginRequired'));
     return;
   }
-  const response = await fetch('/api/v1/hammerfest/config');
+  // `?dev=1` asks for the debug build; the server grants it to allowed accounts only.
+  const devWanted = new URLSearchParams(location.search).get('dev') === '1';
+  const response = await fetch(`/api/v1/hammerfest/config${devWanted ? '?dev=1' : ''}`, {
+    credentials: 'same-origin',
+  });
   if (!response.ok) throw new Error(`config -> ${response.status}`);
   config = await response.json();
+  language = languageOf(config.locale);
+  applyPageLanguage(language);
+  const tabs = document.querySelector('.game-tabs');
+  if (config.debug) {
+    document.body.classList.add('is-debug');
+    tabs?.append(el('span', 'debug-badge', 'DEBUG'));
+  }
+  // Admin account on the normal install: direct access to the debug build.
+  if (config.canDebug && !config.debug) {
+    const params = new URLSearchParams(location.search);
+    params.set('dev', '1');
+    const link = el('a', 'debug-link', t('debugMode'));
+    link.href = `play.html?${params.toString()}`;
+    tabs?.append(link);
+  }
   const wanted = new URLSearchParams(location.search).get('mode');
   if (wanted && config?.modes.some((mode) => mode.id === wanted)) selectedMode = wanted;
   notice.hidden = true;
@@ -209,6 +234,6 @@ form.addEventListener('submit', (event) => {
 });
 
 boot().catch((error) => {
-  notice.textContent = 'Erreur de chargement.';
+  notice.textContent = t('bootFailed');
   console.error('[hammerfest] boot', error);
 });

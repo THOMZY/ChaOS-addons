@@ -1,0 +1,363 @@
+{
+  "families": {
+    "0": "Base items",
+    "1": "First aid kit",
+    "2": "Mass destruction",
+    "3": "Mushrooms",
+    "4": "Playing cards",
+    "5": "Zodiac signs",
+    "6": "Zodiac potions",
+    "7": "Heart 1",
+    "8": "Heart 2",
+    "9": "Heart 3",
+    "10": "Pirate treasure",
+    "11": "Motion-Twin gadgets",
+    "12": "Experimental Norwegian weaponry",
+    "13": "Ancient lighting",
+    "14": "Igor-Newton",
+    "15": "Snowflake 1",
+    "16": "Snowflake 2",
+    "17": "Snowflake 3",
+    "18": "Hands-free calling kit",
+    "19": "Mario party",
+    "1000": "Little treats",
+    "1001": "Classic foods",
+    "1002": "Sweets",
+    "1003": "Gemstones",
+    "1004": "Junk food",
+    "1005": "Exotic!",
+    "1006": "Appetizers",
+    "1007": "Kapital Risk",
+    "1008": "Great Predator trophies",
+    "1009": "Delights of Harry \"the Handsome\"",
+    "1010": "Chocolates",
+    "1011": "Cheeses",
+    "1012": "Canned goods",
+    "1013": "Vegetables",
+    "1014": "MT delights",
+    "1015": "MT survival kit",
+    "1016": "Snack time",
+    "1017": "Pastry boy",
+    "1018": "The laws of robotics",
+    "1019": "Adventurer trophies",
+    "1020": "Ice Keys",
+    "1021": "Wine-soaked key",
+    "1022": "Paperwork",
+    "1023": "Lost keys",
+    "1024": "Joy sticks",
+    "1025": "Funny drinks",
+    "1026": "El Papah's office supplies",
+    "1027": "Mythical artifacts",
+    "1028": "Sandy kit",
+    "1029": "Ninjutsu rewards",
+    "1030": "Ninjutsu artifacts",
+    "1031": "Ounenohn's treasures"
+  },
+  "quests": {
+    "0": {
+      "name": "The constellations",
+      "text": "Igor can now place 2 bombs at once instead of one, permanently!"
+    },
+    "1": {
+      "name": "Zodiac mixtures",
+      "text": "Igor can now send his bombs to the floor above! Hold DOWN while hitting a placed bomb."
+    },
+    "2": {
+      "name": "First steps",
+      "text": "Igor will now start each game with an extra life."
+    },
+    "3": {
+      "name": "The adventure begins",
+      "text": "Igor will now start each game with another extra life."
+    },
+    "4": {
+      "name": "An epic destiny",
+      "text": "Igor will now start each game with yet another extra life!"
+    },
+    "5": {
+      "name": "Perseverance",
+      "text": "Igor will now start each game with an extra life."
+    },
+    "6": {
+      "name": "Greediness",
+      "text": "New (healthier) foods will now appear in game!"
+    },
+    "7": {
+      "name": "Sugar!",
+      "text": "Igor wants even more sugar! Delicious sweets will now appear in game."
+    },
+    "8": {
+      "name": "Malnutrition",
+      "text": "Igor's taste for unbalanced food will let him find even more... \"dubious\" foods in game."
+    },
+    "9": {
+      "name": "Refined taste",
+      "text": "Igor's strange diet has brought new exotic foods into the game!"
+    },
+    "10": {
+      "name": "Technological breakthrough",
+      "text": "To help you on your adventure, a whole bunch of items with strange effects are appearing in game!"
+    },
+    "11": {
+      "name": "The little mushroom guide",
+      "text": "Igor found a strange book, a kind of cookbook about hallucinogenic mushrooms. He can now find some while exploring."
+    },
+    "12": {
+      "name": "Find the secret gold coins!",
+      "text": "Additional, very valuable riches will now appear in game!"
+    },
+    "13": {
+      "name": "The grimoire of Stars",
+      "text": "This mysterious book says a lot about the 12 zodiac constellations. You can now collect them in game!"
+    },
+    "14": {
+      "name": "Armageddon",
+      "text": "Items with devastating effects will now appear in game!"
+    },
+    "15": {
+      "name": "MotionTwin diet",
+      "text": "From eating anything and everything, Igor has mastered games! He can collect extremely rare items while exploring and find exceptional foods!"
+    },
+    "16": {
+      "name": "Budding game designer",
+      "text": "Igor seems to like basic foods; a fine career in video games could await him! Suitable foods will now be offered to him, plus a few playing cards to practise."
+    },
+    "17": {
+      "name": "Life is a box of chocolates",
+      "text": "Delicious chocolates are now handed out in Hammerfest!"
+    },
+    "18": {
+      "name": "The Oune-difaïned treasure",
+      "text": "By picking up diamonds that appeared from nowhere, Igor has gained the ability to spot rare gemstones! He will find some while exploring."
+    },
+    "19": {
+      "name": "Super size me!",
+      "text": "Going ever further into malnutrition, Igor has discovered he can also feed on canned goods."
+    },
+    "20": {
+      "name": "Master jeweller",
+      "text": "Igor has become a true expert in gemstones. He can now discover powerful magic jewels as he explores!"
+    },
+    "21": {
+      "name": "Great predator",
+      "text": "Igor is fed up with chasing sweet things! Now a ruthless predator, he can hunt down and devour all kinds of cold cuts."
+    },
+    "22": {
+      "name": "Salad and soup expert",
+      "text": "Word has it that Igor is the reincarnation of Saladou, the world-renowned master of salad. With this gift, he will be able to pick a huge variety of vegetables!"
+    },
+    "23": {
+      "name": "Hammerfest feast",
+      "text": "With such a complete meal, Igor is ready for the most refined pastries in existence."
+    },
+    "24": {
+      "name": "Birthday snack",
+      "text": "Igor has found everything needed for his next birthday snack! He will now find plenty of little snacks to wait until then."
+    },
+    "25": {
+      "name": "Bon vivant",
+      "text": "A good meal is unthinkable without little things to nibble with an aperitif. Igor knows that now, and he will find what he needs in game."
+    },
+    "26": {
+      "name": "Norwegian fondue",
+      "text": "The smells coming from Igor's lair leave no doubt: he has become a great cheese lover. New dairy products will appear in the caverns."
+    },
+    "27": {
+      "name": "Guu's mystery",
+      "text": "This quest has no point, except to advise you to discover the excellent \"Haré + Guu\" anime as soon as possible, available on DVD in all good shops! Banyaaaaaïï. ^^"
+    },
+    "28": {
+      "name": "Divine sweets",
+      "text": "Sweets hold no more secrets for Igor. From this day on, he will be able to flush out the legendary delights of Harry \"the Handsome\" scattered all over Hammerfest."
+    },
+    "29": {
+      "name": "Igor and Cortex",
+      "text": "Igor has started building mysterious gadgets... Expect to collect strange machines in game!"
+    },
+    "30": {
+      "name": "Facing the darkness",
+      "text": "Igor now knows how to light his way! He will remember to bring a torch so he does not get too lost in the darkness of advanced levels!"
+    },
+    "31": {
+      "name": "And there was light!",
+      "text": "Prepared for every danger, the brave Igor no longer fears the dark in advanced levels at all!"
+    },
+    "32": {
+      "name": "Christmas in Hammerfest!",
+      "text": "You won 5 extra games."
+    },
+    "33": {
+      "name": "Happy birthday Igor",
+      "text": "You won 10 extra games!"
+    },
+    "34": {
+      "name": "Heavenly gift",
+      "text": "You won 20 extra games!"
+    },
+    "35": {
+      "name": "Improved game purchase",
+      "text": "Your calls in the shop will now earn you more snowflakes!"
+    },
+    "36": {
+      "name": "Sorbex exterminator",
+      "text": "You mercilessly squeezed the Sorbex Lemons!"
+    },
+    "37": {
+      "name": "Bombino defuser",
+      "text": "You survived the Bombinos' explosions!"
+    },
+    "38": {
+      "name": "Pear killer",
+      "text": "You defeated a new boss: the Melbomb Pears!"
+    },
+    "39": {
+      "name": "Tagada mixer",
+      "text": "You made short work of the Tagada Strawberries!"
+    },
+    "40": {
+      "name": "Kiwi rub and sting",
+      "text": "You managed to dodge all the Sapper-kiwis' traps!"
+    },
+    "41": {
+      "name": "Bouncer hunter",
+      "text": "You were not impressed by the pack of Bouncers!"
+    },
+    "42": {
+      "name": "Ananargeddon sawyer",
+      "text": "You overcame a group of over-trained Ananargeddons!"
+    },
+    "43": {
+      "name": "King of Hammerfest",
+      "text": "Your perseverance and tenacity got the better of the wizard Tuberculoz: you found Igor's carrot! You will start your next games with an extra life, and Igor will proudly wear his favourite carrot."
+    },
+    "44": {
+      "name": "Mad hatter",
+      "text": "Igor has discovered a new passion for headgear. You can now press \"D\" during the game to change costume!"
+    },
+    "45": {
+      "name": "Eco-terrorist pony",
+      "text": "Igor has gathered enough wealth to fund his shady activities in Hammerfest. He can now dress up by pressing \"D\" during the game! And by the way, have you visited www.dinoparc.com yet?"
+    },
+    "46": {
+      "name": "The Pioupiouz is in you",
+      "text": "It was bound to happen: from picking up anything and everything, Igor got swallowed by a Pioupiou! Press \"D\" during the game to change costume (by the way, did you know www.pioupiouz.com?)"
+    },
+    "47": {
+      "name": "Mushroom hunter",
+      "text": "Like his Italian counterpart (a plumber by trade), Igor has a strange passion for mushrooms. He can now dress up by pressing \"D\" during the game!"
+    },
+    "48": {
+      "name": "Tuberculoz's successor",
+      "text": "Igor seems to have... changed. His gaze is colder now. He looks grim and hides under a large purple cape. Little by little, he is becoming what he fought... You can now wear the wizard Tuberculoz's appearance by pressing \"D\" during the game!"
+    },
+    "49": {
+      "name": "The first key!",
+      "text": "Igor found a kind of wooden skeleton key. No doubt it opens a door somewhere in the caverns..."
+    },
+    "50": {
+      "name": "Rigor Dangerous",
+      "text": "On your adventure you found a mysterious old rusty key! It bears a small engraved note: \"Rick\". Probably its former owner..."
+    },
+    "51": {
+      "name": "The lost Méluzzine",
+      "text": "The Méluzzine, a legendary key from old Hammerfest tales, is said to open the door to great riches. Good luck finding where?"
+    },
+    "52": {
+      "name": "Finally the Grumpy Man!",
+      "text": "This strange little key smells of wine."
+    },
+    "53": {
+      "name": "Freezing",
+      "text": "Although he is a snowman, even Igor struggles to hold this key, so intense is the cold it gives off. The door it opens surely leads to the most remote places in Hammerfest."
+    },
+    "54": {
+      "name": "A rusty key",
+      "text": "This misshapen little piece of scrap metal does not look very valuable. But appearances can be deceiving! Who knows what kind of adventure lies beyond the door it opens?"
+    },
+    "55": {
+      "name": "Let me through!",
+      "text": "Your administrative omnipotence will now be backed by Bois-Joli form BJ22a."
+    },
+    "56": {
+      "name": "The harsh worlds",
+      "text": "For reaching level 50 in Nightmare mode, you won the Key of the Harsh Worlds."
+    },
+    "57": {
+      "name": "Huuurry!",
+      "text": "Without quite knowing why, the Prickly Key you found gives you a mad urge to run everywhere and curl up into a ball."
+    },
+    "58": {
+      "name": "Pick Tubz's pockets",
+      "text": "Tuberculoz, the wicked wizard, was carrying a key..."
+    },
+    "59": {
+      "name": "Tuberculoz, lord of the underworld",
+      "text": "Your supreme power and absolute mastery of Hammerfest fighting techniques earned you a unique key by defeating Tuberculoz in Nightmare mode!"
+    },
+    "60": {
+      "name": "The irony-rich water",
+      "text": "Your excessive consumption of alcoholic drinks unlocked the Grumpy Man's Key! You will now have good chances of finding it while exploring."
+    },
+    "61": {
+      "name": "Administrative paperwork",
+      "text": "Igor is a master at filling in administrative forms. So he will soon find the Bois-Joli authorisation without trouble in the mazes of the caverns..."
+    },
+    "62": {
+      "name": "Best player",
+      "text": "The best player on the net is you, no one doubts it any more! Your gamepad collection will surely make many jealous ^^ Igor now has the Tornado option, which gives a speed boost at the start of each game, whatever options are chosen!"
+    },
+    "63": {
+      "name": "Mirror, my fair mirror",
+      "text": "The Crooked Mirror you found in game now lets you see things from a new angle. The \"Mirror\" game option has been unlocked!"
+    },
+    "64": {
+      "name": "Nightmare mode",
+      "text": "You are gifted. Very gifted indeed... But can you help Igor in Nightmare mode? This option has been unlocked!"
+    },
+    "65": {
+      "name": "The adventure continues!",
+      "text": "The Carrot Council has chosen you to explore further into the caverns of Hammerfest. Gordon's Key is a first step in this new mission."
+    },
+    "66": {
+      "name": "Jewel of Ankhel",
+      "text": "You showed unmatched dexterity and insight by finding the Ankhel Jewel. The Ball Control option has been unlocked for SoccerFest mode!"
+    },
+    "67": {
+      "name": "Sandy starts the adventure!",
+      "text": "All the elements are gathered to give birth to Sandy, the sandman! This new character can join you in Co-op mode, playable by two on the same computer. Rediscover the great adventure with a friend!"
+    },
+    "68": {
+      "name": "Mirror, OUR fair mirror",
+      "text": "With the Sand Mirror, you can now see things from a new angle — but with two! The \"Mirror\" game option has been unlocked for Co-op mode!"
+    },
+    "69": {
+      "name": "Double nightmare mode",
+      "text": "Clearly, you two can do great things! The \"Nightmare\" game option has been unlocked for Co-op mode!"
+    },
+    "70": {
+      "name": "A great friendship",
+      "text": "Better late than never! Igor and Sandy have finally understood they are better off helping each other if they want to survive as a pair in the Caverns of Hammerfest. The \"Life Sharing\" game option has been unlocked for Co-op mode! When enabled, a player who loses their last life takes one from the other player and can keep playing!"
+    },
+    "71": {
+      "name": "Learning the flying knives",
+      "text": "From jumping around all the time, Igor has gained ninja-like agility and uncommon dexterity! But to prove his worth, he must now collect the ninja artifacts scattered across Hammerfest!"
+    },
+    "72": {
+      "name": "Shinobi do!",
+      "text": "Igor has completed his initiatory quest and now perfectly masters many Ninjutsu weapons! But as his new code of honour forbids it, he cannot use them. He can however test his skills with the \"Ninjutsu\" game option he just unlocked for Adventure mode!"
+    },
+    "73": {
+      "name": "Fast as lightning!",
+      "text": "Igor is unbeatable when it comes to aiming true and moving precisely... Now he must prove it to others! TIME ATTACK mode is unlocked and also gives you access to a new ranking on the site. Be the fastest snowman in all of Hammerfest!"
+    },
+    "74": {
+      "name": "Master of bombs",
+      "text": "You are the expert renowned throughout Hammerfest for explosives. And to show nobody can fool you, the \"Unstable Explosives\" option has been unlocked for Adventure mode! Beware of EVERYTHING that explodes in game! Also, you can push all your bombs further by moving while you hit them."
+    },
+    "75": {
+      "name": "Tuberculoz's tomb",
+      "text": "You discovered a strange pocket pyramid in Tuberculoz's tomb."
+    }
+  },
+  "otherFamily": "Miscellaneous"
+}

@@ -1,6 +1,7 @@
 // @ts-check
 // Page de fin de partie : score, niveau, objets ramassés (avec les badges
 // « nouveau » et « débloqué ») et les quêtes qui ont progressé pendant la partie.
+import { applyPageLanguage, formatters, loadLanguage, modeName, translate } from './i18n.js';
 const notice = /** @type {HTMLElement} */ (document.getElementById('notice'));
 const resultBox = /** @type {HTMLElement} */ (document.getElementById('result'));
 const summary = /** @type {HTMLElement} */ (document.getElementById('summary'));
@@ -10,15 +11,21 @@ const questsBox = /** @type {HTMLElement} */ (document.getElementById('quests'))
 const questsCount = /** @type {HTMLElement} */ (document.getElementById('quests-count'));
 const subtitle = /** @type {HTMLElement} */ (document.getElementById('subtitle'));
 
-const nf = new Intl.NumberFormat('fr-FR');
-const df = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+/** @type {import('./i18n.js').Language} */
+let language = 'fr';
+/** @type {Intl.NumberFormat} */
+let nf = new Intl.NumberFormat('fr-FR');
+/** @type {Intl.DateTimeFormat} */
+let df = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+/** @param {string} key @param {Record<string, string | number>} [values] */
+const t = (key, values) => translate(key, language, values);
 
 /** Message « connecte-toi » avec le lien de retour, sans innerHTML. */
 function loginNotice(message) {
   notice.hidden = false;
   notice.replaceChildren(
     document.createTextNode(message + ' '),
-    Object.assign(el('a', undefined, 'Retour au site'), { href: '/' }),
+    Object.assign(el('a', undefined, t('backToSite')), { href: '/' }),
   );
 }
 
@@ -43,12 +50,13 @@ const runId = () => location.pathname.split('/').filter(Boolean).pop() ?? '';
 
 /** @param {any} run */
 function renderSummary(run) {
+  const modeLabel = modeName({ id: run.mode, display_name: run.modeLabel }, language);
   /** @type {[string, string, string?][]} */
   const boxes = [
-    ['Points', nf.format(run.totalScore)],
-    ['Niveau atteint', String(run.maxLevel), run.isVictory ? 'victory' : undefined],
-    ['Mode', run.modeLabel],
-    ['Terminée', run.endedAt ? df.format(new Date(run.endedAt)) : '—'],
+    [t('rsPoints'), nf.format(run.totalScore)],
+    [t('rsLevel'), String(run.maxLevel), run.isVictory ? 'victory' : undefined],
+    [t('rsMode'), modeLabel],
+    [t('rsEnded'), run.endedAt ? df.format(new Date(run.endedAt)) : '—'],
   ];
   summary.replaceChildren(
     ...boxes.map(([label, value, extra]) => {
@@ -57,19 +65,19 @@ function renderSummary(run) {
       return box;
     }),
   );
-  subtitle.textContent = `${run.modeLabel}${run.isVictory ? ' — victoire !' : ''}`;
+  subtitle.textContent = `${modeLabel}${run.isVictory ? ' — ' + t('rsVictory') : ''}`;
 }
 
 /** @param {any[]} items */
 function renderItems(items) {
   if (items.length === 0) {
-    itemsBox.replaceChildren(el('p', 'empty', 'Aucun objet ramassé pendant cette partie.'));
+    itemsBox.replaceChildren(el('p', 'empty', t('rsNoItems')));
     itemsCount.textContent = '';
     return;
   }
   const unlocked = items.filter((item) => item.unlockedNow).length;
   const fresh = items.filter((item) => item.isNew).length;
-  itemsCount.textContent = `${items.length} objet(s) · ${fresh} nouveau(x) · ${unlocked} débloqué(s)`;
+  itemsCount.textContent = t('rsItemsCount', { total: items.length, fresh, unlocked });
 
   itemsBox.replaceChildren(
     ...items.map((item) => {
@@ -77,12 +85,12 @@ function renderItems(items) {
       const name = el('div');
       name.append(
         el('div', 'name', item.name),
-        el('div', 'sub', item.unlockedNow ? `seuil ${item.unlock} atteint` : `${item.after} / ${item.unlock}`),
+        el('div', 'sub', item.unlockedNow ? t('rsThreshold', { n: item.unlock }) : `${item.after} / ${item.unlock}`),
       );
       card.append(icon(item.id), name, el('span', 'count', `×${nf.format(item.gained)}`));
       const tags = el('div', 'tags');
-      if (item.unlockedNow) tags.append(el('span', 'tag unlock', 'Débloqué'));
-      if (item.isNew) tags.append(el('span', 'tag new', 'Nouveau'));
+      if (item.unlockedNow) tags.append(el('span', 'tag unlock', t('rsUnlocked')));
+      if (item.isNew) tags.append(el('span', 'tag new', t('rsNew')));
       card.append(tags);
       return card;
     }),
@@ -92,12 +100,12 @@ function renderItems(items) {
 /** @param {any[]} quests */
 function renderQuests(quests) {
   if (quests.length === 0) {
-    questsBox.replaceChildren(el('p', 'empty', 'Aucune quête n’a progressé pendant cette partie.'));
+    questsBox.replaceChildren(el('p', 'empty', t('rsNoQuests')));
     questsCount.textContent = '';
     return;
   }
   const done = quests.filter((quest) => quest.completedNow).length;
-  questsCount.textContent = `${quests.length} quête(s)${done ? ` · ${done} terminée(s)` : ''}`;
+  questsCount.textContent = t('rsQuestsCount', { total: quests.length }) + (done ? t('rsQuestsCountDone', { done }) : '');
 
   questsBox.replaceChildren(
     ...quests.map((quest) => {
@@ -111,7 +119,7 @@ function renderQuests(quests) {
       row.append(head, bar);
       if (quest.completedNow) {
         const tags = el('div', 'tags');
-        tags.append(el('span', 'tag unlock', 'Quête terminée'));
+        tags.append(el('span', 'tag unlock', t('rsQuestDone')));
         row.append(tags);
       }
       return row;
@@ -120,14 +128,17 @@ function renderQuests(quests) {
 }
 
 async function boot() {
+  language = await loadLanguage();
+  ({ nf, df } = formatters(language));
+  applyPageLanguage(language);
   const id = runId();
   if (!/^[0-9a-f-]{36}$/.test(id)) {
-    notice.textContent = 'Partie introuvable.';
+    notice.textContent = t('rsNotFound');
     return;
   }
   const response = await fetch(`/api/v1/hammerfest/runs/${id}`, { credentials: 'same-origin' });
   if (!response.ok) {
-    loginNotice('Connecte-toi sur ChaOS website pour voir cette partie.');
+    loginNotice(t('loginResult'));
     return;
   }
   const { run } = await response.json();
@@ -139,6 +150,6 @@ async function boot() {
 }
 
 boot().catch((error) => {
-  notice.textContent = 'Impossible de charger le résultat.';
+  notice.textContent = t('rsError');
   console.error('[hammerfest] result', error);
 });
