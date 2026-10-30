@@ -5,6 +5,7 @@
   "chaosAddonApi": 1,
   "server": "server/index.js",
   "data": {
-    "dir": "data"
+    "dir": "data",
+    "install": "node scripts/games/games-install.mjs hammerfest"
   }
 }
