@@ -58,3 +58,45 @@ test('presentation waits through a browser paint before the native engine may ad
   frames.shift()();
   assert.equal(session.bridge.presented, true);
 });
+
+test('online presentation completes when a background tab suspends animation frames', async (t) => {
+  const previous = globalThis.requestAnimationFrame;
+  const frames = [],
+    callbacks = new Map();
+  let sequence = 0;
+  globalThis.requestAnimationFrame = (callback) => frames.push(callback);
+  t.after(() => {
+    globalThis.requestAnimationFrame = previous;
+  });
+  const session = createNativeSession({
+    outcome: () => ({}),
+    onReady() {},
+    setVolume() {},
+    timers: {
+      setTimeout(callback, delay) {
+        assert.equal(delay, 1000);
+        callbacks.set(++sequence, callback);
+        return sequence;
+      },
+      clearTimeout(id) {
+        callbacks.delete(id);
+      },
+    },
+  });
+  const options = { args: [], audio: {}, net: { role: 'host' }, onStatus() {}, onExit() {} };
+  await session.launch(options, true);
+  session.bridge.present();
+  assert.equal(session.bridge.presented, false);
+  assert.equal(callbacks.size, 1);
+  [...callbacks.values()][0]();
+  assert.equal(session.bridge.presented, true);
+  assert.equal(callbacks.size, 0);
+  session.bridge.finished();
+  await session.launch(options);
+  frames.shift()();
+  frames.shift()();
+  assert.equal(session.bridge.presented, false, 'a late paint cannot release a later match');
+  session.bridge.present();
+  session.bridge.finished();
+  assert.equal(callbacks.size, 0, 'finishing a match cancels its paint fallback');
+});

@@ -1,9 +1,22 @@
 // Per-match callbacks around one long-lived native Go training engine.
-export function createNativeSession({ outcome, onReady, onFinished = () => {}, setVolume }) {
+export function createNativeSession({
+  outcome,
+  onReady,
+  onFinished = () => {},
+  setVolume,
+  timers = globalThis,
+}) {
   let active = null,
     idle = Promise.resolve(),
     release = null,
-    closed = false;
+    closed = false,
+    presentation = 0,
+    presentationTimer = null;
+  function clearPresentation() {
+    presentation++;
+    if (presentationTimer !== null) timers.clearTimeout(presentationTimer);
+    presentationTimer = null;
+  }
   const bridge = {
     pending: '',
     stop: false,
@@ -18,15 +31,22 @@ export function createNativeSession({ outcome, onReady, onFinished = () => {}, s
       if (bridge.trace.length > 40) bridge.trace.shift();
     },
     present() {
+      clearPresentation();
+      const version = presentation;
+      const acknowledge = () => {
+        if (version !== presentation) return;
+        clearPresentation();
+        bridge.presented = true;
+      };
       bridge.phase('paint');
       active?.onStatus({ phase: 'running' });
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          bridge.presented = true;
-        }),
-      );
+      // Background tabs suspend animation frames: an online peer must not
+      // wait indefinitely for this browser to paint its first fight frame.
+      if (active?.net) presentationTimer = timers.setTimeout(acknowledge, 1000);
+      requestAnimationFrame(() => requestAnimationFrame(acknowledge));
     },
     finished() {
+      clearPresentation();
       bridge.phase('finished');
       const match = active;
       const result = outcome();
@@ -46,6 +66,7 @@ export function createNativeSession({ outcome, onReady, onFinished = () => {}, s
       bridge.phase('begin');
       if (closed) throw new Error('engine_stopped');
       active = options;
+      clearPresentation();
       idle = new Promise((resolve) => {
         release = resolve;
       });
@@ -61,6 +82,7 @@ export function createNativeSession({ outcome, onReady, onFinished = () => {}, s
       if (active) bridge.stop = true;
     },
     fail(value) {
+      clearPresentation();
       closed = true;
       onFinished();
       const match = active;
