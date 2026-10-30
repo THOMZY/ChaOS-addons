@@ -3,7 +3,7 @@
 // Un objet est « débloqué » quand sa quantité atteint son seuil (`unlock`,
 // 10 exemplaires pour la plupart, 1 pour les objets uniques) : en dessous il
 // reste affiché mais grisé, et un objet jamais obtenu s'affiche « ? ».
-import { applyPageLanguage, formatters, loadLanguage, modeName, translate } from './i18n.js';
+import { applyPageLanguage, formatters, loadLanguage, translate } from './i18n.js';
 const notice = /** @type {HTMLElement} */ (document.getElementById('notice'));
 const sectionFrigo = /** @type {HTMLElement} */ (document.getElementById('section-frigo'));
 const sectionObjets = /** @type {HTMLElement} */ (document.getElementById('section-objets'));
