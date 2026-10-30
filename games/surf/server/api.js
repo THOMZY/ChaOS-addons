@@ -313,6 +313,19 @@ router.all('/', (req, res) => {
       });
     }
 
+    // ── Staged boards ────────────────────────────────────────────────────────
+    // Newer upstream boards are played in order (Staged · N stages). The client
+    // then reads per-stage records, a per-stage leaderboard and the viewer's
+    // stage bests. ChaOS stores whole-run times only, so these are valid EMPTY
+    // shapes: without them the client shows "Stage records are unavailable
+    // right now." on every staged map and the board panel reads as broken.
+    case 'stage-records':
+      return res.json({ records: [] });
+    case 'stage-leaderboard-public':
+      return res.json({ entries: [] });
+    case 'stage-bests':
+      return res.json({ bests: [] });
+
     // ── Site moderation: valid shapes, empty data ────────────────────────────
     // The new client can display reports, chat mutes and ranked suspensions. We
     // store none of that: the REAL moderation is the room one (`moderate` /

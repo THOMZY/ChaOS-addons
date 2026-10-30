@@ -188,5 +188,170 @@
   "id": "surf_sandtrap2",
   "slug": "sandtrap2",
   "title": "Sandtrap 2"
+ },
+ {
+  "id": "surf_cannonball",
+  "slug": "cannonball",
+  "title": "Cannonball"
+ },
+ {
+  "id": "surf_666",
+  "slug": "666",
+  "title": "666"
+ },
+ {
+  "id": "surf_minuet_ksf",
+  "slug": "minuet",
+  "title": "Minuet"
+ },
+ {
+  "id": "surf_hades2",
+  "slug": "hades2",
+  "title": "Hades2"
+ },
+ {
+  "id": "surf_angst",
+  "slug": "angst",
+  "title": "Angst"
+ },
+ {
+  "id": "surf_lt_omnific",
+  "slug": "lt-omnific",
+  "title": "Lt Omnific"
+ },
+ {
+  "id": "surf_technique",
+  "slug": "technique",
+  "title": "Technique"
+ },
+ {
+  "id": "surf_goliath",
+  "slug": "goliath",
+  "title": "Goliath"
+ },
+ {
+  "id": "surf_bugs",
+  "slug": "bugs",
+  "title": "Bugs"
+ },
+ {
+  "id": "surf_stonework4",
+  "slug": "stonework4",
+  "title": "Stonework4"
+ },
+ {
+  "id": "surf_gigapede",
+  "slug": "gigapede",
+  "title": "Gigapede"
+ },
+ {
+  "id": "surf_sinsane_ksf",
+  "slug": "sinsane",
+  "title": "Sinsane"
+ },
+ {
+  "id": "surf_radiant",
+  "slug": "radiant",
+  "title": "Radiant"
+ },
+ {
+  "id": "surf_race_final",
+  "slug": "race",
+  "title": "Race"
+ },
+ {
+  "id": "surf_me",
+  "slug": "me",
+  "title": "Me"
+ },
+ {
+  "id": "surf_santorini_ksf",
+  "slug": "santorini",
+  "title": "Santorini"
+ },
+ {
+  "id": "surf_botanica",
+  "slug": "botanica",
+  "title": "Botanica"
+ },
+ {
+  "id": "surf_sofia_fix",
+  "slug": "sofia",
+  "title": "Sofia"
+ },
+ {
+  "id": "surf_surreal",
+  "slug": "surreal",
+  "title": "Surreal"
+ },
+ {
+  "id": "surf_for_shareholder_value",
+  "slug": "for-shareholder-value",
+  "title": "For Shareholder Value"
+ },
+ {
+  "id": "surf_anzchamps",
+  "slug": "anzchamps",
+  "title": "Anzchamps"
+ },
+ {
+  "id": "surf_premium",
+  "slug": "premium",
+  "title": "Premium"
+ },
+ {
+  "id": "surf_ravine",
+  "slug": "ravine",
+  "title": "Ravine"
+ },
+ {
+  "id": "surf_agony",
+  "slug": "agony",
+  "title": "Agony"
+ },
+ {
+  "id": "surf_ivory",
+  "slug": "ivory",
+  "title": "Ivory"
+ },
+ {
+  "id": "surf_interference",
+  "slug": "interference",
+  "title": "Interference"
+ },
+ {
+  "id": "surf_leidenfrost",
+  "slug": "leidenfrost",
+  "title": "Leidenfrost"
+ },
+ {
+  "id": "surf_phantasia",
+  "slug": "phantasia",
+  "title": "Phantasia"
+ },
+ {
+  "id": "surf_not_quite_goliath",
+  "slug": "not-quite-goliath",
+  "title": "Not Quite Goliath"
+ },
+ {
+  "id": "surf_threnody",
+  "slug": "threnody",
+  "title": "Threnody"
+ },
+ {
+  "id": "surf_fiellu_ksf",
+  "slug": "fiellu",
+  "title": "Fiellu"
+ },
+ {
+  "id": "surf_kitsune2",
+  "slug": "kitsune2",
+  "title": "Kitsune2"
+ },
+ {
+  "id": "surf_overgrowth",
+  "slug": "overgrowth",
+  "title": "Overgrowth"
  }
 ]

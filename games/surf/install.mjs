@@ -180,6 +180,10 @@ const CLEAN_RULES = [
   // enabled, even if the host changes. Apply FIRST because it contains strings
   // that resemble the storage keys below.
   ['["surfd.net","www.surfd.net","surfd-five.vercel.app"]', '[]'],
+  // Asset CDN origin: newer generations fetch map packs and the menu flythrough
+  // manifest from a Cloudflare Worker. An empty origin makes the URL builder an
+  // identity function, so the already-prefixed /surf/… paths stay same-origin.
+  ['"https://surfd-assets.classic-surf.workers.dev"', '""'],
   // Lowercase storage keys and technical identifiers.
   ['"surfd.',                      '"chaos.surf.'],
   // Remove the guest concept from local browser keys as well.
@@ -188,6 +192,9 @@ const CLEAN_RULES = [
   ['surfd-retained-replays',       'chaos-surf-retained-replays'],
   ['surfd_signup_username',        'chaos_surf_signup_username'],
   ['"surfd-v1"',                   '"chaos-surf-v1"'],   // Multiplayer subprotocol.
+  // Crosshair preset id: the display name is rebranded by the capitalised rule
+  // below, but the id would keep the original name in what we serve.
+  ['"surfd","Surfd"',              '"chaos-surf","Surfd"'],
   // Forms the `"surfd.` rule does not cover: a key template (backtick), a
   // download filename (backtick too), an internal error domain, and a DOM
   // event name.
