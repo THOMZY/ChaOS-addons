@@ -1,6 +1,7 @@
 import { controls } from '../config/controls.js';
 import { Control, GamepadThumbstick } from '../constants/control.js';
 import { FighterDirection } from '../constants/fighter.js';
+import { readLegacyGameKey } from '/core/js/games/input/keyboard-layout.js';
 
 const heldKeys = new Set();
 const pressedKeys = new Set();
@@ -14,7 +15,7 @@ const mappedKeys = controls
 
 // Handle Keyboard
 function handleKeyDown(event) {
-    const key = event.key.toLowerCase();
+    const key = readLegacyGameKey(event);
     if (!mappedKeys.includes(key)) return;
     event.preventDefault();
 
@@ -22,7 +23,7 @@ function handleKeyDown(event) {
 }
 
 function handleKeyUp(event) {
-    const key = event.key.toLowerCase();
+    const key = readLegacyGameKey(event);
     if (!mappedKeys.includes(key)) return;
     event.preventDefault();
 

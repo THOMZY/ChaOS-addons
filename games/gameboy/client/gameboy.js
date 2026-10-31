@@ -1,6 +1,8 @@
 import { decodeRle, renderIndexedFrame, tintMonochromePalette } from './gameboy-frame-codec.js';
 import { shouldStream } from './stream-state.js';
 import { gainFromVolume } from './volume.js';
+import { getLanguage } from '/core/js/i18n.js';
+import { getKeyboardLabel } from '/core/js/games/input/keyboard-layout.js';
 // Game Boy window client (ChaOS-addons add-on).
 //
 // The window manifest gives us an empty body (#gameboy-body); this module
@@ -40,9 +42,9 @@ const SHELL = `
   <div class="gb-hud"><span id="gb-state">…</span> · <span id="gb-rate">–</span> · <span id="gb-count">–</span> joueur(s)</div>
   <div class="gb-keyboard" aria-label="Commandes clavier">
     <span><kbd>↑ ↓ ← →</kbd> Croix</span>
-    <span><kbd>X / W</kbd> A · <kbd>Z</kbd> B</span>
-    <span><kbd>Entrée</kbd> Start · <kbd>Maj</kbd> Select</span>
-    <span class="gb-advance-controls"><kbd>Q</kbd> L · <kbd>E</kbd> R</span>
+    <span><kbd data-key-code="KeyX">X</kbd> / <kbd data-key-code="KeyW">W</kbd> A · <kbd data-key-code="KeyZ">Z</kbd> B</span>
+    <span><kbd data-key-code="Enter">Enter</kbd> Start · <kbd data-key-code="ShiftLeft">Shift</kbd> Select</span>
+    <span class="gb-advance-controls"><kbd data-key-code="KeyQ">Q</kbd> L · <kbd data-key-code="KeyE">E</kbd> R</span>
   </div>
 </div>`;
 
@@ -137,6 +139,12 @@ function create(host) {
     observers.push(observer);
     return observer;
   };
+  const renderKeyboardHints = () => {
+    for (const key of host.querySelectorAll('[data-key-code]'))
+      key.textContent = getKeyboardLabel(key.dataset.keyCode, getLanguage());
+  };
+  listen(document, 'chaos:language:changed', renderKeyboardHints);
+  renderKeyboardHints();
 
   /**
    * The shell has a fixed size (430 px classic, 620 px Advance). In a small

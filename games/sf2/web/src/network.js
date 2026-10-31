@@ -11,6 +11,7 @@
 //   - Reports round end to parent when the game's finishRound fires
 
 import { controls } from './config/controls.js';
+import { readLegacyGameKey } from '/core/js/games/input/keyboard-layout.js';
 import { Control }  from './constants/control.js';
 import { setKeyState } from './engine/InputHandler.js';
 import { gameState } from './state/gameState.js';
@@ -33,7 +34,7 @@ if (isOnline) {
   if (p1 && validChars.includes(p1)) gameState.fighters[1].id = p1;
 }
 
-// ── Online key map — uses event.key (lowercase), works on any keyboard layout ─
+// French action names are kept on the wire; physical keys are normalized at ingress.
 // Each browser has ONE local player; opponent input is injected via setKeyState.
 const ONLINE_PHYS = {
   [Control.LEFT]:         'q',
@@ -83,8 +84,8 @@ function _releaseAllLocalKeys() {
 }
 
 if (isOnline) {
-  window.addEventListener('keydown', (e) => { if (!e.repeat) _handleLocalKey(e.key, true);  });
-  window.addEventListener('keyup',   (e) => {                _handleLocalKey(e.key, false); });
+  window.addEventListener('keydown', (e) => { if (!e.repeat) _handleLocalKey(readLegacyGameKey(e), true); });
+  window.addEventListener('keyup',   (e) => { _handleLocalKey(readLegacyGameKey(e), false); });
   // Firefox (and others) may not fire keyup when focus is lost — release all held keys.
   window.addEventListener('blur', _releaseAllLocalKeys);
   document.addEventListener('visibilitychange', () => { if (document.hidden) _releaseAllLocalKeys(); });
@@ -128,8 +129,8 @@ if (isOnline) {
   setInterval(sendInput, SEND_INTERVAL);
   // Also send immediately on local key events for snappy response
   const physKeys = new Set(CONTROL_ACTIONS.map(c => ONLINE_PHYS[c]));
-  window.addEventListener('keydown', (e) => { if (physKeys.has(e.key.toLowerCase())) sendInput(); }, { passive: true });
-  window.addEventListener('keyup',   (e) => { if (physKeys.has(e.key.toLowerCase())) sendInput(); }, { passive: true });
+  window.addEventListener('keydown', (e) => { if (physKeys.has(readLegacyGameKey(e))) sendInput(); }, { passive: true });
+  window.addEventListener('keyup',   (e) => { if (physKeys.has(readLegacyGameKey(e))) sendInput(); }, { passive: true });
 }
 
 // ── Receive messages from parent ──────────────────────────────────────────────

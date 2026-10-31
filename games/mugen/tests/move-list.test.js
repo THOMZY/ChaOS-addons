@@ -7,6 +7,11 @@ import { createCatalog } from '../server/catalog.js';
 import { parseMoveList, readMoveList } from '../server/move-list.js';
 import { formatMoveInput } from '../client/move-input.js';
 
+test('move notation accepts localized keyboard and controller button labels', () => {
+  assert.equal(formatMoveInput('x+a', { x: 'Q', a: 'W' }), 'Q + W');
+  assert.equal(formatMoveInput('D,DF,F,x', { x: 'X / □' }), '↓  ›  ↘  ›  →  ›  X / □');
+});
+
 test('move list preserves alternatives, charge inputs and combinations while excluding AI and held directions', () => {
   const command = (name, input) => `[Command]\nname = "${name}"\ncommand = ${input}\n`;
   const moves = parseMoveList(

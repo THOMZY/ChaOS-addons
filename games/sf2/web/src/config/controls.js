@@ -19,7 +19,7 @@ export const controls = [
             [Control.MEDIUM_KICK]: 1,
             [Control.HEAVY_KICK]: 7,
         },
-        // Online: ZQSD movement + UIOJKL attacks — uses event.key (lowercase), layout-agnostic
+        // Physical WASD keys are normalized to these French action names before use.
         keyboard: {
             [Control.LEFT]:         'q',
             [Control.RIGHT]:        'd',

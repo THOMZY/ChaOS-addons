@@ -1,5 +1,17 @@
 import { el } from './dom.js';
 import { BUTTON_KEYS, formatMoveInput } from './move-input.js';
+import { getLanguage } from '/core/js/i18n.js';
+import { getKeyboardLabel } from '/core/js/games/input/keyboard-layout.js';
+
+const PAD_KEYS = {
+  a: 'A / ✕',
+  b: 'B / ○',
+  c: 'RT / R2',
+  x: 'X / □',
+  y: 'Y / △',
+  z: 'RB / R1',
+  s: 'Start / Options',
+};
 
 export function createMoveList({
   root,
@@ -25,6 +37,16 @@ export function createMoveList({
     behind = [],
     version = 0;
   const cache = new Map();
+  let device = 'keyboard';
+  const buttonKeys = () =>
+    device === 'gamepad'
+      ? PAD_KEYS
+      : Object.fromEntries(
+          Object.entries(BUTTON_KEYS).map(([button, key]) => [
+            button,
+            getKeyboardLabel(key === 'Enter' ? key : 'Key' + key, getLanguage()),
+          ]),
+        );
 
   function close(restoreFocus = true) {
     version++;
@@ -66,7 +88,7 @@ export function createMoveList({
           ? result.moves.map((move) =>
               el('div', { class: 'mugen-move-row' }, [
                 el('span', { class: 'mugen-move-name', text: move.name.replaceAll('_', ' ') }),
-                el('kbd', { text: formatMoveInput(move.input), title: move.input }),
+                el('kbd', { text: formatMoveInput(move.input, buttonKeys()), title: move.input }),
               ]),
             )
           : [
@@ -108,6 +130,38 @@ export function createMoveList({
       id: 'mugen-move-rows',
       tabindex: 0,
     });
+    const legend = el('div', { class: 'mugen-move-legend' });
+    const renderLegend = () =>
+      legend.replaceChildren(
+        ...Object.entries(buttonKeys()).map(([button, key]) =>
+          el('span', {}, [el('kbd', { text: key }), ` = ${button}`]),
+        ),
+      );
+    const deviceSelect = el(
+      'select',
+      {
+        class: 'mugen-input',
+        'aria-label': text('movesDevice', 'Input device'),
+        onchange: (event) => {
+          device = event.target.value;
+          renderLegend();
+          void loadMoves(content, characters[selected]);
+        },
+      },
+      [
+        el('option', {
+          value: 'keyboard',
+          selected: device === 'keyboard',
+          text: text('movesKeyboard', 'Keyboard'),
+        }),
+        el('option', {
+          value: 'gamepad',
+          selected: device === 'gamepad',
+          text: text('movesGamepad', 'Gamepad'),
+        }),
+      ],
+    );
+    renderLegend();
     const select = (index) => {
       selected = index;
       for (const [slot, tab] of [...tabs.children].entries()) {
@@ -156,6 +210,7 @@ export function createMoveList({
           closeButton,
         ]),
         tabs,
+        deviceSelect,
         el('p', {
           class: 'mugen-move-note',
           text: text(
@@ -163,13 +218,7 @@ export function createMoveList({
             'Directions assume you face right. Reverse left/right when facing left.',
           ),
         }),
-        el(
-          'div',
-          { class: 'mugen-move-legend' },
-          Object.entries(BUTTON_KEYS).map(([button, key]) =>
-            el('span', {}, [el('kbd', { text: key }), ` = ${button}`]),
-          ),
-        ),
+        legend,
         el('p', {
           class: 'mugen-move-note',
           text: text(
@@ -202,7 +251,7 @@ export function createMoveList({
         if (!event.repeat) toggle();
       } else if (overlay && event.key === 'Tab') {
         const targets = [
-          ...overlay.querySelectorAll('button:not([tabindex="-1"]), [tabindex="0"]'),
+          ...overlay.querySelectorAll('button:not([tabindex="-1"]), select, [tabindex="0"]'),
         ];
         const first = targets[0],
           last = targets.at(-1);
@@ -218,6 +267,12 @@ export function createMoveList({
     { capture: true },
   );
   scope.cleanup(() => close(false));
+  scope.on(document, 'chaos:language:changed', () => {
+    if (overlay) {
+      close(false);
+      open();
+    }
+  });
   return {
     toggle,
     isOpen: () => overlay !== null,

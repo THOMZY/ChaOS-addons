@@ -45,6 +45,7 @@ export function createWormsInput({
   playRandomSpeech,
   fire,
   now = Date.now,
+  readKey = (event) => event.key.toLowerCase(),
   isActive = () => true,
   logger = console,
   width = 960,
@@ -197,7 +198,7 @@ export function createWormsInput({
   function handleKeyDown(session, event) {
     if (!call(session, ownsInput, event)) return;
     const state = readState(session),
-      key = event.key.toLowerCase();
+      key = readKey(event);
     if (MOVEMENT_KEYS.has(key)) event.preventDefault();
     state.keys.add(key);
     const canSetFuse = fuseWeapons.has(state.selectedWeapon) && canCharge(state);
@@ -261,8 +262,7 @@ export function createWormsInput({
       readState(session);
       listen(session, eventTarget, 'keydown', (event) => handleKeyDown(session, event));
       listen(session, eventTarget, 'keyup', (event) => {
-        if (call(session, ownsInput, event))
-          readState(session).keys.delete(event.key.toLowerCase());
+        if (call(session, ownsInput, event)) readState(session).keys.delete(readKey(event));
       });
       listen(session, canvas, 'pointermove', (event) => {
         if (session.pointerId === null || session.pointerId === event.pointerId)

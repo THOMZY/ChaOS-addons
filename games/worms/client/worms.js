@@ -18,7 +18,8 @@ import { setSafeHtml } from '/core/js/safe-dom.js';
 import { createGameScope } from '/core/js/games/game-scope.js';
 import { createGameInput } from '/core/js/games/ui.js';
 import { createGameEvents } from '/core/js/games/game-events.js';
-import { t } from '/core/js/i18n.js';
+import { t, getLanguage } from '/core/js/i18n.js';
+import { getKeyboardCode, getKeyboardLabel, readLegacyGameKey } from '/core/js/games/input/keyboard-layout.js';
 import { renderUserName, userNameHtml } from '/core/js/user-name.js';
 
 let current = null;
@@ -229,6 +230,7 @@ const actions = createWormsActions({
 });
 
 const gameInput = createWormsInput({
+  readKey: readLegacyGameKey,
   getState: () => ({ keys: _keys, physics: _ws, worms: _worms, activeWormId: _activeWormId,
     myUserId: _myUserId, isMyTurn: _myTurn(), hasShotFired: _shotFired, isAnimating: _animating,
     selectedWeapon: _selectedWeapon, isPhysicsSynced: _wsSynced,
@@ -249,6 +251,7 @@ const gameInput = createWormsInput({
 });
 
 const gameView = createWormsGameView({
+  formatKey: key => getKeyboardLabel(getKeyboardCode({ key }, 'fr'), getLanguage()),
   getState: () => ({ selectedWeapon: _selectedWeapon, isSpectateMode: _spectateMode,
     get isMuted() { return _muted; }, set isMuted(value) { _muted = value; } }),
   createElement: _el, weapons: WEAPONS, getWeaponLabel: _weaponLabel,

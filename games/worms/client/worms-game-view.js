@@ -5,6 +5,7 @@ export function createWormsGameView({
   getWeaponLabel,
   getWeaponIconName,
   translate,
+  formatKey = (key) => key,
   attachInput,
   detachInput,
   mountTerrain,
@@ -372,7 +373,7 @@ export function createWormsGameView({
   function buildWeaponKeyLabel(session, key) {
     const lbl = createNode(session, 'span');
     lbl.style.cssText = 'font-size:8px;font-family:monospace;opacity:0.7;';
-    lbl.textContent = key;
+    lbl.textContent = formatKey(key);
     return lbl;
   }
 

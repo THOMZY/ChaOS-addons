@@ -8,6 +8,7 @@ import { createCatalog } from '../server/catalog.js';
 import { mountMugenRoutes } from '../server/routes.js';
 import { createMugenRuntime } from '../server/runtime.js';
 import { startBrowser } from './browser-driver.mjs';
+import { installNativeGamepad, readConfirmedPadInputs } from './fixtures/gamepad-browser.js';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const catalog = createCatalog({ dataRoot: root + 'games/mugen/data' });
@@ -86,6 +87,24 @@ try {
   }
   assert.deepEqual(await host.evaluate('notices'), []);
   assert.deepEqual(await guest.evaluate('notices'), []);
+  for (const page of [host, guest]) await page.evaluate(`(${installNativeGamepad.toString()})()`);
+  await host.evaluate(
+    "Object.assign(document.querySelector('iframe').contentWindow.testGamepad.buttons[0],{pressed:true,value:1}); document.querySelector('iframe').contentWindow.testGamepad.buttons[14].pressed=true; true",
+  );
+  await guest.evaluate(
+    "Object.assign(document.querySelector('iframe').contentWindow.testGamepad.buttons[2],{pressed:true,value:1}); document.querySelector('iframe').contentWindow.testGamepad.buttons[15].pressed=true; true",
+  );
+  await host.wait(
+    `(${readConfirmedPadInputs.toString()})().then(inputs => inputs && (inputs[0] & 20) === 20 && (inputs[1] & 136) === 136)`,
+    'both players use their first local controller',
+  );
+  for (const page of [host, guest])
+    await page.evaluate("document.querySelector('iframe').contentWindow.testGamepad=null");
+  await host.wait(
+    `(${readConfirmedPadInputs.toString()})().then(inputs => inputs && inputs[0] === 0 && inputs[1] === 0)`,
+    'controller disconnect releases both players',
+  );
+  console.info('PASS native Mugen controller inputs for host and guest, including disconnect');
   await host.command('Page.bringToFront');
   await host.evaluate(`(() => {
     const frame = document.querySelector('iframe').contentWindow;
@@ -96,6 +115,24 @@ try {
     "document.querySelectorAll('.mugen-move-row').length > 0",
     'character commands shown with Escape',
   );
+  assert.equal(
+    await host.evaluate("document.querySelector('.mugen-move-legend kbd').textContent"),
+    'W',
+    'French AZERTY labels',
+  );
+  await host.evaluate("import('/core/js/i18n.js').then(module=>module.applyAccountLanguage('en'))");
+  await host.wait(
+    "document.querySelector('.mugen-move-legend kbd')?.textContent === 'Z'",
+    'English QWERTY labels update during play',
+  );
+  await host.evaluate(
+    "(() => {const select=document.querySelector('.mugen-move-list select');select.value='gamepad';select.dispatchEvent(new Event('change'));})()",
+  );
+  await host.wait(
+    "document.querySelector('.mugen-move-legend kbd')?.textContent === 'A / ✕' && document.querySelectorAll('.mugen-move-row').length > 0",
+    'controller move notation',
+  );
+  await host.evaluate("import('/core/js/i18n.js').then(module=>module.applyAccountLanguage('fr'))");
   await host.evaluate(
     "document.querySelector('iframe').dispatchEvent(new MouseEvent('mouseenter'))",
   );

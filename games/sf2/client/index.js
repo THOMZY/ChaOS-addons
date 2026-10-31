@@ -2,6 +2,7 @@ import { createGameScope } from '/core/js/games/game-scope.js';
 import { setSafeHtml } from '/core/js/safe-dom.js';
 import { t } from '/core/js/i18n.js';
 import { renderUserName, userNameHtml } from '/core/js/user-name.js';
+import { readLegacyGameKey } from '/core/js/games/input/keyboard-layout.js';
 // ChaOS — Street Fighter 2 client module
 //
 // Handles the SF2 window lifecycle:
@@ -108,23 +109,23 @@ export function initSF2(socket, getMe, pushSystem, scope = createGameScope()) {
     // "Find As You Type" / quick-find bar for game keys while the game is active.
     _keyFwdDown = (e) => {
       if (body.closest('.wm-win')?.dataset.minimized === '1') return;
-      if (!SF2_GAME_KEYS.has(e.key.toLowerCase())) return;
+      if (!SF2_GAME_KEYS.has(readLegacyGameKey(e))) return;
       // Always block browser default for game keys during play (stops Firefox quick-find).
       e.preventDefault();
       if (!_sf2Focused || e.repeat) return;
-      _iframe?.contentWindow?.postMessage({ type: 'sf2:key', isDown: true,  key: e.key }, window.location.origin);
+      _iframe?.contentWindow?.postMessage({ type: 'sf2:key', isDown: true,  key: readLegacyGameKey(e) }, window.location.origin);
     };
     _keyFwdUp = (e) => {
       if (body.closest('.wm-win')?.dataset.minimized === '1') return;
-      if (!SF2_GAME_KEYS.has(e.key.toLowerCase())) return;
+      if (!SF2_GAME_KEYS.has(readLegacyGameKey(e))) return;
       e.preventDefault();
       if (!_sf2Focused) return;
-      _iframe?.contentWindow?.postMessage({ type: 'sf2:key', isDown: false, key: e.key }, window.location.origin);
+      _iframe?.contentWindow?.postMessage({ type: 'sf2:key', isDown: false, key: readLegacyGameKey(e) }, window.location.origin);
     };
     // keypress: Firefox's quick-find bar is triggered here; block it for game keys.
     _keyFwdPress = (e) => {
       if (body.closest('.wm-win')?.dataset.minimized === '1') return;
-      if (SF2_GAME_KEYS.has(e.key?.toLowerCase())) e.preventDefault();
+      if (SF2_GAME_KEYS.has(readLegacyGameKey(e))) e.preventDefault();
     };
     scope.on(document, 'keydown',  _keyFwdDown,  true);
     scope.on(document, 'keyup',    _keyFwdUp,    true);
@@ -191,7 +192,7 @@ export function initSF2(socket, getMe, pushSystem, scope = createGameScope()) {
         ` : ''}
 
         <p class="sf2-controls-hint">
-          <strong style="color:#e8c000">${t('games.sf2.controls')}</strong> — ZQSD ← ↑ ↓ → &nbsp;|&nbsp; U/I/O LP·MP·HP &nbsp; J/K/L LK·MK·HK
+          <strong style="color:#e8c000">${t('games.sf2.controls')}</strong> — ${t('games.sf2.movementKeys')} ← ↑ ↓ → &nbsp;|&nbsp; U/I/O LP·MP·HP &nbsp; J/K/L LK·MK·HK
         </p>
       </div>
     `);

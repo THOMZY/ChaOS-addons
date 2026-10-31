@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWormsInput } from '../client/worms-input.js';
+import { readLegacyGameKey } from '../../../website/core/js/games/input/keyboard-layout.js';
 
 function createScene(options = {}) {
   let owner,
@@ -115,6 +116,7 @@ function createScene(options = {}) {
       return state;
     },
     eventTarget: document,
+    readKey: options.readKey,
     on,
     off,
     ownsInput(event) {
@@ -181,6 +183,18 @@ function createScene(options = {}) {
 }
 
 // These cases preserve the original input rules and numeric formulas.
+test('physical AZERTY and QWERTY movement keys share the same Worms actions', () => {
+  const scene = createScene({ readKey: readLegacyGameKey });
+  scene.owner.bind(scene.canvas);
+  for (const key of ['q', 'a']) {
+    scene.document.fire('keydown', { key, code: 'KeyA' });
+    assert.equal(scene.state.keys.has('q'), true);
+    scene.document.fire('keyup', { key, code: 'KeyA' });
+    assert.equal(scene.state.keys.has('q'), false);
+  }
+  scene.document.fire('keydown', { key: '&', code: 'Digit1' });
+  assert.deepEqual(scene.actions.at(-1), ['weapon', 'bazooka']);
+});
 test('movement keys prevent browser defaults and release shared keys', () => {
   const scene = createScene();
   scene.owner.bind(scene.canvas);

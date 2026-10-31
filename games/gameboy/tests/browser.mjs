@@ -26,6 +26,7 @@ const app = createHttpApp();
 feature.routes(app);
 const clientRoot = resolve(import.meta.dirname, '../client');
 app.use('/games/gameboy/client', express.static(clientRoot));
+app.use('/core', express.static(resolve(import.meta.dirname, '../../../website/core')));
 app.get('/', (_request, response) =>
   response.send(`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/games/gameboy/client/gameboy.css">
 <style>.wm-win{width:600px;height:900px}.gameboy-body{width:100%;height:100%}</style>
@@ -135,6 +136,10 @@ try {
       () => evaluate('!!window.ready && !document.getElementById("gb-start").hidden'),
       'explicit start screen',
     );
+    assert.equal(await evaluate("document.querySelector('[data-key-code=KeyW]').textContent"), 'Z');
+    await evaluate("import('/core/js/i18n.js').then(module => module.applyAccountLanguage('en'))");
+    assert.equal(await evaluate("document.querySelector('[data-key-code=KeyW]').textContent"), 'W');
+    await evaluate("import('/core/js/i18n.js').then(module => module.applyAccountLanguage('fr'))");
     await evaluate('document.querySelector(".wm-win").dataset.minimized="1"');
     await delay(80);
     await evaluate('document.querySelector(".wm-win").dataset.minimized="0"');

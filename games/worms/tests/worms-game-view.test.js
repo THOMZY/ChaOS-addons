@@ -98,6 +98,7 @@ function createScene(options = {}) {
       return state;
     },
     createElement,
+    formatKey: options.formatKey,
     weapons,
     getWeaponLabel(key) {
       options.onLabel?.(owner);
@@ -193,6 +194,13 @@ test('weapon clicks call the existing selection action', () => {
     view = s.mount();
   view.weaponButtons.drill.fire('click');
   assert.deepEqual(s.actions.at(-1), ['select', 'drill']);
+});
+
+test('weapon shortcuts use the supplied keyboard layout labels', () => {
+  const scene = createScene({ formatKey: (key) => 'layout:' + key });
+  const view = scene.mount();
+  assert.equal(view.weaponButtons.bazooka.children[1].textContent, 'layout:1');
+  assert.equal(view.weaponButtons.bazooka.children[2].dataset.ammo, 'bazooka');
 });
 test('weapon image paths preserve fallback names and native error uses a textual icon', () => {
   const s = createScene(),

@@ -470,11 +470,13 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
     const bar = el('div', { class: 'mugen-bar' }, [
       el('span', {
         class: 'mugen-hint',
+        'data-mugen-controls': '',
         text: tr('games.mugen.ikemenControls', 'Arrows move · Z X C / A S D attack · Enter start'),
       }),
       el('button', {
         class: 'mugen-button',
         text: tr('games.mugen.movesButton', 'Move list · Esc'),
+        'data-mugen-moves': '',
         onclick: moveList.toggle,
       }),
       onForfeit
@@ -825,6 +827,12 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
       if (error === 'replay_unavailable' && state.spectating?.roomId === roomId) renderLobby();
     },
   };
+  scope.on(document, 'chaos:language:changed', () => {
+    const hint = root.querySelector('[data-mugen-controls]');
+    const button = root.querySelector('[data-mugen-moves]');
+    if (hint) hint.textContent = t('games.mugen.ikemenControls');
+    if (button) button.textContent = t('games.mugen.movesButton');
+  });
   for (const [event, handler] of Object.entries(handlers)) socket.on(event, handler);
   scope.cleanup(() => {
     for (const [event, handler] of Object.entries(handlers)) socket.off(event, handler);
