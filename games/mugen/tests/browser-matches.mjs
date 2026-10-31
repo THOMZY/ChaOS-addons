@@ -116,6 +116,19 @@ try {
     `(() => { const frame=document.querySelector('.mugen-engine-frame'); window.firstEngine=frame.contentWindow;window.firstFs=firstEngine.fs;return {...firstEngine.chaosSession}; })()`,
   );
   assert.equal(cold.loads, 2, 'both native fighters were loaded once');
+  await page.evaluate(`(() => {
+    firstEngine.document.dispatchEvent(new firstEngine.KeyboardEvent('keydown', {key:'Escape',code:'Escape',bubbles:true,cancelable:true}));
+  })()`);
+  await page.wait("document.querySelectorAll('.mugen-move-row').length > 0", 'training move list');
+  assert.equal(
+    await page.evaluate('firstEngine.chaosSession.stop'),
+    false,
+    'Escape opens the list without quitting training',
+  );
+  await page.evaluate(
+    "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}))",
+  );
+  assert.equal(await page.evaluate("!!document.querySelector('.mugen-move-list')"), false);
   // Oto unlocks its audio context on the first input inside the engine frame.
   await page.command('Input.dispatchKeyEvent', {
     type: 'keyDown',
@@ -133,7 +146,7 @@ try {
   assert.ok(musicRequests.length, 'stage music file was fetched');
   const first = new Map(requests);
   assert.ok(first.size > 2, 'native engine actually loaded fighter resources');
-  await page.evaluate(`document.querySelector('.mugen-bar button').click()`);
+  await page.evaluate(`document.querySelector('.mugen-bar button:last-child').click()`);
   await page.wait(`!!document.querySelector('.mugen-lobby')`, 'quit first match');
   await openTraining();
   const warmMs = await launch();

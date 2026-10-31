@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
+import { writeFile } from 'node:fs/promises';
 import express from 'express';
 import { Server } from 'socket.io';
 import { createCatalog } from '../server/catalog.js';
@@ -85,7 +86,69 @@ try {
   }
   assert.deepEqual(await host.evaluate('notices'), []);
   assert.deepEqual(await guest.evaluate('notices'), []);
+  await host.command('Page.bringToFront');
+  await host.evaluate(`(() => {
+    const frame = document.querySelector('iframe').contentWindow;
+    frame.document.dispatchEvent(new frame.KeyboardEvent('keydown', {key:'ArrowRight',code:'ArrowRight',bubbles:true}));
+    frame.document.dispatchEvent(new frame.KeyboardEvent('keydown', {key:'Escape',code:'Escape',bubbles:true,cancelable:true}));
+  })()`);
+  await host.wait(
+    "document.querySelectorAll('.mugen-move-row').length > 0",
+    'character commands shown with Escape',
+  );
+  await host.evaluate(
+    "document.querySelector('iframe').dispatchEvent(new MouseEvent('mouseenter'))",
+  );
+  assert.equal(
+    await host.evaluate(
+      "document.querySelector('.mugen-move-list').contains(document.activeElement)",
+    ),
+    true,
+    'the engine cannot steal focus from its move list',
+  );
+  assert.equal(await host.evaluate("document.querySelectorAll('[role=tab]').length"), 2);
+  assert.equal(
+    await host.evaluate("document.querySelector('iframe').contentWindow.chaosSession.stop"),
+    false,
+    'Escape must not cancel the native fight',
+  );
+  await host.evaluate("document.querySelectorAll('[role=tab]')[1].click()");
+  await host.wait(
+    "document.querySelectorAll('[role=tab]')[1].getAttribute('aria-selected') === 'true' && document.querySelectorAll('.mugen-move-row').length > 0",
+    'opponent commands shown',
+  );
+  if (process.env.MUGEN_SCREENSHOT) {
+    await host.command('Emulation.setDeviceMetricsOverride', {
+      width: 460,
+      height: 700,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    assert.equal(
+      await host.evaluate(
+        "document.querySelector('.mugen-move-list').scrollWidth <= document.querySelector('.mugen-move-list').clientWidth",
+      ),
+      true,
+      'move list fits a narrow game window',
+    );
+    const screenshot = await host.command('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.MUGEN_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+  }
+  await host.evaluate(
+    "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}))",
+  );
+  assert.equal(await host.evaluate("!!document.querySelector('.mugen-move-list')"), false);
+  assert.equal(
+    await host.evaluate("document.activeElement === document.querySelector('iframe')"),
+    true,
+    'closing restores engine focus',
+  );
+  assert.equal(
+    await host.evaluate("document.querySelector('iframe').contentWindow.chaosSession.stop"),
+    false,
+  );
   console.info('PASS two real socket clients start a native duel');
+  console.info('PASS Escape shows both command lists and closes without cancelling the fight');
 } catch (error) {
   for (const page of pages)
     console.error(

@@ -1,0 +1,105 @@
+.mugen-move-list {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: #15120ff5;
+  border: 1px solid var(--mugen-accent);
+  min-height: 0;
+  overflow: auto;
+}
+.mugen-move-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.mugen-move-header h2 {
+  color: var(--mugen-accent);
+  margin: 0;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.mugen-move-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mugen-move-tab {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid var(--mugen-line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.mugen-move-tab[aria-selected='true'] {
+  border-color: var(--mugen-accent);
+  color: var(--mugen-accent);
+  background: #ff6a3d12;
+}
+.mugen-move-note,
+.mugen-move-footer {
+  margin: 0;
+  color: #c0b8b0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.mugen-move-legend {
+  display: flex;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+}
+.mugen-move-list kbd {
+  font-family: Consolas, monospace;
+}
+.mugen-move-legend kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--mugen-line);
+  border-bottom-width: 3px;
+}
+.mugen-move-rows {
+  flex: 1;
+  min-height: 80px;
+  overflow: auto;
+  border-top: 1px solid var(--mugen-line);
+}
+.mugen-move-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--mugen-line);
+}
+.mugen-move-name {
+  overflow-wrap: anywhere;
+}
+.mugen-move-row kbd {
+  color: #ffd4a7;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.mugen-move-footer {
+  border-left: 2px solid var(--mugen-accent);
+  padding-left: 8px;
+}
+.mugen-move-list :focus-visible {
+  outline: 2px solid var(--mugen-accent);
+  outline-offset: 2px;
+}
+@media (max-width: 480px) {
+  .mugen-move-list {
+    padding: 10px;
+    gap: 8px;
+  }
+  .mugen-move-header h2 {
+    font-size: 14px;
+  }
+}

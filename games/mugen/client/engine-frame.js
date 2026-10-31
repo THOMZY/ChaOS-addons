@@ -28,11 +28,23 @@ export function createEngineFrame({ container, scope, resources }) {
   frame.src = HOST_URL;
   container.append(frame);
   let destroyed = false;
-  const focus = () => frame.contentWindow?.document.getElementById('ikemen-canvas')?.focus();
+  let onEscape = null;
+  let canFocus = () => true;
+  const focus = () => {
+    if (canFocus()) frame.contentWindow?.document.getElementById('ikemen-canvas')?.focus();
+  };
   scope.on(frame, 'mouseenter', focus);
 
   const ready = new Promise((resolve, reject) => {
     frame.addEventListener('load', () => {
+      const interceptEscape = (event) => {
+        if (event.key !== 'Escape' || !onEscape) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (event.type === 'keydown' && !event.repeat) onEscape();
+      };
+      scope.on(frame.contentWindow?.document, 'keydown', interceptEscape, { capture: true });
+      scope.on(frame.contentWindow?.document, 'keyup', interceptEscape, { capture: true });
       const engine = frame.contentWindow?.mugenEngine;
       if (engine) resolve(engine);
       else reject(new Error('engine_frame_failed'));
@@ -43,12 +55,18 @@ export function createEngineFrame({ container, scope, resources }) {
   return {
     element: frame,
     focus,
-    cancelMatch: () => frame.contentWindow?.mugenEngine?.cancelMatch(),
+    cancelMatch: () => {
+      onEscape = null;
+      frame.contentWindow?.mugenEngine?.cancelMatch();
+    },
+    releaseInput: () => frame.contentWindow?.mugenEngine?.releaseInput(),
     setVolume: (values) => {
       if (!destroyed) frame.contentWindow?.mugenEngine?.setVolume(values);
     },
     /** Starts the match; resolves with { receive } once the engine runs. */
     async start(options) {
+      onEscape = options.onEscape ?? null;
+      canFocus = options.canFocus ?? (() => true);
       const engine = await scope.wait(ready, 30_000);
       if (destroyed) throw new Error('engine_stopped');
       const handle = await engine.start({

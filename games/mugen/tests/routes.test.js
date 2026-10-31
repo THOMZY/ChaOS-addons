@@ -105,3 +105,15 @@ test('MUGEN describes the browser file system of an installed engine', async (t)
     '-- main',
   );
 });
+
+test('MUGEN move list endpoint serves commands and rejects unknown characters', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'mugen-move-route-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  write(root, 'Characters/Ryu/ryu.def', '[Files]\nsprite=ryu.sff\ncmd=ryu.cmd');
+  write(root, 'Characters/Ryu/ryu.cmd', '[Command]\nname=Hadouken\ncommand=D,DF,F,x');
+  const { get } = await serve(t, root);
+  const response = await get('/api/mugen/moves?path=Ryu%2Fryu.def');
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).moves, [{ name: 'Hadouken', input: 'D,DF,F,x' }]);
+  assert.equal((await get('/api/mugen/moves?path=../private.def')).status, 404);
+});

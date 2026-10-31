@@ -47,6 +47,7 @@ export function createResidentEngine({ container, scope, resources }) {
       return {
         element: current.element,
         focus: current.focus,
+        releaseInput: current.releaseInput,
         setVolume: current.setVolume,
         start: async (options) => {
           await starting;

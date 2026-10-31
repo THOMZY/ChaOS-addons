@@ -13,6 +13,7 @@ import { duelArgs } from './match-options.js';
 import { bindVolumeControls } from './volume.js';
 import { createEngineResources } from './engine/resources.js';
 import { createResidentEngine } from './resident-engine.js';
+import { createMoveList } from './move-list.js';
 
 const STYLE_ID = 'mugen-addon-style';
 const LIBRARY_STYLE_ID = 'mugen-library-style';
@@ -72,6 +73,13 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
   const resources = createEngineResources();
   scope.cleanup(() => resources.dispose());
   const residentEngine = createResidentEngine({ container: body, scope, resources });
+  const moveList = createMoveList({
+    root,
+    scope,
+    tr,
+    releaseInput: () => state.match?.frame.releaseInput(),
+    focusEngine: () => state.match?.frame.focus(),
+  });
   void resources.warm().catch(() => {
     // A missing/offline engine is reported when a match is requested; the
     // lobby and uploads remain usable while the engine is being installed.
@@ -425,6 +433,7 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
   // ── Engine ──────────────────────────────────────────────────────────────────
 
   function stopEngine() {
+    moveList.setCharacters([]);
     state.match?.frame.destroy();
     state.match = null;
   }
@@ -445,7 +454,14 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
   }
 
   /** Mounts the engine view and starts a match; resolves with the engine's exit outcome. */
-  function runEngine({ args, net = null, roomId = null, onForfeit = null }) {
+  function runEngine({
+    args,
+    net = null,
+    roomId = null,
+    onForfeit = null,
+    characters = [],
+    slot = 0,
+  }) {
     const overlay = el('div', {
       class: 'mugen-overlay',
       text: t('games.mugen.loadingFighters'),
@@ -455,6 +471,11 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
       el('span', {
         class: 'mugen-hint',
         text: tr('games.mugen.ikemenControls', 'Arrows move · Z X C / A S D attack · Enter start'),
+      }),
+      el('button', {
+        class: 'mugen-button',
+        text: tr('games.mugen.movesButton', 'Move list · Esc'),
+        onclick: moveList.toggle,
       }),
       onForfeit
         ? el('button', {
@@ -469,6 +490,7 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
           }),
     ]);
     show('match', el('div', { class: 'mugen-match' }, [stage, bar]));
+    moveList.setCharacters(characters, slot);
     const frame = residentEngine.acquire(stage);
     const match = {
       roomId,
@@ -485,6 +507,8 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
         .start({
           args,
           net,
+          onEscape: moveList.toggle,
+          canFocus: () => !moveList.isOpen(),
           onStatus: (status) => {
             if (state.match !== match) return;
             overlay.textContent = engineStatusText(status);
@@ -521,7 +545,7 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
     const chosen = stage ?? stages[Math.floor(Math.random() * stages.length)];
     const args = ['-p1', character.path, '-p2', opponent.path, '-p2.ai', String(level)];
     if (chosen) args.push('-s', 'stages/' + chosen.path);
-    const pending = runEngine({ args });
+    const pending = runEngine({ args, characters: [character, opponent] });
     const match = state.match;
     const outcome = await pending;
     if (state.view !== 'match' || state.match !== match) return;
@@ -551,6 +575,8 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
       args,
       net,
       roomId,
+      characters: [start.p1, start.p2],
+      slot: start.slot,
       onForfeit: () => {
         if (window.confirm(t('games.mugen.confirmForfeit')))
           socket.emit('mugen:forfeit', { roomId });
@@ -566,6 +592,7 @@ export function initMugen(socket, getMe, pushSystem, scope = createGameScope()) 
         : { roomId, aborted: true },
     );
     if (outcome.code !== 0 && outcome.errors.length) notice(outcome.errors.at(-1));
+    moveList.setCharacters([]);
     match.frame.destroy();
     if (!match.finished)
       show(

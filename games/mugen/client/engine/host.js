@@ -199,6 +199,7 @@ async function start({
 
 globalThis.mugenEngine = {
   start,
+  releaseInput: releaseKeys,
   cancelMatch: () => {
     releaseKeys();
     resident?.cancel();

@@ -3,6 +3,7 @@ import { buildFsManifest } from './manifest.js';
 import { createPortraits } from './portraits.js';
 import { createStagePreviews } from './stage-previews.js';
 import { fileURLToPath } from 'node:url';
+import { readMoveList } from './move-list.js';
 
 // Text files the engine parses are small and may be edited in place on the
 // server: revalidate them. Sprites, sounds and music keep a day of cache.
@@ -67,6 +68,13 @@ export function mountMugenRoutes(
 
   app.get('/api/mugen/chars', apiLimiter, (_request, response) => {
     response.json(catalog.characters());
+  });
+  app.get('/api/mugen/moves', apiLimiter, (request, response) => {
+    const path = typeof request.query.path === 'string' ? request.query.path : '';
+    const result = readMoveList(catalog, path);
+    response.setHeader('Cache-Control', 'no-store');
+    if (result) response.json(result);
+    else response.status(404).json({ error: 'unknown_character' });
   });
   app.get('/api/mugen/stages', apiLimiter, (_request, response) => {
     response.json(catalog.stages());
