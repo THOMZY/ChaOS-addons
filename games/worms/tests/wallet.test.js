@@ -19,11 +19,11 @@ class Socket extends EventEmitter {
 after(()=>db.close());
 const seed=(id)=>{
   db.prepare('INSERT INTO accounts VALUES (?,?,?,?,?,?,?)').run(id,id+'@invalid.test',id,id,'hash',1,1);
-  db.prepare('INSERT INTO chat_user_settings (account_id,points,last_daily_bonus,updated_at) VALUES (?,777,987,1)').run(id);
+  db.prepare('INSERT INTO account_wallets (account_id,points,last_daily_bonus,updated_at) VALUES (?,777,987,1)').run(id);
   const user=new User(id,{pseudo:id});user.points=1000;user.lastDailyBonus=123;return user;
 };
-const saved=id=>db.prepare('SELECT points,last_daily_bonus FROM chat_user_settings WHERE account_id=?').get(id);
-const newer=id=>db.prepare('UPDATE chat_user_settings SET points=888,last_daily_bonus=654 WHERE account_id=?').run(id);
+const saved=id=>db.prepare('SELECT points,last_daily_bonus FROM account_wallets WHERE account_id=?').get(id);
+const newer=id=>db.prepare('UPDATE account_wallets SET points=888,last_daily_bonus=654 WHERE account_id=?').run(id);
 const cases=[['worms',createWormsRuntime]];
 for(const [name,create] of cases)test(`default ${name} adapter debits current SQLite and refunds a later offline balance`,async t=>{
   const id='default-'+name,user=seed(id),socket=new Socket(),users=new Map([[id,user]]),clock=gameClock();user.clients.add(socket);

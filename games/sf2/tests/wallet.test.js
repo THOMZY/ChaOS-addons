@@ -33,7 +33,7 @@ const seed = (id) => {
     1,
   );
   db.prepare(
-    'INSERT INTO chat_user_settings (account_id,points,last_daily_bonus,updated_at) VALUES (?,777,987,1)',
+    'INSERT INTO account_wallets (account_id,points,last_daily_bonus,updated_at) VALUES (?,777,987,1)',
   ).run(id);
   const user = new User(id, { pseudo: id });
   user.points = 1000;
@@ -41,10 +41,10 @@ const seed = (id) => {
   return user;
 };
 const saved = (id) =>
-  db.prepare('SELECT points,last_daily_bonus FROM chat_user_settings WHERE account_id=?').get(id);
+  db.prepare('SELECT points,last_daily_bonus FROM account_wallets WHERE account_id=?').get(id);
 const newer = (id) =>
   db
-    .prepare('UPDATE chat_user_settings SET points=888,last_daily_bonus=654 WHERE account_id=?')
+    .prepare('UPDATE account_wallets SET points=888,last_daily_bonus=654 WHERE account_id=?')
     .run(id);
 const cases = [
   // Table games pay through games/platform/tables.js (tables-accounting.test.js).
