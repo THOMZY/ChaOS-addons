@@ -1,0 +1,242 @@
+/* Shared Street Fighter 2 lobby/HUD styles. */
+
+/* Char selector */
+.sf2-char-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sf2-char-btn {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.sf2-char-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sf2-char-btn.active {
+  background: rgba(232, 192, 0, 0.2);
+  border-color: #e8c000;
+  color: #e8c000;
+}
+
+/* Bet row */
+.sf2-bet-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sf2-label {
+  color: #888;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.sf2-bet-input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #e0ddf5;
+  font-size: 12px;
+}
+
+.sf2-bet-input:focus {
+  outline: none;
+  border-color: #e8c000;
+}
+
+/* Buttons */
+.sf2-btn {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.sf2-btn:hover {
+  opacity: 0.85;
+}
+.sf2-btn:active {
+  opacity: 0.7;
+}
+
+.sf2-btn-create {
+  width: 100%;
+  background: #e8c000;
+  color: #000;
+}
+
+.sf2-btn-join {
+  background: #2d8e40;
+  color: #fff;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.sf2-btn-cancel,
+.sf2-btn-cancel-wait {
+  background: #8e2d2d;
+  color: #fff;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.sf2-btn-forfeit {
+  background: #8e2d2d;
+  color: #fff;
+  margin-top: 6px;
+  width: 100%;
+}
+
+/* Room list */
+.sf2-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.sf2-room-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+
+.sf2-room-char {
+  color: #888;
+}
+
+.sf2-room-bet {
+  background: rgba(232, 192, 0, 0.2);
+  color: #e8c000;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.sf2-room-vs {
+  color: #555;
+}
+
+.sf2-room-round {
+  color: #888;
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.sf2-empty {
+  color: #555;
+  font-size: 11px;
+  padding: 4px 0;
+  margin: 0;
+}
+
+.sf2-live-section {
+  margin-top: 0;
+}
+
+/* Controls hint */
+.sf2-controls-hint {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* ── Waiting ────────────────────────────────────────────────────────────── */
+
+.sf2-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  padding: 20px;
+}
+
+.sf2-waiting-msg {
+  color: #e8c000;
+  font-size: 14px;
+  animation: sf2-blink 1.2s step-end infinite;
+}
+
+@keyframes sf2-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.sf2-waiting-room {
+  font-size: 11px;
+  color: #555;
+}
+
+.sf2-waiting-room code {
+  color: #888;
+  font-family: monospace;
+}
+
+.sf2-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.sf2-wins {
+  color: #e8c000;
+  letter-spacing: 0.1em;
+}
+
+.sf2-wins-right {
+  text-align: right;
+}
+
+.sf2-round {
+  color: #ccc;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sf2-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  display: block;
+  background: #000;
+}

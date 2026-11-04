@@ -12,5 +12,161 @@
   },
   "compose": {
     "profile": "minecraft"
+  },
+  "catalogue": {
+    "id": "minecraft",
+    "title": "Minecraft",
+    "icon": "▣",
+    "thumbnail": "/games/minecraft/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 1,
+    "hasStakes": false,
+    "players": {
+      "max": 20,
+      "mode": "server"
+    },
+    "launch": {
+      "kind": "window",
+      "target": "minecraft"
+    },
+    "description": "Un monde partagé dans le navigateur. Client Eaglercraft et serveur Minecraft requis."
+  },
+  "description": "Un monde partagé dans le navigateur. Client Eaglercraft et serveur Minecraft requis.",
+  "icon": "▣",
+  "readiness": {
+    "files": [
+      {
+        "path": "data/server.properties",
+        "minBytes": 1
+      },
+      {
+        "path": "web/eaglercraft.html",
+        "minBytes": 100000
+      }
+    ],
+    "bootstrapFiles": ["data/server.properties"]
+  },
+  "preserveFiles": [
+    {
+      "path": "web/eaglercraft.html",
+      "legacy": "data/eaglercraft.html",
+      "minBytes": 100000,
+      "savedPath": "eaglercraft.html"
+    }
+  ],
+  "updates": {
+    "ignore": ["web/eaglercraft.html"]
+  },
+  "adminServer": {
+    "id": "minecraft",
+    "title": "Minecraft",
+    "emoji": "⛏️",
+    "subtitle": "Paper 1.12.2 · EaglerXServer",
+    "kind": "container",
+    "container": "minecraft",
+    "console": "rcon",
+    "playUrl": "/mc/",
+    "quick": [
+      {
+        "labelKey": "games.quick.players",
+        "command": "list",
+        "hintKey": "games.quick.connectedPlayers"
+      },
+      {
+        "labelKey": "games.quick.save",
+        "command": "save-all",
+        "hintKey": "games.quick.saveWorld"
+      },
+      {
+        "labelKey": "games.quick.day",
+        "command": "time set day",
+        "hintKey": "games.quick.setDay"
+      },
+      {
+        "labelKey": "games.quick.clearWeather",
+        "command": "weather clear",
+        "hintKey": "games.quick.stopRain"
+      },
+      {
+        "labelKey": "games.quick.whitelist",
+        "command": "whitelist list",
+        "hintKey": "games.quick.listWhitelist"
+      },
+      {
+        "labelKey": "games.quick.reload",
+        "command": "reload",
+        "hintKey": "games.quick.reloadPlugins"
+      }
+    ],
+    "logsTty": true,
+    "kickCommand": "kick {name}"
+  },
+  "control": {
+    "service": "minecraft",
+    "startOnInstall": true,
+    "stopOnUninstall": true
+  },
+  "browser": {
+    "window": "client/host-window.js",
+    "locales": "client/host-locales.json"
+  },
+  "windowGeometry": {
+    "left": 22,
+    "top": 7.333333,
+    "width": 52,
+    "height": 62.222222
+  },
+  "controlTarget": {
+    "id": "minecraft",
+    "container": "minecraft",
+    "console": {
+      "protocol": "rcon",
+      "host": "minecraft",
+      "port": 25575,
+      "hostEnv": "MC_RCON_HOST",
+      "portEnv": "MC_RCON_PORT",
+      "passwordEnv": "MC_RCON_PASSWORD",
+      "players": {
+        "command": "list",
+        "pattern": "There are (\\d+) of a max(?: of)? (\\d+) players online:?\\s*(.*)",
+        "countGroup": 1,
+        "capacityGroup": 2,
+        "namesGroup": 3,
+        "separator": ","
+      }
+    }
+  },
+  "access": {
+    "reservedPaths": ["/mc", "/mc-ws"]
+  },
+  "deployment": {
+    "compose": "deploy/compose.json",
+    "profile": "minecraft"
+  },
+  "networkPolicy": {
+    "services": ["minecraft"],
+    "localPorts": [
+      {
+        "service": "minecraft",
+        "target": 25565,
+        "protocol": "tcp",
+        "ip": "0.0.0.0",
+        "why": "player game port"
+      }
+    ],
+    "productionPorts": [
+      {
+        "service": "minecraft",
+        "target": 25565,
+        "published": 25565,
+        "protocol": "tcp"
+      }
+    ],
+    "privatePorts": [
+      {
+        "port": 25575,
+        "label": "private RCON"
+      }
+    ]
   }
 }

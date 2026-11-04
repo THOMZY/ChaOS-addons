@@ -8,7 +8,168 @@
     "dir": "data",
     "check": "game",
     "legacyDir": "server/games/quake",
-    "install": "node games/quake/install.mjs <dossier-du-miroir>"
+    "install": "node games/quake/install.mjs <dossier-du-miroir>",
+    "readOnly": true
   },
-  "compose": { "profile": "quake" }
+  "compose": {
+    "profile": "quake"
+  },
+  "catalogue": {
+    "id": "quake",
+    "title": "Quake III",
+    "icon": "Ⅲ",
+    "thumbnail": "/games/quake/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 1,
+    "hasStakes": false,
+    "players": {
+      "max": 16,
+      "mode": "server"
+    },
+    "launch": {
+      "kind": "window",
+      "target": "quake3"
+    },
+    "description": "Arènes multijoueurs Quake 3. Client navigateur et serveur dédié à préparer."
+  },
+  "description": "Arènes multijoueurs Quake 3. Client navigateur et serveur dédié à préparer.",
+  "icon": "Ⅲ",
+  "readiness": {
+    "files": [
+      {
+        "path": "data/ioquake3.js",
+        "minBytes": 1
+      },
+      {
+        "path": "data/ioquake3.wasm",
+        "minBytes": 1
+      },
+      {
+        "path": "data/baseq3/pak0.pk3",
+        "minBytes": 1
+      }
+    ],
+    "directories": ["data/_next"]
+  },
+  "adminServer": {
+    "id": "quake",
+    "title": "Quake 3",
+    "emoji": "🔫",
+    "subtitle": "ioq3ded · tunnel WASM",
+    "kind": "container",
+    "container": "quake",
+    "console": "q3",
+    "playUrl": "/quake",
+    "quick": [
+      {
+        "labelKey": "games.quick.status",
+        "command": "status",
+        "hintKey": "games.quick.statusPlayers"
+      },
+      {
+        "labelKey": "games.quick.restart",
+        "command": "sv_restart 1",
+        "hintKey": "games.quick.restartRound"
+      },
+      {
+        "labelKey": "games.quick.map17",
+        "command": "map q3dm17",
+        "hintKey": "games.quick.changeMap"
+      },
+      {
+        "labelKey": "games.quick.map6",
+        "command": "map q3dm6",
+        "hintKey": "games.quick.changeMap"
+      },
+      {
+        "labelKey": "games.quick.deathmatch",
+        "command": "g_gametype 0",
+        "hintKey": "games.quick.deathmatchHint"
+      },
+      {
+        "labelKey": "games.quick.fraglimit20",
+        "command": "fraglimit 20",
+        "hintKey": "games.quick.fragLimit"
+      }
+    ],
+    "maps": [
+      {
+        "id": "13vast",
+        "title": "13vast"
+      },
+      {
+        "id": "q3dm1",
+        "title": "q3dm1"
+      },
+      {
+        "id": "q3dm7",
+        "title": "q3dm7"
+      },
+      {
+        "id": "q3dm9",
+        "title": "q3dm9"
+      },
+      {
+        "id": "q3dm17",
+        "title": "q3dm17"
+      },
+      {
+        "id": "q3tourney2",
+        "title": "q3tourney2"
+      },
+      {
+        "id": "q3tourney6_ctf",
+        "title": "q3tourney6_ctf"
+      }
+    ],
+    "logsTty": false,
+    "kickCommand": "clientkick {index}"
+  },
+  "control": {
+    "service": "quake",
+    "startOnInstall": true,
+    "stopOnUninstall": true
+  },
+  "browser": {
+    "window": "client/host-window.js",
+    "locales": "client/host-locales.json"
+  },
+  "windowGeometry": {
+    "left": 15,
+    "top": 4.5,
+    "width": 64,
+    "height": 69.444444
+  },
+  "controlTarget": {
+    "id": "quake",
+    "container": "quake",
+    "console": {
+      "protocol": "q3",
+      "host": "quake",
+      "port": 27960,
+      "hostEnv": "Q3_RCON_HOST",
+      "portEnv": "Q3_RCON_PORT",
+      "passwordEnv": "Q3_RCON_PASSWORD"
+    }
+  },
+  "access": {
+    "frameOriginEnv": ["QUAKE_ORIGIN"]
+  },
+  "deployment": {
+    "compose": "deploy/compose.json",
+    "profile": "quake"
+  },
+  "networkPolicy": {
+    "services": ["quake"],
+    "localPorts": [
+      {
+        "service": "quake",
+        "target": 27960,
+        "protocol": "udp",
+        "ip": "127.0.0.1",
+        "why": "local development only"
+      }
+    ],
+    "tunnelOnly": ["quake"]
+  }
 }

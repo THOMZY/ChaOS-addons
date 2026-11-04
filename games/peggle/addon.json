@@ -3,5 +3,47 @@
   "name": "Peggle",
   "version": "1.0.0",
   "chaosAddonApi": 1,
-  "server": "server/index.js"
+  "server": "server/index.js",
+  "catalogue": {
+    "id": "peggle",
+    "title": "Peggle",
+    "titleKey": "games.type.peggle",
+    "icon": "🔵",
+    "thumbnail": "/games/peggle/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 2,
+    "hasStakes": true,
+    "client": "/games/peggle/client/index.js",
+    "styles": "/games/peggle/client/style.css",
+    "launch": {
+      "kind": "table",
+      "target": "peggle"
+    },
+    "description": "Défis Peggle sur les tables de jeu avec niveaux partagés."
+  },
+  "description": "Défis Peggle sur les tables de jeu avec niveaux partagés.",
+  "icon": "🔵",
+  "readiness": {
+    "files": [
+      {
+        "path": "client/index.js",
+        "minBytes": 1
+      },
+      {
+        "path": "client/style.css",
+        "minBytes": 1
+      },
+      {
+        "path": "server/table-rules.js",
+        "minBytes": 1
+      },
+      {
+        "path": "media/levels.lua",
+        "minBytes": 1
+      }
+    ]
+  },
+  "browser": {
+    "locales": "client/host-locales.json"
+  }
 }

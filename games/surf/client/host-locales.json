@@ -1,0 +1,16 @@
+{
+  "fr": {
+    "games.surfFrameTitle": "Jeu Surf",
+    "games.unloadForMe": "Décharger pour moi (la partie continue pour les autres)",
+    "games.loadingSurf": "Chargement de Surf…",
+    "games.addons.description.surf": "Parcours de surf et salles multijoueurs hébergées par le site.",
+    "admin.page.surfScores": "Surf — meilleurs temps par carte"
+  },
+  "en": {
+    "games.surfFrameTitle": "Surf game",
+    "games.unloadForMe": "Unload for me (others keep playing)",
+    "games.loadingSurf": "Loading Surf…",
+    "games.addons.description.surf": "Surf courses and multiplayer rooms hosted by the website.",
+    "admin.page.surfScores": "Surf — best times per map"
+  }
+}

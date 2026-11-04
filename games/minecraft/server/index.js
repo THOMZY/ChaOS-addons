@@ -1,7 +1,8 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { defineFeature } from '../../../server/core/features.js';
-import { GAME_CLIENT_PERMISSIONS_POLICY, MC_CLIENT_CSP } from '../../../server/http/csp.js';
+import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../server/http/csp.js';
+import { MC_CLIENT_CSP } from './client-csp.js';
 import { attachMinecraftProxy } from './proxy.js';
 
 const WEB_ROOT = fileURLToPath(new URL('../web/', import.meta.url));

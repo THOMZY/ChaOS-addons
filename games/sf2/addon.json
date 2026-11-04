@@ -3,5 +3,51 @@
   "name": "Street Fighter II",
   "version": "1.0.0",
   "chaosAddonApi": 1,
-  "server": "server/index.js"
+  "server": "server/index.js",
+  "catalogue": {
+    "id": "sf2",
+    "title": "Street Fighter II",
+    "icon": "🥊",
+    "thumbnail": "/games/sf2/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 2,
+    "hasStakes": true,
+    "players": {
+      "max": 2,
+      "mode": "duel"
+    },
+    "launch": {
+      "kind": "window",
+      "target": "sf2"
+    },
+    "description": "Street Fighter II dans sa propre fenêtre de jeu."
+  },
+  "description": "Street Fighter II dans sa propre fenêtre de jeu.",
+  "icon": "🥊",
+  "readiness": {
+    "files": [
+      {
+        "path": "client/index.js",
+        "minBytes": 1
+      },
+      {
+        "path": "web/index.html",
+        "minBytes": 1
+      }
+    ]
+  },
+  "browser": {
+    "window": "client/host-window.js",
+    "chat": "client/host-chat.js",
+    "locales": "client/host-locales.json"
+  },
+  "windowGeometry": {
+    "left": 30,
+    "top": 12,
+    "width": 45,
+    "height": 60
+  },
+  "access": {
+    "reservedPaths": ["/sf2"]
+  }
 }

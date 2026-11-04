@@ -7,5 +7,89 @@
   "data": {
     "dir": "data",
     "install": "node scripts/games/games-install.mjs hammerfest"
+  },
+  "catalogue": {
+    "id": "hammerfest",
+    "title": "Hammerfest",
+    "icon": "⛏",
+    "thumbnail": "/games/hammerfest/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 1,
+    "hasStakes": false,
+    "launch": {
+      "kind": "window",
+      "target": "hammerfest"
+    },
+    "description": "Aventure Hammerfest avec les ressources du jeu importées sur le serveur."
+  },
+  "description": "Aventure Hammerfest avec les ressources du jeu importées sur le serveur.",
+  "icon": "⛏",
+  "readiness": {
+    "files": [
+      {
+        "path": "client/play.html",
+        "minBytes": 1
+      },
+      {
+        "path": "client/play.js",
+        "minBytes": 1
+      },
+      {
+        "path": "client/hf.css",
+        "minBytes": 1
+      }
+    ]
+  },
+  "access": {
+    "publicWrites": [
+      {
+        "pattern": "^/v1/runs/[0-9a-f-]{36}/(start|result)$"
+      }
+    ]
+  },
+  "browser": {
+    "window": "client/host-window.js",
+    "locales": "client/host-locales.json"
+  },
+  "adminScoreboard": {
+    "entry": "server/host-admin.js",
+    "title": "Hammerfest",
+    "columns": [
+      {
+        "key": "modeTitle",
+        "title": "Mode",
+        "titleKey": "admin.page.mode"
+      },
+      {
+        "key": "pseudo",
+        "title": "Player",
+        "format": "identity",
+        "titleKey": "admin.page.pseudo"
+      },
+      {
+        "key": "score",
+        "title": "Score",
+        "format": "number",
+        "titleKey": "admin.page.score"
+      },
+      {
+        "key": "maxLevel",
+        "title": "Level",
+        "format": "number",
+        "titleKey": "admin.page.maxLevel"
+      },
+      {
+        "key": "endedAt",
+        "title": "Date",
+        "format": "date",
+        "titleKey": "admin.page.date"
+      }
+    ]
+  },
+  "windowGeometry": {
+    "left": 15,
+    "top": 4.5,
+    "width": 64,
+    "height": 72
   }
 }

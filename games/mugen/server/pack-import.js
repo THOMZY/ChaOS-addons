@@ -63,6 +63,7 @@ function safePath(name) {
         !part ||
         part === '.' ||
         part === '..' ||
+        // eslint-disable-next-line no-control-regex -- pack paths must reject control bytes
         /[\\:\x00-\x1f]/.test(part) ||
         /[. ]$/.test(part) ||
         /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part),
@@ -73,6 +74,7 @@ function safePath(name) {
 }
 
 function packName(filename) {
+  // eslint-disable-next-line no-control-regex -- file names must reject control bytes
   if (typeof filename !== 'string' || !/\.(zip|rar)$/i.test(filename) || /[\\/\x00-\x1f]/.test(filename))
     throw fail('zip_required');
   const name = filename

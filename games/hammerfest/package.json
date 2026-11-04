@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ruffle-rs/ruffle": "0.7.1"
+  },
+  "name": "hammerfest"
+}

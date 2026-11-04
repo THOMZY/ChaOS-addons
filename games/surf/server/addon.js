@@ -11,6 +11,7 @@ import { clientFiles } from '../../../server/http/game-clients.js';
 import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../server/http/csp.js';
 import { registerInProcessAdmin } from '../../platform/game-admin/registry.js';
 import * as admin from './admin.js';
+import { runCommand } from './host-console.js';
 import router from './api.js';
 // Registers the "surf" room game with the game-server foundation.
 import './room.js';
@@ -21,7 +22,7 @@ export const SURF_CLIENT_ROOT = process.env.GAME_CLIENT_ASSET_ROOT
   : fileURLToPath(new URL('../data/', import.meta.url));
 
 ensureSchema();
-registerInProcessAdmin('surf', admin);
+registerInProcessAdmin('surf', { ...admin, command: runCommand });
 
 export default defineFeature({
   id: 'surf',
@@ -38,7 +39,10 @@ export default defineFeature({
           const pack = /^packed\/[a-f0-9]{64}\.(?:visual-assets|json)\.gz$/i.test(
             relative(SURF_CLIENT_ROOT, path).replaceAll('\\', '/'),
           );
-          response.setHeader('Cache-Control', pack ? 'public, max-age=31536000, immutable' : 'no-cache');
+          response.setHeader(
+            'Cache-Control',
+            pack ? 'public, max-age=31536000, immutable' : 'no-cache',
+          );
           response.setHeader('Permissions-Policy', GAME_CLIENT_PERMISSIONS_POLICY);
         },
       }),

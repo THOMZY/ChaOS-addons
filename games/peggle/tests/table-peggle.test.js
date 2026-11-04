@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // Registers the Peggle rules with the shared tables, as the site does at boot.
 import '../server/index.js';
+import { readFileSync } from 'node:fs';
+import { registerAddonManifests } from '../../catalogue.js';
+registerAddonManifests([JSON.parse(readFileSync(new URL('../addon.json', import.meta.url))).catalogue]);
 import { createTableRuntime } from '../../platform/table-runtime.js';
 import { gameClock } from '../../../tests/helpers/game-clock.mjs';
 

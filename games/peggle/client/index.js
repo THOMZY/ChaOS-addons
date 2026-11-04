@@ -2,7 +2,7 @@ import { el } from '/core/js/games/ui.js';
 import { t, getLocale } from '/core/js/i18n.js';
 import { renderUserName } from '/core/js/user-name.js';
 import { createGameScope } from '/core/js/games/game-scope.js';
-import { loadGameResources } from '/core/js/games/game-resource-loader.js';
+import { loadGameResources } from './host-resources.js';
 
 // One run per seat and round survives a remount (language change, display
 // closed and reopened): the board lives in a detached host the next mount

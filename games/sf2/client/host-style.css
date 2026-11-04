@@ -1,0 +1,222 @@
+/* ── Street Fighter 2 window ────────────────────────────────────────────── */
+@import url('./host-shared.css');
+
+.sf2-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0f;
+  color: #e0ddf5;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+/* ── Lobby ──────────────────────────────────────────────────────────────── */
+
+.sf2-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sf2-lobby-split {
+  display: flex;
+  gap: 10px;
+}
+
+.sf2-section {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.sf2-rooms-section {
+  min-width: 0;
+}
+
+.sf2-section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #e8c000;
+}
+
+/* ── Playing ────────────────────────────────────────────────────────────── */
+
+.sf2-game-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Game Over screen ───────────────────────────────────────────────────── */
+
+.sf2-over {
+  position: relative;
+  flex: 1; /* fill remaining space in .sf2-body flex column */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  background: #05050a;
+}
+
+/* animated scanline bg */
+.sf2-over-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255, 255, 255, 0.018) 4px),
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(30, 20, 60, 0.9) 0%, #05050a 100%);
+  animation: sf2-bg-pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes sf2-bg-pulse {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sf2-over-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  padding: 32px 40px;
+}
+
+/* Big title */
+.sf2-over-title {
+  font-size: 58px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1;
+  filter: drop-shadow(0 0 16px var(--clr)) drop-shadow(0 0 40px var(--clr));
+  animation: sf2-title-in 0.45s cubic-bezier(0.15, 0.85, 0.25, 1.4) both;
+}
+
+@keyframes sf2-title-in {
+  from {
+    transform: scaleX(2.5) scaleY(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Winner block */
+.sf2-over-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: sf2-fade-up 0.4s 0.25s ease-out both;
+}
+
+.sf2-over-winner-label {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.sf2-over-winner-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.sf2-over-payout {
+  font-size: 13px;
+  color: #e8c000;
+  font-weight: 700;
+  background: rgba(232, 192, 0, 0.12);
+  border: 1px solid rgba(232, 192, 0, 0.3);
+  border-radius: 4px;
+  padding: 2px 10px;
+  margin-top: 2px;
+}
+
+/* Stars row */
+.sf2-over-stars {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  animation: sf2-fade-up 0.4s 0.35s ease-out both;
+}
+
+.sf2-over-stars-sep {
+  color: #333;
+  font-size: 14px;
+}
+
+/* Forfeit note */
+.sf2-over-note {
+  font-size: 11px;
+  color: #666;
+  margin: 0;
+  letter-spacing: 0.06em;
+  animation: sf2-fade-up 0.4s 0.4s ease-out both;
+}
+
+/* Divider line */
+.sf2-over-content::after {
+  content: '';
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: sf2-fade-up 0.4s 0.45s ease-out both;
+}
+
+/* Back button */
+.sf2-over-back-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #aaa;
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+  animation: sf2-fade-up 0.4s 0.5s ease-out both;
+}
+
+.sf2-over-back-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+@keyframes sf2-fade-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

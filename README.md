@@ -1,6 +1,6 @@
 # ChaOS-addons
 
-Add-ons for the ChaOS website, grouped by kind: games in `games/`, and later applications in `applications/`. Each add-on contains the code, browser client, optional media and tests for one game or application. The website keeps the catalog, windows, translations and shared accounts.
+Add-ons for the ChaOS website, grouped by kind: games in `games/`, and later applications in `applications/`. Each add-on contains the code, browser client, optional media and tests for one game or application. Chaque paquet possède son catalogue, ses fenêtres, ses traductions, ses ressources et son intégration serveur. Le site fournit les comptes et les API communes.
 
 ## Games
 
@@ -54,3 +54,11 @@ Run game tests with `npm test` from the ChaOS website repository after installin
 ## Credits
 
 ChaOS-addons is an integration project. Individual game credits and source links are listed in each add-on README. The ChaOS website is the host platform.
+
+## Intégration autonome
+
+Le manifeste `addon.json` déclare les intégrations du paquet : `browser` (fenêtre, chat, traductions, manettes), `catalogue`, `adminServer`, `adminScoreboard`, `access`, `readiness`, `preserveFiles`, `migration`, `deployment`, `controlTarget` et `networkPolicy`. Les ressources navigateur restent dans `client/` et `assets/` ; les données privées restent dans `data/`.
+
+Les dépendances npm appartiennent au paquet et sont verrouillées par son `package-lock.json`. Le site les installe sans scripts npm. Les recettes natives `runtime.build` et `runtime.smoke` sont exécutées lors de la construction de l’image ; un moteur natif ajouté depuis le panel nécessite donc une reconstruction de l’image. La recette mGBA et ses vérifications SHA-256 appartiennent à Game Boy.
+
+Pour tester avec le socle commun, installer le paquet dans le dépôt du site puis lancer `npm run test:addons`. Les modules `host-*` sont les adaptateurs vers les API publiques du site ; aucun import propre au jeu n’est nécessaire dans le cœur.

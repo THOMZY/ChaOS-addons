@@ -1,0 +1,14 @@
+{
+  "fr": {
+    "window.gameboy": "Game Boy",
+    "games.addons.description.gameboy": "Bibliothèque Game Boy, Game Boy Color et Game Boy Advance avec sauvegardes.",
+    "about.feature.gameboy": "game boy",
+    "about.feature.gameboyDesc": "VIEILLE CARTOUCHE. LA SAUVEGARDE RESTE."
+  },
+  "en": {
+    "window.gameboy": "Game Boy",
+    "games.addons.description.gameboy": "Game Boy, Game Boy Color and Game Boy Advance library with game saves.",
+    "about.feature.gameboy": "game boy",
+    "about.feature.gameboyDesc": "OLD CART. SAVE STAY."
+  }
+}

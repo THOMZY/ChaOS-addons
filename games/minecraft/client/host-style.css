@@ -1,0 +1,27 @@
+/* ── Minecraft window ─────────────────────────────────────────────────────── */
+/* The WM body fills all available height; the iframe and pointer-lock overlay
+   sit inside it exactly like the player/salty windows. */
+
+.wm-body-mc {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.wm-body-mc iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Cursor overlay — toggled by windows.js to capture mouse during drag/resize */
+.wm-body-mc .iframe-cursor-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 1;
+}

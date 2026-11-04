@@ -1,0 +1,27 @@
+/* ── Hammerfest window ───────────────────────────────────────────────────── */
+/* Same layout as the other game windows: the body fills the frame, the iframe
+   sits on top of it, and the cursor overlay is toggled by windows.js. */
+
+.wm-body-hf {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0b12;
+}
+
+.wm-body-hf iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #0d0b12;
+}
+
+.wm-body-hf .iframe-cursor-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 1;
+}

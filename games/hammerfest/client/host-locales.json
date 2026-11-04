@@ -1,0 +1,18 @@
+{
+  "fr": {
+    "profile.account": "compte",
+    "stats.total": "total",
+    "games.unloadForMe": "Décharger pour moi (la partie continue pour les autres)",
+    "games.loadingHammerfest": "Chargement de Hammerfest…",
+    "games.addons.description.hammerfest": "Aventure Hammerfest avec les ressources du jeu importées sur le serveur.",
+    "admin.page.hammerfestScores": "Hammerfest — meilleurs scores par mode"
+  },
+  "en": {
+    "profile.account": "account",
+    "stats.total": "total",
+    "games.unloadForMe": "Unload for me (others keep playing)",
+    "games.loadingHammerfest": "Loading Hammerfest…",
+    "games.addons.description.hammerfest": "Hammerfest adventures using game resources imported on the server.",
+    "admin.page.hammerfestScores": "Hammerfest — best scores per mode"
+  }
+}

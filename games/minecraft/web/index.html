@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="minecraft.title">ChaOS — Minecraft</title>
   <script type="module">
-    import { bindTranslations, getLanguage } from '../core/js/i18n.js';
+    import { bindTranslations, getLanguage, registerAddonTranslations } from '/core/js/localization/i18n.js';
+      const response = await fetch('/games/minecraft/client/host-locales.json');
+      if (!response.ok) throw new Error('Add-on translations unavailable');
+      registerAddonTranslations(await response.json());
 
     document.documentElement.lang = getLanguage();
     bindTranslations();

@@ -8,6 +8,103 @@
     "dir": "data",
     "check": "index.html",
     "legacyDir": "server/games/surf",
-    "install": "node games/surf/install.mjs <dossier-du-miroir>"
+    "install": "node games/surf/install.mjs <dossier-du-miroir>",
+    "readOnly": true
+  },
+  "catalogue": {
+    "id": "surf",
+    "title": "Surf",
+    "icon": "≋",
+    "thumbnail": "/games/surf/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 1,
+    "hasStakes": false,
+    "players": {
+      "max": 20,
+      "mode": "server"
+    },
+    "launch": {
+      "kind": "window",
+      "target": "surf"
+    },
+    "description": "Parcours de surf et salles multijoueurs hébergées par le site."
+  },
+  "description": "Parcours de surf et salles multijoueurs hébergées par le site.",
+  "icon": "≋",
+  "readiness": {
+    "files": []
+  },
+  "adminServer": {
+    "id": "surf",
+    "title": "Surf",
+    "emoji": "🏄",
+    "subtitle": "Counter-Strike: Source · salles in-process",
+    "kind": "inprocess",
+    "container": null,
+    "console": "process",
+    "playUrl": "/surf/",
+    "quick": [
+      {
+        "label": "Vote map",
+        "command": "/vote",
+        "hint": "ouvre un vote de map"
+      },
+      {
+        "label": "Map suivante",
+        "command": "/next",
+        "hint": "passe à la map suivante"
+      }
+    ],
+    "logsTty": false,
+    "logPattern": "surf|game-server"
+  },
+  "access": {
+    "publicWrites": [
+      {
+        "path": "/surf",
+        "query": {
+          "action": "room-ticket"
+        }
+      }
+    ]
+  },
+  "browser": {
+    "window": "client/host-window.js",
+    "locales": "client/host-locales.json"
+  },
+  "adminScoreboard": {
+    "entry": "server/host-admin.js",
+    "title": "Surf",
+    "columns": [
+      {
+        "key": "mapTitle",
+        "title": "Map",
+        "titleKey": "admin.page.mapName"
+      },
+      {
+        "key": "pseudo",
+        "title": "Player",
+        "format": "identity",
+        "titleKey": "admin.page.pseudo"
+      },
+      {
+        "key": "timeMs",
+        "title": "Time",
+        "format": "duration",
+        "titleKey": "admin.page.runTime"
+      },
+      {
+        "key": "recordedAt",
+        "title": "Date",
+        "format": "date",
+        "titleKey": "admin.page.date"
+      }
+    ]
+  },
+  "windowGeometry": {
+    "left": 18,
+    "top": 5.555556,
+    "width": 64,
+    "height": 69.444444
   }
 }

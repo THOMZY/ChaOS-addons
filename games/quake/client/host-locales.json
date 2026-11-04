@@ -1,0 +1,36 @@
+{
+  "fr": {
+    "games.quakeFrameTitle": "Jeu Quake 3",
+    "games.unloadForMe": "Décharger pour moi (la partie continue pour les autres)",
+    "games.loadingQuake": "Préparation de Quake III…",
+    "games.addons.description.quake": "Arènes multijoueurs Quake 3. Client navigateur et serveur dédié à préparer.",
+    "games.quick.status": "Statut",
+    "games.quick.statusPlayers": "État et joueurs",
+    "games.quick.restart": "Redémarrer",
+    "games.quick.restartRound": "Redémarrer la manche",
+    "games.quick.map17": "Carte q3dm17",
+    "games.quick.map6": "Carte q3dm6",
+    "games.quick.changeMap": "Changer de carte",
+    "games.quick.deathmatch": "Match à mort",
+    "games.quick.deathmatchHint": "Mode deathmatch",
+    "games.quick.fraglimit20": "Limite de frags 20",
+    "games.quick.fragLimit": "Limite de frags"
+  },
+  "en": {
+    "games.quakeFrameTitle": "Quake 3 game",
+    "games.unloadForMe": "Unload for me (others keep playing)",
+    "games.loadingQuake": "Preparing Quake III…",
+    "games.addons.description.quake": "Quake 3 multiplayer arenas. Requires browser assets and a dedicated server.",
+    "games.quick.status": "Status",
+    "games.quick.statusPlayers": "Status and players",
+    "games.quick.restart": "Restart",
+    "games.quick.restartRound": "Restart the round",
+    "games.quick.map17": "Map q3dm17",
+    "games.quick.map6": "Map q3dm6",
+    "games.quick.changeMap": "Change map",
+    "games.quick.deathmatch": "Deathmatch",
+    "games.quick.deathmatchHint": "Deathmatch mode",
+    "games.quick.fraglimit20": "Frag limit 20",
+    "games.quick.fragLimit": "Frag limit"
+  }
+}

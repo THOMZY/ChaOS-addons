@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "node-mgba": "0.3.2",
+    "sharp": "0.35.5"
+  },
+  "overrides": {
+    "node-mgba": {
+      "sharp": "$sharp"
+    }
+  },
+  "name": "gameboy"
+}

@@ -1,0 +1,37 @@
+{
+  "services": {
+    "quake": {
+      "profiles": ["quake"],
+      "image": "lukaklacar/q3js-server:1.0.0",
+      "container_name": "quake",
+      "restart": "unless-stopped",
+      "networks": ["default", "game-console"],
+      "volumes": ["./games/quake/data/baseq3:/data/baseq3:ro", "quake-server-state:/state"],
+      "environment": {
+        "Q3JS_MASTER_URL": "http://127.0.0.1:8080",
+        "Q3JS_HEARTBEAT_INTERVAL_MS": "3600000",
+        "Q3JS_PUBLISH_HOST": "quake",
+        "Q3JS_PUBLISH_PORT": "27961",
+        "Q3JS_SECURE": "false",
+        "Q3JS_SERVER_CONFIG": "seta sv_hostname \"ChaOS Q3\"; seta sv_maxclients \"16\"; seta sv_allowDownload \"1\"; seta sv_pure \"0\"; seta g_gametype \"0\"; seta fraglimit \"20\"; seta timelimit \"15\"; seta sv_master1 \"\"; seta sv_master2 \"\"; seta sv_master3 \"\"; seta sv_master4 \"\"; seta sv_master5 \"\"; seta rconPassword \"${Q3_RCON_PASSWORD:-}\"; map q3dm17"
+      }
+    },
+    "game-admin": {
+      "environment": {
+        "Q3_RCON_HOST": "quake",
+        "Q3_RCON_PORT": "27960",
+        "Q3_RCON_PASSWORD": "${Q3_RCON_PASSWORD:-}"
+      }
+    },
+    "chaos": {
+      "environment": {
+        "Q3_HOST": "quake",
+        "Q3_PORT": "27960",
+        "Q3_RCON_PASSWORD": ""
+      }
+    }
+  },
+  "volumes": {
+    "quake-server-state": {}
+  }
+}

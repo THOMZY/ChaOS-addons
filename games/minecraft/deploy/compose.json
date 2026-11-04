@@ -1,0 +1,31 @@
+{
+  "services": {
+    "minecraft": {
+      "profiles": ["minecraft"],
+      "build": "./games/minecraft/docker",
+      "container_name": "minecraft",
+      "restart": "unless-stopped",
+      "stdin_open": true,
+      "tty": true,
+      "environment": {
+        "MC_RCON_PASSWORD": "${MC_RCON_PASSWORD:-}",
+        "MC_RCON_PORT": "25575"
+      },
+      "ports": ["25565:25565"],
+      "networks": ["default", "game-console"],
+      "volumes": ["./games/minecraft/data:/server"]
+    },
+    "game-admin": {
+      "environment": {
+        "MC_RCON_HOST": "minecraft",
+        "MC_RCON_PORT": "25575",
+        "MC_RCON_PASSWORD": "${MC_RCON_PASSWORD:-}"
+      }
+    },
+    "chaos": {
+      "environment": {
+        "MC_RCON_PASSWORD": ""
+      }
+    }
+  }
+}

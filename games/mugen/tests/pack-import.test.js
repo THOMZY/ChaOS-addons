@@ -40,8 +40,10 @@ test('MUGEN refuses unsafe, encrypted, oversized and corrupt RAR archives', asyn
     [{ name: 'secret.txt', data: 'secret', encrypted: true }],
     [{ name: 'huge.sff', data: 'small', size: PACK_LIMITS.file + 1 }],
     [{ name: 'same.txt' }, { name: 'SAME.txt' }],
-  ]) await assert.rejects(upload(rarFixture(files), 'characters', 'hero.rar'));
-  await assert.rejects(upload(Buffer.from('broken'), 'characters', 'hero.rar'));
+  ]) await assert.rejects(upload(rarFixture(files), 'characters', 'hero.rar'),
+    (error) => error.status === 400 || error.status === 413);
+  await assert.rejects(upload(Buffer.from('broken'), 'characters', 'hero.rar'),
+    (error) => error.status === 400);
   assert.deepEqual(await readdir(root), []);
 });
 

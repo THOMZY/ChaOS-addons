@@ -7,5 +7,57 @@
   "data": {
     "dir": "data",
     "install": "node games/gameboy/install.mjs [source-directory]"
+  },
+  "catalogue": {
+    "id": "gameboy",
+    "title": "Game Boy",
+    "icon": "🕹️",
+    "thumbnail": "/games/gameboy/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 4,
+    "hasStakes": false,
+    "players": {
+      "mode": "console"
+    },
+    "launch": {
+      "kind": "window",
+      "target": "gameboy"
+    },
+    "description": "Bibliothèque Game Boy, Game Boy Color et Game Boy Advance avec sauvegardes."
+  },
+  "description": "Bibliothèque Game Boy, Game Boy Color et Game Boy Advance avec sauvegardes.",
+  "icon": "🕹️",
+  "readiness": {
+    "files": [
+      {
+        "path": "client/gameboy.js",
+        "minBytes": 1
+      },
+      {
+        "path": "client/gameboy.css",
+        "minBytes": 1
+      }
+    ]
+  },
+  "browser": {
+    "window": "client/host-window.js",
+    "locales": "client/host-locales.json"
+  },
+  "windowGeometry": {
+    "left": 27,
+    "top": 5,
+    "width": 40,
+    "height": 80
+  },
+  "development": {
+    "format": ["games/gameboy/{install.mjs,{server,client,tests}/**/*.{js,mjs,css,html}}"],
+    "lint": {
+      "strict": ["games/gameboy/**/*.js", "games/gameboy/**/*.mjs"],
+      "innerHtml": ["games/gameboy/client/**"]
+    }
+  },
+  "runtime": {
+    "build": "install/build-runtime.sh",
+    "smoke": "install/check-runtime.mjs"
   }
 }

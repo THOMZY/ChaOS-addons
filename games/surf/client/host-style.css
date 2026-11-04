@@ -1,0 +1,28 @@
+/* ── Surf window ──────────────────────────────────────────────────────────── */
+/* Same layout as the Minecraft window: the body fills the available height,
+   with the iframe and mouse-capture overlay stacked inside it. Kept separate
+   from minecraft.css so both games can evolve independently. */
+
+.wm-body-surf {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0e12;
+}
+
+.wm-body-surf iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Cursor overlay toggled by windows.js during drag and resize. */
+.wm-body-surf .iframe-cursor-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 1;
+}

@@ -1,0 +1,67 @@
+/* ── Quake 3 window ───────────────────────────────────────────────────────── */
+/* Same layout as the Minecraft and Surf windows: the body fills the available
+   height, with the iframe and mouse-capture overlay stacked inside it.
+   Kept separate so the games can evolve independently. */
+
+.wm-body-quake3 {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0e12;
+}
+
+.wm-body-quake3 iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* WASM may take several seconds to start. This layer is painted before
+   navigation so the window stays informative instead of showing a frozen
+   black rectangle. */
+.wm-body-quake3 .quake3-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  color: #f2e8ce;
+  background: radial-gradient(circle at center, rgba(112, 19, 15, 0.42), transparent 58%), #08090a;
+  font:
+    700 13px/1.2 'Courier New',
+    monospace;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wm-body-quake3 .quake3-loading[hidden] {
+  display: none;
+}
+
+.quake3-loading-mark {
+  color: #ff5a36;
+  font-size: 42px;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(255, 72, 42, 0.7);
+  animation: quake3-loading-pulse 900ms steps(2, end) infinite;
+}
+
+@keyframes quake3-loading-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.88);
+  }
+}
+
+/* Cursor overlay toggled by windows.js during drag and resize. */
+.wm-body-quake3 .iframe-cursor-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 1;
+}

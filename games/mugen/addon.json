@@ -8,6 +8,59 @@
     "dir": "data",
     "check": "engine/engine.json",
     "legacyDir": "server/games/MUGEN",
-    "install": "node games/mugen/install.mjs"
+    "install": "node games/mugen/install.mjs",
+    "legacyIds": ["fighting"]
+  },
+  "catalogue": {
+    "id": "mugen",
+    "title": "MUGEN",
+    "icon": "⚔",
+    "thumbnail": "/games/mugen/assets/thumbnail.webp",
+    "kind": "heavy",
+    "seats": 2,
+    "hasStakes": true,
+    "players": {
+      "max": 2,
+      "mode": "duel"
+    },
+    "launch": {
+      "kind": "window",
+      "target": "mugen"
+    },
+    "description": "Combats et sandbox MUGEN avec tes packs de personnages et de stages."
+  },
+  "description": "Combats et sandbox MUGEN avec tes packs de personnages et de stages.",
+  "icon": "⚔",
+  "readiness": {
+    "files": [
+      {
+        "path": "client/index.js",
+        "minBytes": 1
+      }
+    ]
+  },
+  "migration": "install/migrate-data.js",
+  "browser": {
+    "window": "client/host-window.js",
+    "chat": "client/host-chat.js",
+    "locales": "client/host-locales.json"
+  },
+  "windowGeometry": {
+    "left": 10,
+    "top": 10,
+    "width": 55,
+    "height": 44.444444
+  },
+  "access": {
+    "reservedPaths": ["/mugen", "/mugen-stages", "/api/mugen"]
+  },
+  "development": {
+    "lint": {
+      "innerHtml": ["games/mugen/client/**"],
+      "browserEvaluated": [
+        "games/mugen/tests/fixtures/gamepad-browser.js",
+        "games/mugen/tests/fixtures/replay-browser.js"
+      ]
+    }
   }
 }

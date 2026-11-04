@@ -1,0 +1,1340 @@
+/* ChaOS — MUGEN v2 — MUGEN engine */
+/* sf2-shared.css is loaded explicitly before this sheet by feature-styles. */
+
+/* ── Window root ──────────────────────────────────────────────────────── */
+.mugen-body {
+  display: flex;
+  flex-direction: column;
+  background: #08080f;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  user-select: none;
+  font-family: 'Courier New', monospace;
+  color: #e0e0e0;
+}
+
+.fg-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── MUGEN and SF2 windows (separate since roadmap J5e) ─────────────── */
+.fg-window-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.fg-panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fg-panel-mugen {
+  background: linear-gradient(180deg, #0d0018 0%, #08080f 60%);
+}
+
+.fg-panel-sf2 {
+  background: linear-gradient(180deg, #130a00 0%, #0a0806 60%);
+}
+
+/* ── Panel headers ────────────────────────────────────────────────────── */
+.fg-panel-header {
+  flex-shrink: 0;
+  padding: 10px 14px 9px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  user-select: none;
+}
+
+.fg-panel-header-mugen {
+  background: linear-gradient(135deg, rgba(90, 10, 180, 0.35) 0%, rgba(40, 0, 90, 0.2) 100%);
+  border-bottom: 1px solid rgba(160, 80, 255, 0.35);
+  box-shadow: 0 1px 18px rgba(100, 0, 200, 0.18) inset;
+}
+
+.fg-panel-header-sf2 {
+  background: linear-gradient(135deg, rgba(200, 80, 0, 0.35) 0%, rgba(100, 30, 0, 0.2) 100%);
+  border-bottom: 1px solid rgba(232, 160, 0, 0.4);
+  box-shadow: 0 1px 18px rgba(200, 100, 0, 0.18) inset;
+}
+
+.fg-panel-game-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.fg-panel-game-name {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  line-height: 1.2;
+}
+
+.fg-panel-header-mugen .fg-panel-game-name {
+  color: #cc88ff;
+  text-shadow:
+    0 0 16px rgba(180, 80, 255, 0.6),
+    0 0 4px rgba(180, 80, 255, 0.4);
+}
+
+.fg-panel-header-sf2 .fg-panel-game-name {
+  color: #f0cc00;
+  text-shadow:
+    0 0 16px rgba(240, 190, 0, 0.55),
+    0 0 4px rgba(240, 190, 0, 0.4);
+}
+
+.fg-panel-game-sub {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  margin-top: 3px;
+  opacity: 0.45;
+}
+
+.fg-panel-header-mugen .fg-panel-game-sub {
+  color: #bb88ff;
+}
+.fg-panel-header-sf2 .fg-panel-game-sub {
+  color: #cc9900;
+}
+
+/* ── :has() rules — the MUGEN header shows only in the lobby ─────────── */
+/* Hides MUGEN panel header in fight / char-select / loading states */
+.fg-panel-mugen:not(:has(.fg-lobby)) > .fg-panel-header {
+  display: none;
+}
+
+/* ── :has() rules — the SF2 header hides during play ─────────────────── */
+/* Hide SF2 panel header during active play */
+.fg-panel-sf2:has(.sf2-game-wrap) > .fg-panel-header {
+  display: none;
+}
+
+/* ── Shared buttons ───────────────────────────────────────────────────── */
+.fg-btn {
+  background: #1a0030;
+  border: 1px solid #7733cc;
+  color: #d0a0ff;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.fg-btn:hover {
+  background: #44009a;
+  color: #fff;
+}
+.fg-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.fg-btn-create {
+  border-color: #55aaff;
+  color: #88ddff;
+}
+.fg-btn-create:hover {
+  background: #003366;
+}
+.fg-btn-join {
+  border-color: #33cc77;
+  color: #88ffbb;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.fg-btn-join:hover {
+  background: #003322;
+}
+.fg-btn-spec {
+  border-color: #cc9933;
+  color: #ffd060;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.fg-btn-spec:hover {
+  background: #332200;
+}
+.fg-btn-back {
+  border-color: #555;
+  color: #aaa;
+}
+.fg-btn-back:hover {
+  background: #222;
+}
+.fg-btn-ready {
+  border-color: #33ff88;
+  color: #00ff66;
+  min-width: 120px;
+}
+.fg-btn-ready:hover {
+  background: #002211;
+}
+
+.fg-input {
+  background: #0f0f1a;
+  border: 1px solid #333;
+  color: #e0e0e0;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.fg-input:focus {
+  outline: none;
+  border-color: #7733cc;
+}
+
+/* ── Lobby ────────────────────────────────────────────────────────────── */
+.fg-lobby {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  flex: 1;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.fg-lobby-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+.fg-lobby-col h3 {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #9966cc;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(119, 51, 204, 0.25);
+  padding-bottom: 5px;
+  text-shadow: 0 0 8px rgba(160, 80, 255, 0.3);
+}
+
+.fg-room-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fg-room-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(80, 20, 160, 0.08);
+  border: 1px solid rgba(119, 51, 204, 0.18);
+  border-radius: 4px;
+  font-size: 12px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.fg-room-entry:hover {
+  background: rgba(119, 51, 204, 0.16);
+  border-color: rgba(160, 80, 255, 0.35);
+}
+.fg-room-entry span:first-child {
+  flex: 1;
+}
+.fg-room-bet {
+  color: #ffcc44;
+  font-size: 11px;
+}
+.fg-room-empty {
+  color: #444;
+  font-size: 11px;
+  padding: 8px 4px;
+}
+
+/* ── Character Select ─────────────────────────────────────────────────── */
+.fg-charsel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 12px;
+  padding: 16px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.fg-charsel h2 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  color: #d0a0ff;
+  text-align: center;
+  text-transform: uppercase;
+}
+.fg-charlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  overflow-y: auto;
+  grid-row: 2;
+}
+.fg-char-tile {
+  width: 100px;
+  height: 130px;
+  background: #0d0d1a;
+  border: 1px solid #2a1050;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.fg-char-tile:hover {
+  border-color: #7733cc;
+  background: #150030;
+}
+.fg-char-tile.selected {
+  border-color: #33ff88;
+  background: #002211;
+}
+.fg-char-tile-portrait {
+  display: block;
+  width: 100%;
+  height: 108px;
+  background: #0a0a15;
+  flex-shrink: 0;
+}
+.fg-char-tile-name {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  padding: 4px 2px;
+  background: rgba(0, 0, 0, 0.55);
+  flex-shrink: 0;
+}
+
+.fg-charsel-preview {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.fg-charsel-preview canvas {
+  background: #111;
+  border: 1px solid #2a1050;
+  image-rendering: pixelated;
+}
+.fg-charname {
+  font-size: 12px;
+  color: #d0a0ff;
+  letter-spacing: 0.08em;
+  min-height: 18px;
+  text-align: center;
+}
+
+.fg-charsel .fg-btn-ready {
+  grid-column: 1 / -1;
+}
+.fg-charsel .fg-btn-back {
+  grid-column: 1 / -1;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────── */
+.fg-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 18px;
+}
+.fg-loading-text {
+  font-size: 13px;
+  color: #d0a0ff;
+  letter-spacing: 0.1em;
+}
+.fg-loading-bar {
+  width: 260px;
+  height: 6px;
+  background: #1a1040;
+  border: 1px solid #333;
+}
+.fg-loading-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7733cc, #33ccff);
+  transition: width 0.2s;
+}
+
+/* ── Room Lobby (shared char-select) ──────────────────────────────────── */
+.fg-room-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  padding: 12px 8px 8px;
+  gap: 10px;
+  overflow: hidden;
+}
+.fg-rl-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 0.08em;
+}
+.fg-rl-room-id {
+  color: #555;
+}
+.fg-rl-bet {
+  color: #ffcc44;
+}
+.fg-rl-arena {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  min-height: 0;
+  width: 100%;
+}
+.fg-rl-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.fg-rl-player-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #d0a0ff;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.fg-rl-player-name em {
+  color: #444;
+  font-style: normal;
+  font-size: 11px;
+}
+.fg-rl-preview {
+  border: 1px solid #333;
+  background: #111;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.fg-rl-preview-opp {
+  opacity: 0.7;
+}
+.fg-rl-status {
+  font-size: 11px;
+  color: #888;
+  min-height: 14px;
+  text-align: center;
+}
+.fg-rl-vs {
+  font-size: 22px;
+  font-weight: 900;
+  color: #ff6a3d;
+  align-self: center;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+  padding-top: 40px;
+}
+.fg-rl-charlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  overflow-y: auto;
+  max-height: 110px;
+  width: 100%;
+  padding: 2px;
+  flex-shrink: 0;
+}
+.fg-rl-charlist::-webkit-scrollbar {
+  width: 4px;
+}
+.fg-rl-charlist::-webkit-scrollbar-thumb {
+  background: #333;
+}
+.fg-rl-charlist.fg-rl-locked .fg-rl-char-tile {
+  pointer-events: none;
+  opacity: 0.4;
+}
+.fg-rl-char-tile {
+  padding: 3px 6px;
+  font-size: 10px;
+  min-width: 50px;
+}
+.fg-rl-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fg-btn-validate {
+  border-color: #33ff88;
+  color: #00ff66;
+  min-width: 120px;
+}
+.fg-btn-validate:hover {
+  background: #002211;
+}
+.fg-btn-cancel {
+  border-color: #555;
+  color: #aaa;
+}
+
+/* Stage selector row (creator only) */
+.fg-rl-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+.fg-rl-stage-label {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+}
+.fg-rl-stage-select {
+  flex: 1;
+  background: #111;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ── Waiting screen ───────────────────────────────────────────────────── */
+.fg-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 18px;
+}
+.fg-waiting-text {
+  font-size: 15px;
+  color: #d0a0ff;
+  letter-spacing: 0.1em;
+  animation: fg-blink 1s step-start infinite;
+}
+.fg-waiting-id {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 0.08em;
+}
+@keyframes fg-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.fg-fight-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* HUD */
+.fg-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #08080f;
+  border-bottom: 1px solid #1a0030;
+  flex-shrink: 0;
+}
+.fg-hud-left,
+.fg-hud-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fg-hud-right {
+  align-items: flex-end;
+}
+.fg-hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 60px;
+}
+
+.fg-player-name {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #aaa;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.fg-hpbar-wrap {
+  width: 100%;
+}
+.fg-hpbar-wrap-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.fg-hpbar {
+  width: 100%;
+  max-width: 180px;
+  height: 10px;
+  background: #1a0000;
+  border: 1px solid #440000;
+  overflow: hidden;
+  position: relative;
+}
+.fg-hpbar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4400, #ffcc00);
+  transition: width 0.1s;
+}
+/* Red life overlay — pending chip damage */
+.fg-hpbar-redlife {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  background: rgba(180, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* Guard bar */
+.fg-gpbar-wrap {
+  width: 100%;
+  margin-top: 2px;
+}
+.fg-gpbar-wrap-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.fg-gpbar {
+  width: 100%;
+  max-width: 180px;
+  height: 4px;
+  background: #001a00;
+  border: 1px solid #004400;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.fg-gpbar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #00aa44, #00ff88);
+  transition: width 0.1s;
+  border-radius: 2px;
+}
+
+/* Dizzy indicator */
+.fg-dizzy-icon {
+  font-size: 9px;
+  font-weight: bold;
+  color: #ffee00;
+  text-shadow: 0 0 6px #ffee00;
+  letter-spacing: 0.15em;
+  margin-top: 1px;
+  animation: fg-dizzy-blink 0.3s infinite alternate;
+}
+@keyframes fg-dizzy-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* Power bar */
+.fg-pwbar-wrap {
+  width: 100%;
+  margin-top: 2px;
+}
+.fg-pwbar-wrap-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.fg-pwbar {
+  width: 100%;
+  max-width: 180px;
+  height: 5px;
+  background: #000833;
+  border: 1px solid #003366;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.fg-pwbar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0055ff, #00ccff);
+  transition: width 0.1s;
+  border-radius: 2px;
+}
+.fg-pwbar-fill.fg-pwbar-full {
+  background: linear-gradient(90deg, #ffd700, #fff176);
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+}
+
+.fg-wins {
+  font-size: 10px;
+  color: #d0a0ff;
+  letter-spacing: 0.1em;
+}
+.fg-timer {
+  font-size: 20px;
+  font-weight: bold;
+  color: #e0e0e0;
+  min-width: 36px;
+  text-align: center;
+  line-height: 1;
+}
+.fg-timer-warn {
+  color: #ff4400;
+  animation: fg-timer-pulse 0.5s infinite alternate;
+}
+@keyframes fg-timer-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+
+/* Canvas wrapper — centers and constrains the 800×450 stage */
+.fg-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #0a0a12;
+  container-type: size;
+}
+
+/* Canvas */
+#fg-canvas,
+#fg-sb-canvas {
+  display: block;
+  image-rendering: pixelated;
+  width: min(100cqw, calc(100cqh * 800 / 450));
+  height: auto;
+  aspect-ratio: 800 / 450;
+}
+
+/* Overlay (round announcements) */
+.fg-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.fg-overlay-text {
+  font-size: 48px;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  color: #fff;
+  text-shadow:
+    0 0 30px #cc00ff,
+    0 2px 0 #000;
+  text-transform: uppercase;
+  animation: fg-pop 0.2s ease-out;
+}
+.fg-overlay-sub {
+  font-size: 24px;
+  color: #ffcc44;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 15px #ff8800;
+  margin-top: 8px;
+}
+@keyframes fg-pop {
+  from {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Key hint bar */
+.fg-hint {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  color: #333;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+/* ── Movelist overlay (Esc) ──────────────────────────────────────────── */
+.fg-movelist {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(4px);
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+  color: #e0e0e0;
+  font-size: 11px;
+  line-height: 1.5;
+  z-index: 10;
+}
+.fg-ml-header {
+  font-size: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 10px;
+  text-shadow: 0 0 16px #aa66ff;
+}
+.fg-ml-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #9966cc;
+  border-bottom: 1px solid #333;
+  margin: 10px 0 5px;
+  padding-bottom: 2px;
+}
+.fg-ml-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fg-ml-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fg-ml-key {
+  background: #1e1e2e;
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  color: #ccc;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.fg-ml-key small {
+  font-size: 8px;
+  color: #888;
+  margin-left: 1px;
+}
+.fg-ml-notation {
+  min-width: 80px;
+  color: #ffcc44;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+}
+.fg-ml-name {
+  color: #ccc;
+}
+/* Normals grid */
+.fg-ml-normals-header,
+.fg-ml-normals-row {
+  display: grid;
+  grid-template-columns: 46px repeat(6, 1fr);
+  align-items: center;
+  gap: 2px;
+  padding: 1px 0;
+}
+.fg-ml-normals-header {
+  color: #888;
+  font-size: 9px;
+  text-align: center;
+}
+.fg-ml-normals-row {
+  border-bottom: 1px solid #1a1a2e;
+}
+.fg-ml-stance {
+  color: #aaa;
+  font-size: 10px;
+}
+.fg-ml-has {
+  color: #88ff88;
+  text-align: center;
+  display: block;
+}
+.fg-ml-none {
+  color: #333;
+  text-align: center;
+  display: block;
+}
+/* Clickable movelist rows */
+.fg-ml-clickable {
+  cursor: pointer;
+  border-radius: 3px;
+  transition:
+    background 0.1s,
+    color 0.1s;
+}
+.fg-ml-row.fg-ml-clickable:hover {
+  background: rgba(180, 100, 255, 0.18);
+  color: #fff;
+}
+.fg-ml-row.fg-ml-clickable:hover .fg-ml-notation {
+  color: #ffdd66;
+}
+.fg-ml-row.fg-ml-clickable:hover .fg-ml-name {
+  color: #fff;
+}
+.fg-ml-row.fg-ml-clickable:active {
+  background: rgba(180, 100, 255, 0.35);
+}
+span.fg-ml-has.fg-ml-clickable:hover {
+  color: #ccffcc;
+  background: rgba(100, 255, 100, 0.15);
+}
+span.fg-ml-has.fg-ml-clickable:active {
+  background: rgba(100, 255, 100, 0.35);
+}
+/* Pose rows — distinct gold accent */
+.fg-ml-pose .fg-ml-notation {
+  color: #ffcc44;
+}
+.fg-ml-row.fg-ml-pose:hover {
+  background: rgba(255, 200, 50, 0.15);
+}
+.fg-ml-row.fg-ml-pose:hover .fg-ml-notation {
+  color: #ffe566;
+}
+.fg-ml-row.fg-ml-pose:hover .fg-ml-name {
+  color: #fff;
+}
+.fg-ml-row.fg-ml-pose:active {
+  background: rgba(255, 200, 50, 0.32);
+}
+.fg-ml-empty,
+.fg-ml-close {
+  text-align: center;
+  color: #555;
+  font-size: 10px;
+  margin-top: 12px;
+}
+
+/* ── Result screen ────────────────────────────────────────────────────── */
+.fg-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 20px;
+}
+.fg-result-win {
+  background: radial-gradient(ellipse at center, #001a3a 0%, #08080f 70%);
+}
+.fg-result-lose {
+  background: radial-gradient(ellipse at center, #1a0000 0%, #08080f 70%);
+}
+.fg-result-title {
+  font-size: 52px;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-shadow: 0 0 40px currentColor;
+}
+.fg-result-win .fg-result-title {
+  color: #33ff88;
+}
+.fg-result-lose .fg-result-title {
+  color: #ff3344;
+}
+.fg-result-payout {
+  font-size: 20px;
+  color: #ffcc44;
+  letter-spacing: 0.1em;
+}
+.fg-result-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+/* ── Error state ──────────────────────────────────────────────────────── */
+.fg-error {
+  padding: 20px;
+  color: #ff4444;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ── Titlebar volume slider ───────────────────────────────────────────── */
+.fg-vol-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  cursor: default;
+  user-select: none;
+  pointer-events: auto; /* stopPropagation in JS prevents titlebar drag */
+}
+.fg-vol-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ── SHITPOST (sandbox) mode ──────────────────────────────────────── */
+
+/* Banner in the lobby */
+.fg-sp-banner {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px 0;
+}
+.fg-sp-btn {
+  background: linear-gradient(135deg, #2d003a 0%, #1a0050 100%);
+  border: 1px solid #cc33ff;
+  color: #ff44ff;
+  padding: 8px 28px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+.fg-sp-btn:hover {
+  background: linear-gradient(135deg, #5a0080 0%, #2a0090 100%);
+  box-shadow: 0 0 18px #cc33ffaa;
+  color: #fff;
+}
+/* Player count badge on the SHITPOST button */
+.fg-sp-count {
+  background: #cc33ff;
+  color: #08080f;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+/* Sandbox char-select screen */
+.fg-sb-select {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 14px;
+  gap: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.fg-sb-select h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #ff44ff;
+  text-align: center;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 20px #cc33ff;
+}
+.fg-sb-select-count {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  color: #9955cc;
+  letter-spacing: 0.08em;
+}
+.fg-sb-select-btns {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Sandbox fight wrap */
+.fg-sb-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Sandbox in-fight HUD */
+.fg-sb-hud {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #0e0018;
+  border-bottom: 1px solid #2a1050;
+  gap: 8px;
+}
+.fg-sb-hud-left,
+.fg-sb-hud-right {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+.fg-sb-hud-right {
+  justify-content: flex-end;
+}
+.fg-sb-hud-center {
+  flex: 0 0 auto;
+  text-align: center;
+}
+.fg-sb-count-txt {
+  font-size: 11px;
+  color: #cc33ff;
+  letter-spacing: 0.08em;
+}
+.fg-sb-btn {
+  background: #180030;
+  border: 1px solid #5522aa;
+  color: #cc88ff;
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background 0.12s;
+}
+.fg-sb-btn:hover {
+  background: #330060;
+  color: #fff;
+}
+.fg-sb-btn-quit {
+  border-color: #aa2244;
+  color: #ff6688;
+}
+.fg-sb-btn-quit:hover {
+  background: #440018;
+  color: #fff;
+}
+
+/* In-game overlay panel for change-char / change-stage */
+.fg-sb-overlay-content {
+  background: #0e0018ee;
+  border: 1px solid #5522aa;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 520px;
+  max-height: 80%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.fg-sb-overlay-content h3 {
+  margin: 0;
+  font-size: 12px;
+  color: #cc33ff;
+  letter-spacing: 0.14em;
+  text-align: center;
+}
+.fg-sb-overlay-content .fg-charlist {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Loading banner when a player is joining in-game */
+.fg-sb-loading-banner {
+  background: #0e0018ee;
+  border: 1px solid #cc33ff;
+  color: #ff44ff;
+  padding: 16px 36px;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-shadow: 0 0 12px #cc33ff;
+  animation: fg-pop 0.15s ease-out;
+}
+
+/* Overlay panel that sits over the sandbox canvas */
+#fg-sb-overlay .fg-sb-overlay-content {
+  max-height: 90%;
+}
+.fg-vol-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 70px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.fg-vol-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.4);
+}
+.fg-vol-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.4);
+}
+.fg-vol-slider::-moz-range-progress {
+  background: transparent;
+}
+.fg-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 80, 0.6);
+  cursor: pointer;
+}
+.fg-vol-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+}
+.fg-vol-slider:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ── Street Fighter 2 panel (right side of split window) ─────────────── */
+
+.sf2-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: transparent;
+  color: #e0ddf5;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+/* ── Lobby ──────────────────────────────────────────────────────────────── */
+
+.sf2-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.sf2-lobby-split {
+  display: flex;
+  gap: 10px;
+}
+
+.sf2-section {
+  flex: 1;
+  background: rgba(200, 120, 0, 0.06);
+  border: 1px solid rgba(232, 160, 0, 0.15);
+  border-radius: 6px;
+  padding: 8px 10px;
+  transition: border-color 0.15s;
+}
+
+.sf2-section:hover {
+  border-color: rgba(232, 160, 0, 0.28);
+}
+
+.sf2-rooms-section {
+  min-width: 0;
+}
+
+.sf2-section-title {
+  margin: 0 0 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #e8c000;
+  border-bottom: 1px solid rgba(232, 160, 0, 0.2);
+  padding-bottom: 5px;
+  text-shadow: 0 0 8px rgba(240, 180, 0, 0.35);
+}
+
+/* ── Playing ────────────────────────────────────────────────────────────── */
+
+.sf2-game-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
