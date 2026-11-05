@@ -2,7 +2,7 @@
   "id": "quake",
   "name": "Quake 3",
   "version": "1.0.0",
-  "chaosAddonApi": 1,
+  "chaosAddonApi": 2,
   "server": "server/addon.js",
   "data": {
     "dir": "data",

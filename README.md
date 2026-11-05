@@ -30,16 +30,17 @@ Some games need a separate data install. Follow that game's README, then restart
 
 ```text
 games/<id>/
-  addon.json      package metadata
+  addon.json      package metadata and integrations (chaosAddonApi 2)
   README.md       game guide
   server/         server integration
-  client/         browser code
+  client/         browser code, window and host-* adapters
+  assets/         public assets (thumbnail)
   media/          optional bundled media
   tests/          tests run by the website
   install.mjs     optional data installer
 ```
 
-The website owns each game's catalog manifest, thumbnail, window and translations. Add-ons must not include those website files or an installed data directory.
+Each add-on owns its catalog entry, thumbnail, window and translations, declared in `addon.json`. Add-ons must not include an installed data directory.
 
 ## Development
 
@@ -49,7 +50,7 @@ Check package metadata from this repository:
 node scripts/check-addons.mjs
 ```
 
-Run game tests with `npm test` from the ChaOS website repository after installing the relevant add-on.
+Run game tests with `npm run test:addons` from the ChaOS website repository after installing the relevant add-on.
 
 ## Credits
 

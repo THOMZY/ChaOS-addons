@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks every add-on of this repository without the site: addon.json fields,
-// files the site tracks itself, and the declared entry and installer.
+// the files it declares, and the data folder that must stay out of Git.
 // Add-ons are grouped by kind: games/<id>/ today, applications/<id>/ later.
 //   node scripts/check-addons.mjs
 // The site applies the same rules when it installs an add-on
@@ -10,8 +10,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const ADDON_API = 1;
-const SITE_FILES = ['manifest.js', 'assets'];
+const ADDON_API = 2;
+/** Package folders replaced on every update, never a data folder. */
+const PACKAGE_FOLDERS = ['client', 'server', 'assets'];
 /** Folders that group add-ons by kind; a missing one is simply empty. */
 const KINDS = ['games', 'applications'];
 const problems = [];
@@ -46,9 +47,20 @@ for (const { kind, id, dir } of addons) {
     if (!/^server\/[a-z0-9-]+\.js$/.test(addon.server)) fail('server doit être server/<nom>.js');
     else if (!existsSync(resolve(dir, addon.server))) fail(`${addon.server} introuvable`);
   }
-  for (const name of SITE_FILES) if (existsSync(resolve(dir, name))) fail(`${name} appartient au site`);
+  for (const path of [
+    addon.browser?.window,
+    addon.browser?.chat,
+    addon.browser?.locales,
+    addon.migration,
+    addon.adminScoreboard?.entry,
+    addon.deployment?.compose,
+    addon.runtime?.build,
+    addon.runtime?.smoke,
+  ].filter(Boolean))
+    if (!existsSync(resolve(dir, path))) fail(`${path} introuvable`);
   if (addon.data) {
     if (!/^[a-z0-9-]+$/.test(addon.data.dir ?? '')) fail('data.dir doit être un nom de dossier simple');
+    else if (PACKAGE_FOLDERS.includes(addon.data.dir)) fail(`${addon.data.dir}/ appartient au paquet`);
     else if (existsSync(resolve(dir, addon.data.dir))) fail(`${addon.data.dir}/ ne doit pas être versionné`);
     if (!addon.data.install) fail('data.install manquant');
   }

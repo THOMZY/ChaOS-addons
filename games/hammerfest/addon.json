@@ -2,7 +2,7 @@
   "id": "hammerfest",
   "name": "Hammerfest",
   "version": "1.0.0",
-  "chaosAddonApi": 1,
+  "chaosAddonApi": 2,
   "server": "server/index.js",
   "data": {
     "dir": "data",

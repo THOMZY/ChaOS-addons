@@ -17,7 +17,7 @@ function createFixture(context) {
     'source/games/mugen/addon.json',
     JSON.stringify({
       id: 'mugen',
-      chaosAddonApi: 1,
+      chaosAddonApi: 2,
       version: '1',
       data: { dir: 'data', legacyIds: ['fighting'] },
       migration: 'install/migrate-data.js',
