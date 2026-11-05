@@ -1,4 +1,4 @@
-import '../../../tests/helpers/isolated-env.mjs';
+import '../../../../tests/helpers/isolated-env.mjs';
 import assert from 'node:assert/strict';
 import express from 'express';
 import { createServer } from 'node:http';
@@ -6,8 +6,8 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { createHttpApp } from '../../../server/http/app.js';
-import { createAccount, createSession, SESSION_COOKIE } from '../../../server/auth/service.js';
+import { createHttpApp } from '../../../../server/http/app.js';
+import { createAccount, createSession, SESSION_COOKIE } from '../../../../server/auth/service.js';
 import { createGameboyFeature } from '../server/addon.js';
 import { buildDiagnosticRom } from './fixtures/diagnostic-rom.mjs';
 
@@ -26,7 +26,7 @@ const app = createHttpApp();
 feature.routes(app);
 const clientRoot = resolve(import.meta.dirname, '../client');
 app.use('/games/gameboy/client', express.static(clientRoot));
-app.use('/core', express.static(resolve(import.meta.dirname, '../../../website/core')));
+app.use('/core', express.static(resolve(import.meta.dirname, '../../../../website/core')));
 app.get('/', (_request, response) =>
   response.send(`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/games/gameboy/client/gameboy.css">
 <style>.wm-win{width:600px;height:900px}.gameboy-body{width:100%;height:100%}</style>

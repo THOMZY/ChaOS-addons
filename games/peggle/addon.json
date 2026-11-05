@@ -2,7 +2,7 @@
   "id": "peggle",
   "name": "Peggle",
   "version": "1.0.0",
-  "chaosAddonApi": 2,
+  "chaosAddonApi": 3,
   "server": "server/index.js",
   "catalogue": {
     "id": "peggle",

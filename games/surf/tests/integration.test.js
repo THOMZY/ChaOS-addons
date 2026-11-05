@@ -13,7 +13,7 @@ import express from 'express';
 import { WebSocket } from 'ws';
 import { Server as SocketIOServer } from 'socket.io';
 
-import { registerGameServerRoutes, attachGameServerSockets, mintTicket } from '../../platform/game-servers/core.js';
+import { registerGameServerRoutes, attachGameServerSockets, mintTicket } from '../../../../games/platform/game-servers/core.js';
 import { FLAG, MAP_ROTATION } from '../server/room.js';
 
 const PROTOCOL = 'chaos-surf-v1';

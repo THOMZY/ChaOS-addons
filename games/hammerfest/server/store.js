@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { db } from '../../../server/db/index.js';
+import { db } from '../../../../server/db/index.js';
 
 const SCHEMA_PATH = fileURLToPath(new URL('../schema.sql', import.meta.url));
 

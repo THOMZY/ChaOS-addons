@@ -2,14 +2,14 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
 import { WebSocketServer } from 'ws';
-import { defineFeature } from '../../../server/core/features.js';
-import { requireAccount, requireSameOrigin } from '../../../server/api/auth.js';
+import { defineFeature } from '../../../../server/core/features.js';
+import { requireAccount, requireSameOrigin } from '../../../../server/api/auth.js';
 import {
   readTransportAccess,
   trackTransport,
   rejectUpgrade,
-} from '../../../server/security/transport-access.js';
-import { createUploadRequestService } from '../../../server/uploads/admission.js';
+} from '../../../../server/security/transport-access.js';
+import { createUploadRequestService } from '../../../../server/uploads/admission.js';
 import { GbRoom, CONST } from './room.mjs';
 import { RomLibrary } from './roms.mjs';
 import { fetchArt } from './retrobase.mjs';

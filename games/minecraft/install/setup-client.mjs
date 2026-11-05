@@ -28,7 +28,7 @@ import { resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '../../..');
+const ROOT = resolve(__dirname, '../../../..');
 const OUT_DIR = resolve(ROOT, 'games', 'minecraft', 'web');
 const OUT_FILE = resolve(OUT_DIR, 'eaglercraft.html');
 

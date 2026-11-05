@@ -6,13 +6,13 @@ import { promisify } from 'node:util';
 import test from 'node:test';
 import { Server } from 'socket.io';
 import { createWormsRuntime } from '../server/runtime.js';
-import { chatState } from '../../../server/chat/state.js';
-import { updatePoints, loadUserSettings } from '../../../server/chat/backlog.js';
-import { realtimePolicy, trackRealtimeSocket } from '../../../server/security/realtime-policy.js';
-import { createAccount, createSession, SESSION_COOKIE } from '../../../server/auth/service.js';
-import { db } from '../../../server/db/index.js';
-import { connectSocketIo } from '../../../tests/helpers/socket-io-client.mjs';
-import { gameClock } from '../../../tests/helpers/game-clock.mjs';
+import { chatState } from '../../../../server/chat/state.js';
+import { updatePoints, loadUserSettings } from '../../../../server/chat/backlog.js';
+import { realtimePolicy, trackRealtimeSocket } from '../../../../server/security/realtime-policy.js';
+import { createAccount, createSession, SESSION_COOKIE } from '../../../../server/auth/service.js';
+import { db } from '../../../../server/db/index.js';
+import { connectSocketIo } from '../../../../tests/helpers/socket-io-client.mjs';
+import { gameClock } from '../../../../tests/helpers/game-clock.mjs';
 
 test('worms real sockets keep multi-tab stakes, refund the last offline tab and drain a paid game without removing neighbors', { timeout: 10000 }, async t => {
   const clock = gameClock(), server = createServer(), io = new Server(server), ns = io.of('/chat'), clients = [];
@@ -98,7 +98,7 @@ test('worms native turn, fuse, impact and post timers drain and the isolated chi
       timers:runtime.status().activeTimers, pending:runtime.status().pendingRooms, signals:process.listenerCount('SIGTERM') }));
   `;
   const { stdout } = await promisify(execFile)(process.execPath,
-    ['--import', new URL('../../../tests/helpers/isolated-env.mjs', import.meta.url).href, '--input-type=module', '-e', source,
+    ['--import', new URL('../../../../tests/helpers/isolated-env.mjs', import.meta.url).href, '--input-type=module', '-e', source,
       new URL('../server/runtime.js', import.meta.url).href], { timeout: 4500, windowsHide: true });
   assert.deepEqual(JSON.parse(stdout), { balances: [900, 1100], stopped: true, timers: 0, pending: 0, signals: 0 });
 });

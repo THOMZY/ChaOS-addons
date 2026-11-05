@@ -26,15 +26,15 @@
  */
 import { Router, raw } from 'express';
 import { gunzipSync } from 'node:zlib';
-import { accountFromHeaders } from '../../../server/auth/service.js';
-import { loadUserSettings } from '../../../server/chat/backlog.js';
-import { chatState } from '../../../server/chat/state.js';
-import { mintTicket } from '../../platform/game-servers/core.js';
+import { accountFromHeaders } from '../../../../server/auth/service.js';
+import { loadUserSettings } from '../../../../server/chat/backlog.js';
+import { chatState } from '../../../../server/chat/state.js';
+import { mintTicket } from '../../../../games/platform/game-servers/core.js';
 import { multiplayerUrlFor } from './room.js';
 import { validateRun, saveRun, mapLeaderboard, playerBests, playerRuns, BOARDS, findBoard, openAttempt, attemptById, submissionFor, saveReplay, replayForAttempt } from './runs.js';
-import { toHexColorOr } from '../../platform/game-servers/color.js';
-import { db } from '../../../server/db/index.js';
-import { withCurrentIdentities } from '../../../server/api/score-identities.js';
+import { toHexColorOr } from '../../../../games/platform/game-servers/color.js';
+import { db } from '../../../../server/db/index.js';
+import { withCurrentIdentities } from '../../../../server/api/score-identities.js';
 
 const router = Router();
 // The client compresses its replay before passing it to the SDK adapter.

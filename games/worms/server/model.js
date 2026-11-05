@@ -24,9 +24,9 @@ import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import sharp from 'sharp';
 
-import { randomIndex, randomUnit } from '../../../server/utils/secure-random.js';
-import { publicGameRoom } from '../../platform/rooms.js';
-import { createFFAManager } from '../../platform/ffa-rooms.js';
+import { randomIndex, randomUnit } from '../../../../server/utils/secure-random.js';
+import { publicGameRoom } from '../../../../games/platform/rooms.js';
+import { createFFAManager } from '../../../../games/platform/ffa-rooms.js';
 
 const LCG_INCREMENT = Number.parseInt('3C6EF35F', 16);
 const UINT32_RANGE = 2 ** 32;

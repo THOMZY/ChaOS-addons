@@ -24,13 +24,13 @@ From the ChaOS website repository, with this repository checked out beside it as
 node scripts/games/games-install.mjs surf
 ```
 
-Some games need a separate data install. Follow that game's README, then restart the ChaOS website. Use `--from <directory>` when this repository is elsewhere. Installed data stays in `games/<id>/data/` and is not stored in this repository.
+Some games need a separate data install. Follow that game's README, then restart the ChaOS website. Use `--from <directory>` when this repository is elsewhere. The website installs each add-on in `addons/<kind>/<id>/` (`addons/games/<id>/` for a game); its data stays in `addons/<kind>/<id>/data/` and is not stored in this repository.
 
 ## Add-on structure
 
 ```text
 games/<id>/
-  addon.json      package metadata and integrations (chaosAddonApi 2)
+  addon.json      package metadata and integrations (chaosAddonApi 3)
   README.md       game guide
   server/         server integration
   client/         browser code, window and host-* adapters
@@ -40,7 +40,7 @@ games/<id>/
   install.mjs     optional data installer
 ```
 
-Each add-on owns its catalog entry, thumbnail, window and translations, declared in `addon.json`. Add-ons must not include an installed data directory.
+Each add-on owns its catalog entry, thumbnail, window and translations, declared in `addon.json`. Add-ons must not include an installed data directory. Inside the website a package sits in `addons/<kind>/<id>/`, so its relative imports of the website climb four folders from `server/`, `client/` or `tests/` (`../../../../server/...`).
 
 ## Development
 

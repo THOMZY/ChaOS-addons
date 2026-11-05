@@ -4,15 +4,15 @@ import { createServer } from 'node:http';
 import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createHttpApp } from '../../../server/http/app.js';
+import { createHttpApp } from '../../../../server/http/app.js';
 import {
   createAccount,
   createSession,
   revokeSession,
   SESSION_COOKIE,
   accountFromHeaders,
-} from '../../../server/auth/service.js';
-import { db } from '../../../server/db/index.js';
+} from '../../../../server/auth/service.js';
+import { db } from '../../../../server/db/index.js';
 import { createCatalog } from '../server/catalog.js';
 import { mountMugenRoutes } from '../server/routes.js';
 import { createPackUploads } from '../server/pack-uploads.js';

@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { createPublicHttpClient, readLimitedBody } from '../../../server/http/public-http.js';
+import { createPublicHttpClient, readLimitedBody } from '../../../../server/http/public-http.js';
 
 const API = 'https://retrobase-collection.com/api/public/v1/lookup';
 const openStream = createPublicHttpClient({

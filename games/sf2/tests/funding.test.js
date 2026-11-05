@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test, { after } from 'node:test';
-import { createAccount } from '../../../server/auth/service.js';
-import { db } from '../../../server/db/index.js';
-import { chatState } from '../../../server/chat/state.js';
-import { User } from '../../../server/chat/user.js';
-import { loadUserSettings, updatePoints } from '../../../server/chat/backlog.js';
+import { createAccount } from '../../../../server/auth/service.js';
+import { db } from '../../../../server/db/index.js';
+import { chatState } from '../../../../server/chat/state.js';
+import { User } from '../../../../server/chat/user.js';
+import { loadUserSettings, updatePoints } from '../../../../server/chat/backlog.js';
 import { createSf2Runtime } from '../server/runtime.js';
-import { gameClock } from '../../../tests/helpers/game-clock.mjs';
+import { gameClock } from '../../../../tests/helpers/game-clock.mjs';
 
 class Socket extends EventEmitter {
   packets = [];

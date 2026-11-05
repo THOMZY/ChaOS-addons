@@ -3,7 +3,7 @@
 // report. One honest report beats a silent opponent; two reports that disagree
 // refund both players.
 import { EventEmitter } from 'node:events';
-import { createFFAManager } from '../../platform/ffa-rooms.js';
+import { createFFAManager } from '../../../../games/platform/ffa-rooms.js';
 
 export const WAITING_TIMEOUT_MS = 180_000;
 export const SELECTION_TIMEOUT_MS = 120_000;

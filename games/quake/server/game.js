@@ -32,7 +32,7 @@
  * requires no special packet, so `onOpen` is unnecessary (the client's first
  * datagram is the first one sent, as in ioquake3).
  */
-import { defineGame } from '../../platform/game-servers/core.js';
+import { defineGame } from '../../../../games/platform/game-servers/core.js';
 
 /** Published room. Quake 3 is joined by address; there is no room list. */
 export const Q3_ROOM_ID = 'q3dm';

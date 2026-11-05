@@ -1,12 +1,12 @@
 import { WormGameManager, preloadLevels } from './model.js';
-import { chatState } from '../../../server/chat/state.js';
-import { db } from '../../../server/db/index.js';
-import { createPointsStore } from '../../../server/chat/points-store.js';
-import { randomUnit } from '../../../server/utils/secure-random.js';
-import { requireUserRoom, emitToSpectators } from '../../platform/room-messages.js';
-import { createCasinoWallet } from '../../platform/casino-wallet.js';
-import { createRoomStakes } from '../../platform/room-stakes.js';
-import { createGameLifecycle } from '../../platform/game-lifecycle.js';
+import { chatState } from '../../../../server/chat/state.js';
+import { db } from '../../../../server/db/index.js';
+import { createPointsStore } from '../../../../server/chat/points-store.js';
+import { randomUnit } from '../../../../server/utils/secure-random.js';
+import { requireUserRoom, emitToSpectators } from '../../../../games/platform/room-messages.js';
+import { createCasinoWallet } from '../../../../games/platform/casino-wallet.js';
+import { createRoomStakes } from '../../../../games/platform/room-stakes.js';
+import { createGameLifecycle } from '../../../../games/platform/game-lifecycle.js';
 
 const RETREAT_MS = 5000;
 export function createWormsRuntime({

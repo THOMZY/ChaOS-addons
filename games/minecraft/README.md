@@ -11,7 +11,7 @@ node scripts/games/games-install.mjs minecraft
 docker compose --profile minecraft up -d minecraft
 ```
 
-The container creates Paper and its plugins on first start. Existing worlds and configuration are kept in `games/minecraft/data/`. No world is included in this repository. Mount this directory read/write and stop the container before manual migrations.
+The container creates Paper and its plugins on first start. Existing worlds and configuration are kept in `addons/games/minecraft/data/`. No world is included in this repository. Mount this directory read/write and stop the container before manual migrations.
 
 ## Configuration
 

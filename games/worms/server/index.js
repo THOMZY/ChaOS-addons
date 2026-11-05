@@ -4,7 +4,7 @@
 // controller (client/worms.js) is loaded by the site's Worms window.
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
+import { defineFeature } from '../../../../server/core/features.js';
 import { createWormsRuntime } from './runtime.js';
 
 // Worms: rules in model.js, rooms, stakes and timers in runtime.js.

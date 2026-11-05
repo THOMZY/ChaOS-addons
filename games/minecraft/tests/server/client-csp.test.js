@@ -7,7 +7,7 @@
 // 90): every resource type is named and no wildcard remains.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FORBIDDEN_DIRECTIVES } from '../../../../server/http/csp.js';
+import { FORBIDDEN_DIRECTIVES } from '../../../../../server/http/csp.js';
 import { MC_CLIENT_CSP } from '../../server/client-csp.js';
 
 const DIRECTIVES = new Map(

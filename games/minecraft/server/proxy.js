@@ -1,11 +1,11 @@
 import net from 'node:net';
-import { serverCloseHub } from '../../../server/utils/server-close.js';
+import { serverCloseHub } from '../../../../server/utils/server-close.js';
 import { Transform } from 'node:stream';
 import {
   readTransportAccess,
   trackTransport,
   rejectUpgrade,
-} from '../../../server/security/transport-access.js';
+} from '../../../../server/security/transport-access.js';
 
 // Eagler's handshake only. Never forward ChaOS cookies, bearer credentials or
 // untrusted proxy headers to a different service.

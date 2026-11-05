@@ -6,10 +6,10 @@
 import { ensureSchema } from './schema.js';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
-import { clientFiles } from '../../../server/http/game-clients.js';
-import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../server/http/csp.js';
-import { registerInProcessAdmin } from '../../platform/game-admin/registry.js';
+import { defineFeature } from '../../../../server/core/features.js';
+import { clientFiles } from '../../../../server/http/game-clients.js';
+import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../../server/http/csp.js';
+import { registerInProcessAdmin } from '../../../../games/platform/game-admin/registry.js';
 import * as admin from './admin.js';
 import { runCommand } from './host-console.js';
 import router from './api.js';

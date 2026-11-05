@@ -1,6 +1,6 @@
 import express from 'express';
-import { requireAccount, requireSameOrigin } from '../../../server/api/auth.js';
-import { createUploadRequestService } from '../../../server/uploads/admission.js';
+import { requireAccount, requireSameOrigin } from '../../../../server/api/auth.js';
+import { createUploadRequestService } from '../../../../server/uploads/admission.js';
 import { importPack, PACK_LIMITS } from './pack-import.js';
 import { removeCharacter } from './pack-remove.js';
 

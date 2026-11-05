@@ -6,7 +6,7 @@
       "container_name": "quake",
       "restart": "unless-stopped",
       "networks": ["default", "game-console"],
-      "volumes": ["./games/quake/data/baseq3:/data/baseq3:ro", "quake-server-state:/state"],
+      "volumes": ["./addons/games/quake/data/baseq3:/data/baseq3:ro", "quake-server-state:/state"],
       "environment": {
         "Q3JS_MASTER_URL": "http://127.0.0.1:8080",
         "Q3JS_HEARTBEAT_INTERVAL_MS": "3600000",

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import Database from 'better-sqlite3';
-import { SCHEMA_VERSION, migrateDatabase, inspectDatabaseSchema } from '../../../server/db/migrations.js';
+import { SCHEMA_VERSION, migrateDatabase, inspectDatabaseSchema } from '../../../../server/db/migrations.js';
 import { ensureSchema } from '../server/schema.js';
 
 test('Surf initializes a fresh site database and preserves its ledger and rows on repetition', t => {

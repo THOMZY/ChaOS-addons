@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import {
   encodeSnapshot, decodeBatch, FLAG, SurfRoom, MAP_ROTATION, multiplayerUrlFor, roomBanOf,
 } from '../server/room.js';
-import { chatState } from '../../../server/chat/state.js';
+import { chatState } from '../../../../server/chat/state.js';
 
 const SAMPLE_SIZE = 32;
 const HEADER_BATCH = 12;

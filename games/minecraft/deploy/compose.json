@@ -2,7 +2,7 @@
   "services": {
     "minecraft": {
       "profiles": ["minecraft"],
-      "build": "./games/minecraft/docker",
+      "build": "./addons/games/minecraft/docker",
       "container_name": "minecraft",
       "restart": "unless-stopped",
       "stdin_open": true,
@@ -13,7 +13,7 @@
       },
       "ports": ["25565:25565"],
       "networks": ["default", "game-console"],
-      "volumes": ["./games/minecraft/data:/server"]
+      "volumes": ["./addons/games/minecraft/data:/server"]
     },
     "game-admin": {
       "environment": {

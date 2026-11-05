@@ -19,8 +19,8 @@
  */
 import { Router } from 'express';
 import dgram from 'node:dgram';
-import { accountFromHeaders } from '../../../server/auth/service.js';
-import { loadUserSettings } from '../../../server/chat/backlog.js';
+import { accountFromHeaders } from '../../../../server/auth/service.js';
+import { loadUserSettings } from '../../../../server/chat/backlog.js';
 import { Q3_ROOM_ID, Q3_WS_PATH, q3Upstream } from './game.js';
 
 const router = Router();

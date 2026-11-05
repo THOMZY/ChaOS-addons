@@ -3,7 +3,7 @@
 // site's website/ folder (the add-on is installed in games/worms/).
 import { register } from 'node:module';
 
-const website = new URL('../../../website/', import.meta.url).href;
+const website = new URL('../../../../website/', import.meta.url).href;
 register(
   'data:text/javascript,' +
     encodeURIComponent(`export async function resolve(specifier, context, next) {

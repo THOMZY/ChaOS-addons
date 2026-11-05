@@ -1,7 +1,7 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
-import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../server/http/csp.js';
+import { defineFeature } from '../../../../server/core/features.js';
+import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../../server/http/csp.js';
 import { MC_CLIENT_CSP } from './client-csp.js';
 import { attachMinecraftProxy } from './proxy.js';
 

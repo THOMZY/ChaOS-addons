@@ -9,7 +9,7 @@ From the ChaOS website repository:
 ```sh
 npm ci --ignore-scripts
 node scripts/games/games-install.mjs --from ../ChaOS-addons gameboy
-node games/gameboy/install.mjs [source-directory]
+node addons/games/gameboy/install.mjs [source-directory]
 ```
 
 The source directory is optional. Open the Game Boy library to upload `.gb`, `.gbc` or `.gba` cartridges. Restart the website after installation.
@@ -18,7 +18,7 @@ The package supports Windows x64 and Linux x64. It uses `node-mgba` and `@evan/o
 
 ## Library, saves and clock
 
-Cartridges, `.sav` files, artwork and the index are stored in `games/gameboy/data/`, which must be mounted read/write. Saves belong to the shared game, not to an individual account.
+Cartridges, `.sav` files, artwork and the index are stored in `addons/games/gameboy/data/`, which must be mounted read/write. Saves belong to the shared game, not to an individual account.
 
 The library can remove a cartridge through its confirmation button or `DELETE /gameboy-api/roms/<filename>`. The cartridge, save, clock file, artwork and index entry are removed when no other cartridge uses them.
 
@@ -43,7 +43,7 @@ node gameboy/tests/shell.browser.mjs
 After installation, run the Game Boy tests from the ChaOS website repository:
 
 ```sh
-node --import ./tests/helpers/isolated-env.mjs --test games/gameboy/tests/*.test.js games/gameboy/tests/*.test.mjs
+node --import ./tests/helpers/isolated-env.mjs --test addons/games/gameboy/tests/*.test.js addons/games/gameboy/tests/*.test.mjs
 npm run test:gameboy:browser
 ```
 

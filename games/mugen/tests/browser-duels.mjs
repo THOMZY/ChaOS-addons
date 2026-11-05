@@ -10,7 +10,7 @@ import { createMugenRuntime } from '../server/runtime.js';
 import { startBrowser } from './browser-driver.mjs';
 import { installNativeGamepad, readConfirmedPadInputs } from './fixtures/gamepad-browser.js';
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
+const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const catalog = createCatalog({ dataRoot: root + 'games/mugen/data' });
 const fighter = catalog.characters().find((entry) => entry.path.startsWith('Goku/'));
 const stage = catalog.stages()[0];

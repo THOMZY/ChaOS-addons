@@ -2,7 +2,7 @@
   "id": "sf2",
   "name": "Street Fighter II",
   "version": "1.0.0",
-  "chaosAddonApi": 2,
+  "chaosAddonApi": 3,
   "server": "server/index.js",
   "catalogue": {
     "id": "sf2",

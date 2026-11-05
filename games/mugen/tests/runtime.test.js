@@ -1,15 +1,15 @@
-import { createPointsStore } from '../../../server/chat/points-store.js';
+import { createPointsStore } from '../../../../server/chat/points-store.js';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test, { after } from 'node:test';
-import { createAccount } from '../../../server/auth/service.js';
-import { db } from '../../../server/db/index.js';
-import { loadUserSettings, updatePoints } from '../../../server/chat/backlog.js';
-import { User } from '../../../server/chat/user.js';
-import { createCasinoWallet } from '../../../games/platform/casino-wallet.js';
+import { createAccount } from '../../../../server/auth/service.js';
+import { db } from '../../../../server/db/index.js';
+import { loadUserSettings, updatePoints } from '../../../../server/chat/backlog.js';
+import { User } from '../../../../server/chat/user.js';
+import { createCasinoWallet } from '../../../../games/platform/casino-wallet.js';
 import { createMugenRuntime } from '../server/runtime.js';
 import { MATCH_TIMEOUT_MS, RESULT_GRACE_MS, SELECTION_TIMEOUT_MS } from '../server/model.js';
-import { gameClock } from '../../../tests/helpers/game-clock.mjs';
+import { gameClock } from '../../../../tests/helpers/game-clock.mjs';
 import { fakeCatalog } from './fixtures.js';
 
 let sequence = 0;

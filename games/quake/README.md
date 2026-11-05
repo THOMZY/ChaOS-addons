@@ -8,17 +8,17 @@ From the ChaOS website repository:
 
 ```sh
 node scripts/games/games-install.mjs quake
-node games/quake/install.mjs <mirror-directory>
+node addons/games/quake/install.mjs <mirror-directory>
 docker compose --profile quake up -d quake
 ```
 
-The mirror must contain the client files (`game2/`, `baseq3/`, `ioquake3.*`, touch controls, icons and `manifest.json`). The installer stores them in `games/quake/data/`. The old `server/games/quake/` location is migrated once.
+The mirror must contain the client files (`game2/`, `baseq3/`, `ioquake3.*`, touch controls, icons and `manifest.json`). The installer stores them in `addons/games/quake/data/`. The old `server/games/quake/` location is migrated once.
 
-The native server uses the `quake` Compose profile and reads `games/quake/data/baseq3/` read-only. `Q3_HOST` and `Q3_PORT` select the tunnel target.
+The native server uses the `quake` Compose profile and reads `addons/games/quake/data/baseq3/` read-only. `Q3_HOST` and `Q3_PORT` select the tunnel target.
 
 ## Test
 
-Run `npm test` from the ChaOS website repository. For a browser check, run `node games/quake/tests/browser.mjs`; set `BROWSER_PATH` when needed.
+Run `npm test` from the ChaOS website repository. For a browser check, run `node addons/games/quake/tests/browser.mjs`; set `BROWSER_PATH` when needed.
 
 ## Credits
 

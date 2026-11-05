@@ -6,14 +6,14 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import WebSocket from 'ws';
-import { createHttpApp } from '../../../server/http/app.js';
+import { createHttpApp } from '../../../../server/http/app.js';
 import {
   createAccount,
   createSession,
   revokeSession,
   SESSION_COOKIE,
-} from '../../../server/auth/service.js';
-import { invalidateConnections } from '../../../server/security/connections.js';
+} from '../../../../server/auth/service.js';
+import { invalidateConnections } from '../../../../server/security/connections.js';
 import { createGameboyFeature } from '../server/addon.js';
 import { crc32 } from '../server/roms.mjs';
 

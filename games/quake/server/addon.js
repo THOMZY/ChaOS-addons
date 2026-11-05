@@ -6,9 +6,9 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
-import { clientFiles } from '../../../server/http/game-clients.js';
-import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../server/http/csp.js';
+import { defineFeature } from '../../../../server/core/features.js';
+import { clientFiles } from '../../../../server/http/game-clients.js';
+import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../../server/http/csp.js';
 import { quakeAssetCacheWorker } from './cache-worker.js';
 import router from './api.js';
 // Registers the "quake3" tunnel with the game-server foundation.

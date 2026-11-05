@@ -1,6 +1,6 @@
 // SF2 owns rooms/clocks, not money or simulation. Slot 0 still reports KOs.
 import { EventEmitter } from 'node:events';
-import { createFFAManager } from '../../platform/ffa-rooms.js';
+import { createFFAManager } from '../../../../games/platform/ffa-rooms.js';
 
 export class SF2Manager extends EventEmitter {
   constructor({ timers = { setTimeout, clearTimeout }, beforeStart = () => true } = {}) {

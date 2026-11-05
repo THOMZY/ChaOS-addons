@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { db as database } from '../../../server/db/index.js';
-import { withCurrentIdentities } from '../../../server/api/score-identities.js';
+import { db as database } from '../../../../server/db/index.js';
+import { withCurrentIdentities } from '../../../../server/api/score-identities.js';
 const HAMMERFEST_BEST_SQL = `
   WITH ranked AS (
     SELECT r.account_id AS accountId,

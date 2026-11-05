@@ -3,11 +3,11 @@ import test from 'node:test';
 import { createServer } from 'node:http';
 import express from 'express';
 import surfRouter from '../server/api.js';
-import { createAccount, createSession, SESSION_COOKIE } from '../../../server/auth/service.js';
-import { saveUserSettings } from '../../../server/chat/backlog.js';
+import { createAccount, createSession, SESSION_COOKIE } from '../../../../server/auth/service.js';
+import { saveUserSettings } from '../../../../server/chat/backlog.js';
 // Since site schema 4 the add-on creates its own `surf_*` tables.
 import { ensureSchema } from '../server/schema.js';
-import { db } from '../../../server/db/index.js';
+import { db } from '../../../../server/db/index.js';
 
 ensureSchema();
 

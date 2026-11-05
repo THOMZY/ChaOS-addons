@@ -11,13 +11,13 @@ import { join } from 'node:path';
 
 process.env.DB_PATH = join(mkdtempSync(join(tmpdir(), 'surf-runs-')), 'hub.db');
 
-const { db } = await import('../../../server/db/index.js');
+const { db } = await import('../../../../server/db/index.js');
 // Since site schema 4 the add-on creates its own `surf_*` tables.
 const { ensureSchema } = await import('../server/schema.js');
 ensureSchema();
 // The leaderboard joins chat_user_settings (site nickname and color), so the
 // chat table must exist without importing its module, which has side effects.
-const chatSchema = readFileSync(new URL('../../../server/chat/schema.sql', import.meta.url), 'utf8')
+const chatSchema = readFileSync(new URL('../../../../server/chat/schema.sql', import.meta.url), 'utf8')
   .replace(/^\s*SET\s+QUOTED_IDENTIFIER\s+ON;\s*/i, '');
 db.exec(chatSchema);
 

@@ -7,8 +7,8 @@ import {
   attachFeatureUpgrades,
   buildShutdownPhases,
   mountFeatureRoutes,
-} from '../../../../server/core/features.js';
-import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../../server/http/csp.js';
+} from '../../../../../server/core/features.js';
+import { GAME_CLIENT_PERMISSIONS_POLICY } from '../../../../../server/http/csp.js';
 import { MC_CLIENT_CSP } from '../../server/client-csp.js';
 
 test('Minecraft mounts its real client with dedicated security and cache headers', async (context) => {

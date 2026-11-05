@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 import { EventEmitter } from 'node:events';
-import { db } from '../../../server/db/index.js';
-import { User } from '../../../server/chat/user.js';
-import { gameClock } from '../../../tests/helpers/game-clock.mjs';
+import { db } from '../../../../server/db/index.js';
+import { User } from '../../../../server/chat/user.js';
+import { gameClock } from '../../../../tests/helpers/game-clock.mjs';
 import { createMugenRuntime } from '../server/runtime.js';
 import { fakeCatalog } from './fixtures.js';
 

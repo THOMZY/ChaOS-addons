@@ -10,9 +10,9 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { join } from 'node:path';
 import { unlinkSync } from 'node:fs';
-import { gameClientFixtures } from '../../../tests/helpers/game-client-fixtures.mjs';
+import { gameClientFixtures } from '../../../../tests/helpers/game-client-fixtures.mjs';
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
+const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const assets = process.env.GAME_CLIENT_ASSET_ROOT;
 let child, port, files, output = '';
 function get(path, headers = {}, method = 'GET') {

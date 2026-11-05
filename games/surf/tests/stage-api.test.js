@@ -5,7 +5,7 @@ import express from 'express';
 import surfRouter from '../server/api.js';
 // The add-on creates its own `surf_*` tables since site schema 4.
 import { ensureSchema } from '../server/schema.js';
-import { db } from '../../../server/db/index.js';
+import { db } from '../../../../server/db/index.js';
 
 ensureSchema();
 

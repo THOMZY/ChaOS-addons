@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 // Registers the Peggle rules with the shared tables, as the site does at boot.
 import '../server/index.js';
 import { readFileSync } from 'node:fs';
-import { registerAddonManifests } from '../../catalogue.js';
+import { registerAddonManifests } from '../../../../games/catalogue.js';
 registerAddonManifests([JSON.parse(readFileSync(new URL('../addon.json', import.meta.url))).catalogue]);
-import { createTableRuntime } from '../../platform/table-runtime.js';
-import { gameClock } from '../../../tests/helpers/game-clock.mjs';
+import { createTableRuntime } from '../../../../games/platform/table-runtime.js';
+import { gameClock } from '../../../../tests/helpers/game-clock.mjs';
 
 test('a funded Peggle table hides scores until both runs end, then pays the best score', async () => {
   const clock = gameClock(),

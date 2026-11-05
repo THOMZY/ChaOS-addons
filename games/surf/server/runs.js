@@ -23,7 +23,7 @@ import { readFileSync } from 'node:fs';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db } from '../../../server/db/index.js';
+import { db } from '../../../../server/db/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

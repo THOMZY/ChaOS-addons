@@ -5,8 +5,8 @@
 // (client/index.js) is served by the site's catalogue.
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
-import { registerTableRules } from '../../platform/table-games.js';
+import { defineFeature } from '../../../../server/core/features.js';
+import { registerTableRules } from '../../../../games/platform/table-games.js';
 import { peggleRules } from './table-rules.js';
 
 registerTableRules('peggle', peggleRules);

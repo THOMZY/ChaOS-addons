@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWormsInput } from '../client/worms-input.js';
-import { readLegacyGameKey } from '../../../website/core/js/games/input/keyboard-layout.js';
+import { readLegacyGameKey } from '../../../../website/core/js/games/input/keyboard-layout.js';
 
 function createScene(options = {}) {
   let owner,

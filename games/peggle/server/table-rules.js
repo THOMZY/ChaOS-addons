@@ -44,7 +44,7 @@ export function createPeggleRules({
   random = randomInt,
   drawLevel = () => drawPeggleLevel(random),
 } = {}) {
-  /** @type {import('../../platform/table-rounds.js').TableRules} */
+  /** @type {import('../../../../games/platform/table-rounds.js').TableRules} */
   const rules = {
     timeoutMs: 15 * 60_000,
     create: (seats) => ({

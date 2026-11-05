@@ -25,9 +25,9 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Room, defineGame, attachRooms } from '../../platform/game-servers/core.js';
-import { toHexColor } from '../../platform/game-servers/color.js';
-import { chatState } from '../../../server/chat/state.js';
+import { Room, defineGame, attachRooms } from '../../../../games/platform/game-servers/core.js';
+import { toHexColor } from '../../../../games/platform/game-servers/color.js';
+import { chatState } from '../../../../server/chat/state.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

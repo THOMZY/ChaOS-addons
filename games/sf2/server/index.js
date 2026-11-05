@@ -1,6 +1,6 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
+import { defineFeature } from '../../../../server/core/features.js';
 import { createSf2Runtime } from './runtime.js';
 
 const runtime = createSf2Runtime();

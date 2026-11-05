@@ -1,6 +1,6 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { defineFeature } from '../../../server/core/features.js';
+import { defineFeature } from '../../../../server/core/features.js';
 import { createCatalog } from './catalog.js';
 import { mountMugenRoutes } from './routes.js';
 import { createMugenRuntime } from './runtime.js';

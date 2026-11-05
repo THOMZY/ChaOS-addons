@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { db as database } from '../../../server/db/index.js';
-import { withCurrentIdentities } from '../../../server/api/score-identities.js';
+import { db as database } from '../../../../server/db/index.js';
+import { withCurrentIdentities } from '../../../../server/api/score-identities.js';
 const SURF_BEST_SQL = `
   SELECT r.account_id AS accountId, r.map_id AS mapId, r.time_ms AS timeMs, r.created_at AS recordedAt
   FROM surf_runs AS r

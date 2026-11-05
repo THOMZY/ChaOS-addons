@@ -1,5 +1,5 @@
 // Run from the ChaOS website: node games/mugen/tests/browser-library.mjs [screenshot.png]
-import '../../../tests/helpers/isolated-env.mjs';
+import '../../../../tests/helpers/isolated-env.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -7,17 +7,17 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
-import { createHttpApp } from '../../../server/http/app.js';
-import { requireAccount } from '../../../server/api/auth.js';
-import { createAccount, createSession, SESSION_COOKIE } from '../../../server/auth/service.js';
-import { db } from '../../../server/db/index.js';
+import { createHttpApp } from '../../../../server/http/app.js';
+import { requireAccount } from '../../../../server/api/auth.js';
+import { createAccount, createSession, SESSION_COOKIE } from '../../../../server/auth/service.js';
+import { db } from '../../../../server/db/index.js';
 import { createCatalog } from '../server/catalog.js';
 import { mountMugenRoutes } from '../server/routes.js';
 import { createPackUploads } from '../server/pack-uploads.js';
 import { characterPack, stageSpriteFixture, zipFixture } from './zip-fixture.js';
 import { startBrowser } from './browser-driver.mjs';
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
+const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const client = fileURLToPath(new URL('../client/', import.meta.url));
 const dataRoot = await mkdtemp(join(tmpdir(), 'mugen-library-fixture-'));
 const catalog = createCatalog({ dataRoot });

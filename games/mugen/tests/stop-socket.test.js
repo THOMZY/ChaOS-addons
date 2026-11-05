@@ -6,13 +6,13 @@ import { promisify } from 'node:util';
 import test from 'node:test';
 import { Server } from 'socket.io';
 import { createMugenRuntime } from '../server/runtime.js';
-import { chatState } from '../../../server/chat/state.js';
-import { updatePoints, loadUserSettings } from '../../../server/chat/backlog.js';
-import { realtimePolicy, trackRealtimeSocket } from '../../../server/security/realtime-policy.js';
-import { createAccount, createSession, SESSION_COOKIE } from '../../../server/auth/service.js';
-import { db } from '../../../server/db/index.js';
-import { connectSocketIo } from '../../../tests/helpers/socket-io-client.mjs';
-import { gameClock } from '../../../tests/helpers/game-clock.mjs';
+import { chatState } from '../../../../server/chat/state.js';
+import { updatePoints, loadUserSettings } from '../../../../server/chat/backlog.js';
+import { realtimePolicy, trackRealtimeSocket } from '../../../../server/security/realtime-policy.js';
+import { createAccount, createSession, SESSION_COOKIE } from '../../../../server/auth/service.js';
+import { db } from '../../../../server/db/index.js';
+import { connectSocketIo } from '../../../../tests/helpers/socket-io-client.mjs';
+import { gameClock } from '../../../../tests/helpers/game-clock.mjs';
 import { fakeCatalog } from './fixtures.js';
 
 test(
@@ -163,7 +163,7 @@ test(
       process.execPath,
       [
         '--import',
-        new URL('../../../tests/helpers/isolated-env.mjs', import.meta.url).href,
+        new URL('../../../../tests/helpers/isolated-env.mjs', import.meta.url).href,
         '--input-type=module',
         '-e',
         source,

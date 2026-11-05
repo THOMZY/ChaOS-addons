@@ -10,7 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const ADDON_API = 2;
+const ADDON_API = 3;
 /** Package folders replaced on every update, never a data folder. */
 const PACKAGE_FOLDERS = ['client', 'server', 'assets'];
 /** Folders that group add-ons by kind; a missing one is simply empty. */

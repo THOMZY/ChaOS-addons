@@ -59,12 +59,12 @@ test('every game wire manager member exists on its manager instance', async () =
 
   for (const [file, exportName, referenceName = exportName] of specs) {
     const moduleUrl = FEATURE_MODULES.has(file)
-      ? new URL(`../../../games/${file}/server/index.js`, import.meta.url)
-      : new URL(`../../../server/chat/wire/${file}.js`, import.meta.url);
+      ? new URL(`../../${file}/server/index.js`, import.meta.url)
+      : new URL(`../../../../server/chat/wire/${file}.js`, import.meta.url);
     const module = await import(moduleUrl);
     // Compatibility facades must not hide manager calls from this contract.
     const runtimeUrl = FEATURE_RUNTIMES.has(file)
-      ? new URL(`../../../games/${file}/server/runtime.js`, import.meta.url)
+      ? new URL(`../../${file}/server/runtime.js`, import.meta.url)
       : new URL(`./${file}-runtime.js`, moduleUrl);
     const sourceUrls = ['roulette', 'blackjack', 'mugen', 'sf2'].includes(file)
       ? [moduleUrl, runtimeUrl]

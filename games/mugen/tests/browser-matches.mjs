@@ -9,7 +9,7 @@ import { createCatalog } from '../server/catalog.js';
 import { mountMugenRoutes } from '../server/routes.js';
 import { startBrowser, pause } from './browser-driver.mjs';
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
+const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const catalog = createCatalog({ dataRoot: root + 'games/mugen/data' });
 const fighter =
   process.argv[2] ?? catalog.characters().find((entry) => entry.path.startsWith('Goku/'))?.path;

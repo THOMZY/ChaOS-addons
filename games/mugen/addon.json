@@ -2,13 +2,13 @@
   "id": "mugen",
   "name": "MUGEN",
   "version": "1.0.0",
-  "chaosAddonApi": 2,
+  "chaosAddonApi": 3,
   "server": "server/index.js",
   "data": {
     "dir": "data",
     "check": "engine/engine.json",
     "legacyDir": "server/games/MUGEN",
-    "install": "node games/mugen/install.mjs",
+    "install": "node addons/games/mugen/install.mjs",
     "legacyIds": ["fighting"]
   },
   "catalogue": {
@@ -56,10 +56,10 @@
   },
   "development": {
     "lint": {
-      "innerHtml": ["games/mugen/client/**"],
+      "innerHtml": ["addons/games/mugen/client/**"],
       "browserEvaluated": [
-        "games/mugen/tests/fixtures/gamepad-browser.js",
-        "games/mugen/tests/fixtures/replay-browser.js"
+        "addons/games/mugen/tests/fixtures/gamepad-browser.js",
+        "addons/games/mugen/tests/fixtures/replay-browser.js"
       ]
     }
   }

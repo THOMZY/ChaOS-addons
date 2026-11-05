@@ -1,16 +1,16 @@
 // Real Chromium Service Worker + real composed server, synthetic packs only
 // (moved from the site's scripts/check-game-clients-browser.mjs, roadmap J7b).
 // Run from the site with the add-on installed: node games/quake/tests/browser.mjs
-import '../../../tests/helpers/isolated-env.mjs';
+import '../../../../tests/helpers/isolated-env.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync, mkdtempSync, readFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { gameClientFixtures } from '../../../tests/helpers/game-client-fixtures.mjs';
+import { gameClientFixtures } from '../../../../tests/helpers/game-client-fixtures.mjs';
 
-const root = resolve(import.meta.dirname, '../../..');
+const root = resolve(import.meta.dirname, '../../../..');
 const files = gameClientFixtures(process.env.GAME_CLIENT_ASSET_ROOT);
 files.write('quake/probe.html', '<!doctype html><title>synthetic SW probe</title>');
 files.write('quake/legacy-sw.js', `const CACHE='chaos-quake-assets-v1';

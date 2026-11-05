@@ -2,7 +2,7 @@
   "id": "minecraft",
   "name": "Minecraft",
   "version": "1.0.0",
-  "chaosAddonApi": 2,
+  "chaosAddonApi": 3,
   "server": "server/index.js",
   "data": {
     "dir": "data",

@@ -15,12 +15,12 @@ From the ChaOS website repository:
 ```sh
 node scripts/games/games-install.mjs mugen
 npm --prefix games/mugen ci --omit=dev
-node games/mugen/install.mjs
+node addons/games/mugen/install.mjs
 ```
 
 The compiled engine ships in `engine/mugen-engine.tar.gz` (about 25 MiB).
 `install.mjs` checks its SHA-256 and pinned version, then installs it into
-`games/mugen/data/engine/` without network access, Git or Go. Characters and stages
+`addons/games/mugen/data/engine/` without network access, Git or Go. Characters and stages
 are preserved. The archive includes the WASM binary, matching Go loader, engine
 scripts, screenpack, fonts and upstream licence notices; it contains no user packs.
 
@@ -56,8 +56,8 @@ The data directory must be writable by the website process, including in Docker.
 
 Packs can also be copied manually, one folder each:
 
-- characters in `games/mugen/data/Characters/<folder>/` (the `.def` can sit one folder deeper);
-- stages in `games/mugen/data/Stages/<folder>/` or directly in `Stages/`.
+- characters in `addons/games/mugen/data/Characters/<folder>/` (the `.def` can sit one folder deeper);
+- stages in `addons/games/mugen/data/Stages/<folder>/` or directly in `Stages/`.
 
 Files are found without regard to case, as on Windows. These assets are not stored in Git. The old `server/games/MUGEN` directory and the former `games/fighting/` add-on are migrated by the website installer.
 
@@ -175,7 +175,7 @@ To test real netplay and a late spectator with the compiled WebAssembly engine,
 using only the screenpack's Kung Fu Man assets:
 
 ```sh
-node games/mugen/tests/browser-replay.mjs <built-bundle-directory> <screenpack-checkout>
+node addons/games/mugen/tests/browser-replay.mjs <built-bundle-directory> <screenpack-checkout>
 ```
 
 This starts an isolated local HTTP server and headless Chromium. Set `BROWSER_PATH`
@@ -192,7 +192,7 @@ in-window panel refreshing the open picker, mobile layout and signed-out access
 from the website checkout:
 
 ```sh
-node games/mugen/tests/browser-library.mjs
+node addons/games/mugen/tests/browser-library.mjs
 ```
 
 This uses an isolated test account, database and pack directory.
@@ -200,7 +200,7 @@ This uses an isolated test account, database and pack directory.
 To check successive native matches with installed packs from the website checkout:
 
 ```sh
-node games/mugen/tests/browser-matches.mjs [character-path] [stage-path]
+node addons/games/mugen/tests/browser-matches.mjs [character-path] [stage-path]
 ```
 
 The test launches two training matches through the actual UI, checks that the
